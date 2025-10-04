@@ -36,7 +36,7 @@ export function Navbar() {
   }, [dropdownRef]);
 
   const links = [
-    { href: "/projects", label: "Social Projects" },
+    { href: "/projects", label: "Social Enterprises" },
     { href: "/rewards", label: "Rewards" },
     { href: "/about", label: "About Us" },
     { href: "/contact", label: "Contact" },

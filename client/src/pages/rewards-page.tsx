@@ -120,10 +120,19 @@ export default function RewardsPage() {
 
       <div className="container mx-auto py-12 px-4">
         <div className="max-w-4xl mx-auto">
+          {/* Development Status Banner */}
+          <div className="mb-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center justify-center gap-2 text-center">
+              <span className="text-sm font-medium text-blue-800">
+                🚀 <strong>Preview Mode:</strong> Reward redemption launches November 2025 with our value guarantee system
+              </span>
+            </div>
+          </div>
+
           <div className="text-center mb-10">
-            <h1 className="text-3xl font-bold mb-4">Impact Rewards</h1>
+            <h1 className="text-3xl font-bold mb-4">Impact Rewards Preview</h1>
             <p className="text-muted-foreground">
-              Redeem your impact points for exclusive rewards
+              Explore the rewards you'll unlock with Impact Points. <strong>$1 = 10 Points</strong>, guaranteed 150% value return.
             </p>
           </div>
 
