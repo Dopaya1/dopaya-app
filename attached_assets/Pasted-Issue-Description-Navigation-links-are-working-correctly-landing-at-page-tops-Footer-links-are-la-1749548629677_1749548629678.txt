@@ -1,0 +1,59 @@
+Issue Description
+
+Navigation links are working correctly (landing at page tops)
+Footer links are landing somewhere in the middle of pages instead of at the top
+Project detail page links from project overview pages are not landing at page tops
+Other internal links throughout the site are not consistently landing at page beginnings
+Need all non-navigation links to consistently land visitors at the beginning of linked pages
+
+Required Changes
+1. Footer Links (Priority Fix)
+
+Audit ALL footer links across every page
+Remove any hash fragments or anchors causing mid-page landing
+Ensure footer links use clean URLs: href="page.html" not href="page.html#section"
+Test each footer link individually
+
+2. Project Detail Page Links (Priority Fix)
+
+Check all links from project overview/portfolio pages to individual project detail pages
+Ensure these links point to clean page URLs without anchors
+Verify project detail pages load from the top when accessed via these links
+
+3. Complete Site Audit
+Systematically check EVERY page for ALL internal links:
+
+Contact page links
+About page links
+Service/product page links
+Blog post links (if applicable)
+Call-to-action buttons
+Image links
+Text links within content
+Social media links (if internal)
+Any other clickable elements that navigate to internal pages
+
+4. Specific Areas to Check
+
+Footer sections: Contact links, privacy policy, terms, sitemap, etc.
+Project galleries: All thumbnail/title links to project details
+Content areas: Any embedded links within page content
+Sidebar links: If present on any pages
+Button elements: Ensure all internal navigation buttons work correctly
+
+5. Technical Check
+
+Look for JavaScript-based navigation that might be causing scroll issues
+Check for CSS that might be affecting scroll position on page load
+Verify no scroll-behavior CSS is interfering with natural page loading
+
+6. Testing Requirements
+
+Test EVERY footer link on every page where footers appear
+Test EVERY project detail link from overview pages
+Test ALL internal links found during the site audit
+Use browser developer tools to inspect problematic links
+Clear browser cache between tests to ensure accurate results
+
+Expected Result
+ALL internal links (except navigation which already works) should bring visitors to the very beginning/top of the destination page, providing consistent user experience throughout the entire website.

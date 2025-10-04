@@ -1,0 +1,87 @@
+I want you to create a clean, emotionally engaging About Us page for Dopaya — founder-centric, modern, scroll-friendly, and mobile-optimized.
+
+Addd a link to it in the navigation. 
+
+Please keep the old ones as well.
+⸻
+
+🎨 STYLE & LAYOUT GUIDELINES
+	•	Use Dopaya’s existing brand system (fonts, orange accent color, soft beige background)
+	•	Center content vertically where relevant (especially in hero/intro)
+	•	Use a letter-style structure — paragraph-based, like storytelling
+	•	Avoid clutter — aim for light whitespace, no harsh grid lines
+	•	Icons: minimal, soft, playful (when used)
+	•	Ensure mobile responsiveness
+
+
+🧩 PAGE SECTIONS & CONTENT
+
+⸻
+
+Section 0: The name
+Add the section from the current About us page, explaining the words meaning. SUe exactly the same styling
+
+
+Section 1: The Why
+
+Headline:
+We believe donations should feel personal, powerful — and actually work.
+
+Paragraphs: (Use soft serif or clean sans-serif font for storytelling tone)
+
+We started Dopaya because we were frustrated by how broken the world of impact felt.  
+Billions are donated every year, but so much of it gets lost in overhead or unclear processes.  
+Meanwhile, incredible social entrepreneurs struggle to access small amounts of funding that could change lives.
+
+What if we could make giving feel more like building something real?  
+More transparent. More joyful. And more connected to outcomes — not just promises.
+
+
+Section 2: What We Believe
+
+Headline:
+A better way is possible — and people-powered.
+
+Text (short paragraphs, styled softly):
+We’re building the most transparent, rewarding, and community-led giving platform.
+
+Where every dollar is tracked. Every result is visible.  
+And everyone who gives becomes part of the impact story.
+
+Dopaya isn’t just about raising funds.  
+It’s an ecosystem where generosity is rewarded, changemakers are empowered,  
+and donations spark long-term impact.
+
+
+Section 3: Why Dopaya Is Different
+
+Use a 3-column layout with small icons + short text (stacked on mobile):
+
+Title
+Description
+🔍
+Transparent by Design
+Track every dollar and impact outcome live on your dashboard.
+🤝
+Built Around People
+We fund vetted social enterprises with strong founder missions — not vague causes.
+🎁
+Giving = Earning
+Earn rewards, badges, and Impact Points for supporting change.
+
+Use light hover animations or color shifts if possible.
+
+
+Section 4: Our Team & Community
+
+Headline:
+Meet the team and community behind Dopaya
+
+
+Add a grid, similar to the one from the About us page
+
+
+
+Section 5: CTA
+Use the saem CTA from the current ABout us page. Use exactly the same styling
+

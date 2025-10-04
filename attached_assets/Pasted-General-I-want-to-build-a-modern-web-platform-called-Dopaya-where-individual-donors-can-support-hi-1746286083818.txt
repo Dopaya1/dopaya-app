@@ -1,0 +1,151 @@
+General:
+I want to build a modern web platform called Dopaya, where individual donors can support high-impact social enterprises and receive Impact Points in return and achieve certain Impact levels. Details in file attached). These points can be redeemed for rewards from consumer brands.
+
+🎯 Website Requirements
+Design Language:
+    • Clean, modern, fast-loading, and mobile-first
+    • Use #F55701 as the primary accent color (buttons, highlights)
+    • Use #F8F6EF as the background color (light, neutral base)
+    • Use bold, engaging typography
+    • Avoid unnecessary animations or heavy frameworks — keep it fast and simple
+    Separate concerns cleanly: presentation logic, API calls, and business logic should not mix.
+    
+    Frontend (Next.js):
+        Use Next.js with functional components and React hooks.
+        All UI components must be defined in a /components directory.
+        Each component should be reusable and accept props for dynamic rendering.
+        Avoid repetition and hardcoding—abstract logic wherever possible.
+        Optimize the DOM structure for minimal depth and clarity.
+        Use Tailwind CSS for styling.
+        Avoid heavy UI libraries.
+        Ensure accessibility and mobile responsiveness.
+        Use Typescript and ensure type safety.
+        Proper error handling and good, meaningful error messages at every component.
+        All operations must be asynchronous where appropriate (e.g., data fetching, form submissions, auth actions).
+        Properly handle loading states, error handling, and async/await patterns.
+
+    Backend (Supabase):
+        Use Supabase Auth for secure, asynchronous authentication (email/password or OAuth).
+        Use Supabase Database with async CRUD operations.
+        Handle all database and auth interactions with async functions, with clear:
+            Error messages
+            Retry/fallback mechanisms where applicable
+        Use Next.js API routes or Supabase client hooks to manage backend logic cleanly.
+        Store secrets and API keys securely using environment variables.
+
+Initial page structure:
+GLOBAL NAVIGATION BAR (fixed)
+    •   Left: Dopaya logo
+    •   Center: “Social Projects” | “Rewards” | “About Us” | “Contact” 
+    •   Right: “Sign Up” and “Login” buttons
+
+GLOBAL FOOTER:
+- left side logo and paragraph below
+- 3 extra columns with headlines and links below each headline
+
+1. HOMEPAGE
+(Design idea of first sections attached)
+
+Hero Section
+    •   Left: Headline, 2-sentence Dopaya description, CTA button (“Explore Social Projects”)
+    •   Right: High-impact image
+
+Featured Projects
+    •   Display top 4 Social Projects in a 4-column layout
+    •   Each card: image, title, 1-sentence summary, category tag, and “Learn More” button
+    •   Below: Button “See all Social Projects” leading to the Social Projects page
+
+How It Works Section
+    •   Step-by-step section in 3 parts (Step 1, 2, 3)
+    •   Alternating layout: image left/text right, then right/left, then left/right
+
+Rewards & Partners
+    •   Headline
+    •   Text explaining users get rewards for Impact Points
+    •   Logos of popular supporting brands below
+
+Sign-Up CTA
+    •   Full-width horizontal bar: “Join the movement — Get early access”
+    •   CTA: “Get on the Waitlist” button
+
+⸻
+
+2. SOCIAL PROJECTS LISTING PAGE
+Design idea attached
+
+Filter Section
+    •   Top of page: Search bar + Filter dropdowns (by category and country)
+
+Project Grid
+    •   Display Social Projects in 4-column responsive grid
+    •   Each project card:
+    •   Cover image
+    •   Category tag
+    •   Title
+    •   1-sentence mission summary
+    •   “View Project” button that links to the individual project page
+
+Support Section
+    •   Headline: “Supported by Leading Companies”
+    •   Grid with company logos underneath
+
+⸻
+
+3. SOCIAL PROJECT DETAIL PAGE
+Design idea attached
+
+Left Side (2/3 width)
+    •   Category badge (e.g., “Education”)
+    •   Project title
+    •   Mission tagline
+    •   Hero image
+    •   Image carousel
+    •   Sections:
+    •   About this Project (text)
+    •   Impact Summary (number + highlight)
+    •   Achievements so far (bullet points)
+    •   Sustainable Approach + Community Involvement (icons or badges)
+    •   How Funds Are Used (bullets or timeline)
+    •   CTA: “Support this Project” button
+
+Right Side (1/3 width)
+    •   Box with snapshot info:
+    •   Country
+    •   Impact Points Multiplier (e.g., “10x on all donations”)
+    •   Founders
+    •   Focus Area
+    •   Contact & links section (Linktree style):
+    •   Website, Twitter, LinkedIn, Instagram, Email
+    •   Impact Point System (explained below)
+
+5. SIGN-UP PAGE
+    •   Fields: First Name, Last Name, Email, Password, Confirm Password
+    •   Button: “Create Account”
+    •   Or: Sign up via Google / Facebook (buttons)
+
+⸻
+
+6. USER DASHBOARD
+Design idea attached
+
+After login, user sees a personal dashboard with:
+
+Summary Section
+    •   Total donated (amount in $)
+    •   Projects supported (count)
+    •   Total impact generated (number + visual badge)
+
+Performance Section
+    •   Visual chart showing giving over time
+    •   Current Level (e.g., Advocate) with XP/Progress
+
+Supported Projects List
+    •   Table of all supported Social Projects with:
+    •   Name
+    •   Amount Donated
+    •   Impact Points Earned
+    •   Link to each Project Detail Page
+
+⸻
+
+

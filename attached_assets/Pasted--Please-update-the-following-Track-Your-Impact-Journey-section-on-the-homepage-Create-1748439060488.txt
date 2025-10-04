@@ -1,0 +1,136 @@
+
+Please update the following:
+
+
+>>>>>>>Track Your Impact Journey section on the homepage
+
+
+// Create a responsive homepage section for Dopaya.com to explain our Impact Points System and User Levels.
+// Style: Clean, modern, slightly playful, matching Dopaya’s brand (orange accent, soft shadows, rounded edges, white background).
+// Use TailwindCSS for styling.
+// Structure: two columns side by side, vertically centered.
+
+///////////////////////////////////////
+// SECTION TITLE
+///////////////////////////////////////
+
+Headline:
+"Track Your Impact Journey"
+
+Subheadline:
+“Turn your donations into lasting impact. Earn badges, unlock perks, and rise through our community ranks.”
+
+///////////////////////////////////////
+// LEFT SIDE (Simplified Impact Widget)
+///////////////////////////////////////
+
+Left column: Card-style module titled **"Your Impact Progress"**
+
+- Display user level: e.g. “🌟 Impact Hero”
+- Show total impact points: e.g. “7,250 pts”
+- Visual progress line or badge ladder: “Supporter → Advocate → Hero → Changemaker → Hall of Fame”
+  - Show current position on graph with an icon (e.g. glowing badge)
+- CTA button: “View My Journey”
+- All elements **vertically centered** to match right column height
+
+Use placeholder values like {userLevel}, {impactPoints}, and indicate that the rank graphic should be minimalistic, Dopaya-style
+
+///////////////////////////////////////
+// RIGHT SIDE (Impact Levels Overview)
+///////////////////////////////////////
+
+Right column: “Impact Levels & Benefits”
+
+Display 5 contribution levels in a vertical card stack. Each should include:
+
+LEVEL NAME + POINTS + BADGE COLOR + SHORT BENEFIT TEXT
+
+- 🟦 **Supporter** – 1,000 pts  
+  _“Start making ripples.”_  
+  Access basic brand perks.
+
+- 🟩 **Advocate** – 5,000 pts  
+  _“Your story inspires others.”_  
+  Get early access & curated rewards.
+
+- 🟧 **Impact Hero** – 10,000 pts  
+  _“You’re powering real change.”_  
+  Unlock exclusive gifts & showcases.
+
+- 🟪 **Changemaker** – 25,000 pts  
+  _“You shape what comes next.”_  
+  Join founder AMAs & pilot access.
+
+- 🟨 **Hall of Fame** – 50,000 pts  
+  _“Become part of Dopaya legacy.”_  
+  Enjoy custom brand experiences.
+
+///////////////////////////////////////
+// LAYOUT + DESIGN NOTES
+///////////////////////////////////////
+
+// Use flex/grid layout with min-h-[60vh] and items-center
+// Responsive: stack vertically on mobile
+// Dopaya brand colors: orange CTA, soft grays, white background
+// Fonts: modern sans-serif, clean hierarchy
+// Optional: placeholder SVG line graph or icon ladder for level progression
+
+
+>>>>>>>FAQ page
+
+In the FAQ page, please radd the following FAQs 
+
+// TITLE
+Title: “Frequently Asked Questions”
+
+// FAQ ITEMS
+
+1. Q: Why should I donate to social enterprises instead of NGOs?  
+   A: Social enterprises use sustainable business models to create long-term impact. Unlike NGOs that often rely on recurring donations, social enterprises reinvest earnings into their mission — making your donation go further. Some even deliver a measurable social return on investment (SROI) of 2×, 3× or more.
+
+2. Q: How much does Dopaya take from donations?  
+   A: Dopaya charges a small 10% fee to operate the platform and grow impact. This covers tech infrastructure, partner support, and verification. Our long-term goal is to reduce this fee even further as we scale with the help of brands and other partners.
+
+3. Q: How does Dopaya ensure donations are used correctly?  
+   A: Every social enterprise on Dopaya goes through a careful vetting process. We assess their impact model, financials, and governance to ensure credibility. We also track how funds are used and offer donors clear visibility through updates and dashboards.
+
+4. Q: How can my social enterprise join Dopaya?  
+   A: Social enterprises can apply through our simple onboarding form. We review each application carefully based on impact potential and alignment. If selected, you’ll get access to our platform and tools to grow your funding and visibility.
+   Please link this suvey here: https://tally.so/r/3Nd6lp
+
+5. Q: How do brands collaborate with Dopaya?  
+   A: Brands can offer rewards, product experiences, or exclusive perks for our donor community. They simply submit a form, and we’ll get in touch to co-create impact campaigns. It’s a unique way to connect with socially conscious, Gen Z and Millennial audiences.
+   Please link this survey here: https://tally.so/r/3lvVg5
+
+6. Q: Is there any cost for brands?  
+   A: No, it’s completely free. Dopaya helps purpose-driven brands reach a values-aligned audience — at no cost. You gain access to marketing exposure and impact storytelling while contributing to real change.
+
+7. Q: Is there any cost for social enterprises?  
+   A: Never. We exist to support social enterprises and help them access funding streams without lifting a finger. There are no platform fees — just more reach, more donors, and more time to focus on your mission.
+
+8. Q: Can I choose where my donation goes?  
+   A: Yes. You can explore our list of vetted social enterprises and choose who to support — or let Dopaya recommend projects based on your interests. Either way, your impact is real, transparent, and trackable.
+
+9. Q: What kind of rewards do donors receive?  
+   A: Every donation earns you Impact Points — which unlock badges, perks, and access to curated brand experiences. The more you give or refer, the more rewarding your journey becomes.
+
+10. Q: Are donations tax-deductible?  
+   A: In many cases, yes. We’re working to expand this and provide tax-friendly options for more users globally.
+
+
+please update the FAQs in the FAQ section on the homepage accordingly, showing 6 most relevant ones from the list
+
+
+>>>>>>>In the footer please:
+- remove the link Resources
+- Remove the link compliances
+- hide the social media icons
+- hide the language selector
+
+>>>>>>>In the header:
+- remove the How it works link >>> you can delete the entire page
+- rmove the For creators (Option 1 page) >>> you can delete the entire page
+- remove the for donors page >>> you can delete the entire page
+
+
+Do not directly jump into code. Show me your plan of action, take a confirmation and only then proceed to implement these changes.

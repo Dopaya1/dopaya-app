@@ -1,0 +1,32 @@
+User-agent: *
+Allow: /
+
+# High priority pages
+Allow: /projects
+Allow: /social-enterprises
+Allow: /about
+Allow: /rewards
+Allow: /brands
+Allow: /contact
+Allow: /faq
+Allow: /eligibility
+
+# Low priority pages
+Allow: /privacy
+Allow: /cookies
+Allow: /thank-you
+
+# Disallow admin or sensitive paths (if any exist in future)
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /api/
+
+# Block specific bots if needed (uncomment if required)
+# User-agent: GPTBot
+# Disallow: /
+
+# Sitemap location
+Sitemap: https://dopaya.org/sitemap.xml
+
+# Crawl-delay (optional, set if needed)
+# Crawl-delay: 1

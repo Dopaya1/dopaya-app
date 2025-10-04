@@ -1,0 +1,91 @@
+
+🔷 Step 1: Immersive Welcome Screen (10–15 sec)
+
+Headline:
+
+“What if every rupee you gave multiplied itself — and changed lives sustainably?”
+
+Visual:
+	•	Short video loop: a social enterprise in action (e.g. clean water buckets, recycled plastic into products, women-led ventures)
+	•	Stats overlay:
+	•	“₹100 on Dopaya = ₹350 in long-term impact”
+	•	“+1,240 donors, +7 verified enterprises, +42,000 lives touched”
+
+Purpose:
+→ Instant hook. Not “please donate,” but: “this is ROI-driven giving.”
+→ Feels like a fusion of fintech x impact x gamified purpose.
+
+⸻
+
+🔷 Step 2: Choose Your Style (15 sec)
+
+“How do you want to change the world today?”
+
+Card Carousel (Tap to Explore):
+	•	🧒 Education
+	•	🌱 Climate Action
+	•	💧 Clean Water
+	•	👩‍🌾 Women’s Entrepreneurship
+	•	🧼 Sanitation
+
+After click → Show a real social enterprise profile (micro case study):
+
+“Meet Jaya. Her soap business helps 100 women every month earn income and hygiene dignity. Your ₹500 helps scale this to 300 women by year-end.”
+
+→ Mini-donation slider appears below: “Contribute ₹100 → See what happens”
+
+Purpose:
+→ Emotional + strategic: shows the individual and systemic outcome.
+→ Replaces endless project lists with bite-sized impact previews.
+
+
+
+
+ Instant Differentiation User Flow (Mobile/Web)
+
+⸻
+
+🔷 Step 1: Immersive Welcome Screen (10–15 sec)
+
+Headline:
+
+“What if every rupee you gave multiplied itself — and changed lives sustainably?”
+
+Visual:
+	•	Short video loop: a social enterprise in action (e.g. clean water buckets, recycled plastic into products, women-led ventures)
+	•	Stats overlay:
+	•	“₹100 on Dopaya = ₹350 in long-term impact”
+	•	“+1,240 donors, +7 verified enterprises, +42,000 lives touched”
+
+Purpose:
+→ Instant hook. Not “please donate,” but: “this is ROI-driven giving.”
+→ Feels like a fusion of fintech x impact x gamified purpose.
+
+⸻
+
+🔷 Step 2: Choose Your Style (15 sec)
+
+“How do you want to change the world today?”
+
+Card Carousel (Tap to Explore):
+	•	🧒 Education
+	•	🌱 Climate Action
+	•	💧 Clean Water
+	•	👩‍🌾 Women’s Entrepreneurship
+	•	🧼 Sanitation
+
+After click → Show a real social enterprise profile (micro case study):
+
+“Meet Jaya. Her soap business helps 100 women every month earn income and hygiene dignity. Your ₹500 helps scale this to 300 women by year-end.”
+
+→ Mini-donation slider appears below: “Contribute ₹100 → See what happens”
+
+Purpose:
+→ Emotional + strategic: shows the individual and systemic outcome.
+→ Replaces endless project lists with bite-sized impact previews.
+
+⸻
+
+🔷 Step 3: Show the Dopaya Edge (15 sec)
+
+After interaction, overlay a 1-screen Dopaya vs Others visual:

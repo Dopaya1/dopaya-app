@@ -1,0 +1,131 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 44 43% 96%;  /* #F8F6EF */
+    --foreground: 20 14.3% 4.1%;
+    
+    --muted: 60 4.8% 95.9%;
+    --muted-foreground: 25 5.3% 44.7%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 14.3% 4.1%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 20 14.3% 4.1%;
+    
+    --border: 20 5.9% 90%;
+    --input: 20 5.9% 90%;
+    
+    --primary: 20 96% 48%; /* #F55701 */
+    --primary-foreground: 60 9.1% 97.8%;
+    
+    --secondary: 60 4.8% 95.9%;
+    --secondary-foreground: 24 9.8% 10%;
+    
+    --accent: 20 96% 48%; /* #F55701 */
+    --accent-foreground: 60 9.1% 97.8%;
+    
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 60 9.1% 97.8%;
+    
+    --ring: 20 96% 48%; /* #F55701 */
+    
+    --radius: 0.5rem;
+
+    /* Chart colors */
+    --chart-1: 20 96% 48%;
+    --chart-2: 210 79% 65%;
+    --chart-3: 120 75% 60%;
+    --chart-4: 47 89% 61%;
+    --chart-5: 310 70% 60%;
+  }
+
+  .dark {
+    --background: 44 43% 96%;  /* Keep same background */
+    --foreground: 0 0% 98%;
+    
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    
+    --primary: 20 96% 48%; /* #F55701 */
+    --primary-foreground: 0 0% 98%;
+    
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    
+    --accent: 20 96% 48%; /* #F55701 */
+    --accent-foreground: 0 0% 98%;
+    
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    
+    --ring: 20 96% 48%; /* #F55701 */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading font-bold;
+  }
+}
+
+/* Ensure consistent page loading behavior */
+html {
+  scroll-behavior: auto !important;
+}
+
+@layer utilities {
+  .font-heading {
+    font-family: 'Poppins', system-ui, sans-serif;
+  }
+  .font-sans {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+  .impact-card {
+    @apply transition-transform duration-200;
+  }
+  .impact-card:hover {
+    @apply transform -translate-y-1;
+  }
+  /* Hide scrollbar but allow scrolling */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari and Opera */
+  }
+  /* Continuous automatic sliding animation */
+  @keyframes scroll {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+  .animate-scroll {
+    animation: scroll 30s linear infinite;
+  }
+  .animate-scroll:hover {
+    animation-play-state: paused;
+  }
+}

@@ -1,0 +1,85 @@
+import { useState } from "react";
+
+export default function DifferentiatorPage() {
+  const [step, setStep] = useState(0);
+  const quizSteps = [
+    { q: "Which causes matter to you?", options: ["Clean Water", "Women", "Climate", "Education"] },
+    { q: "How often would you like to give?", options: ["One-Time", "Monthly", "Seasonal"] },
+    { q: "Do you want rewards or just impact?", options: ["Both", "Only Impact", "Not Sure"] }
+  ];
+  const currentQuiz = quizSteps[step];
+
+  const causes = [
+    { title: "Clean Water", img: "https://source.unsplash.com/featured/?water" },
+    { title: "Women Empowerment", img: "https://source.unsplash.com/featured/?women" },
+    { title: "Climate Action", img: "https://source.unsplash.com/featured/?climate" },
+    { title: "Education", img: "https://source.unsplash.com/featured/?education" }
+  ];
+
+  const comparison = [
+    ["Multiply Impact", "✅", "❌"],
+    ["Live Dashboards", "✅", "❌"],
+    ["Brand Rewards", "✅", "❌"],
+    ["Curated Social Enterprises", "✅", "❌"]
+  ];
+
+  return (
+    <div className="font-sans text-gray-800">
+      {/* HERO */}
+      <div className="text-center px-6 py-20 bg-gradient-to-r from-indigo-500 to-violet-600 text-white">
+        <h1 className="text-4xl font-bold mb-4">What if every ₹100 you donated became ₹350 of lasting impact?</h1>
+        <p className="text-lg mb-6">Support social enterprises that multiply your donation — with full transparency and rewards.</p>
+        <button className="bg-white text-indigo-600 font-semibold px-6 py-3 rounded-full shadow hover:bg-gray-100 transition">See How It Works</button>
+      </div>
+
+      {/* CAUSE CAROUSEL */}
+      <div className="overflow-x-auto whitespace-nowrap py-6 bg-gray-50 px-4 flex space-x-4">
+        {causes.map((cause, idx) => (
+          <div key={idx} className="inline-block w-60 bg-white rounded-xl shadow p-3">
+            <img src={cause.img} alt={cause.title} className="w-full h-36 object-cover rounded-lg" />
+            <h3 className="text-lg font-semibold mt-3">{cause.title}</h3>
+            <button className="mt-2 text-indigo-600 font-medium">Explore</button>
+          </div>
+        ))}
+      </div>
+
+      {/* COMPARISON */}
+      <div className="bg-white px-4 py-10 text-center">
+        <h2 className="text-2xl font-bold mb-6">Why Dopaya is Different</h2>
+        <div className="grid grid-cols-3 gap-3 font-medium text-sm text-left max-w-md mx-auto">
+          <div></div><div>Dopaya</div><div>Others</div>
+          {comparison.map(([label, dopaya, others], i) => (
+            <><div key={`l${i}`}>{label}</div><div key={`d${i}`}>{dopaya}</div><div key={`o${i}`}>{others}</div></>
+          ))}
+        </div>
+      </div>
+
+      {/* ONBOARDING QUIZ */}
+      <div className="p-6 bg-gray-50 text-center">
+        {step < quizSteps.length ? (
+          <>
+            <h3 className="text-lg font-semibold mb-4">{currentQuiz.q}</h3>
+            <div className="flex flex-wrap justify-center gap-3">
+              {currentQuiz.options.map((opt, i) => (
+                <button key={i} onClick={() => setStep((s) => s + 1)} className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-full hover:bg-indigo-200">
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="text-center">
+            <h2 className="text-xl font-bold mb-4">Welcome to Your Impact Dashboard</h2>
+            <div className="space-y-2">
+              <p>🎯 Causes Followed: <strong>Clean Water, Women</strong></p>
+              <p>💰 Total Given: <strong>₹0</strong></p>
+              <p>🏅 Impact Points: <strong>0</strong></p>
+              <p>🔗 Referral Code: <code>DOPAYA123</code></p>
+            </div>
+            <button className="mt-6 bg-indigo-600 text-white px-6 py-2 rounded-full shadow">Make Your First Donation</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

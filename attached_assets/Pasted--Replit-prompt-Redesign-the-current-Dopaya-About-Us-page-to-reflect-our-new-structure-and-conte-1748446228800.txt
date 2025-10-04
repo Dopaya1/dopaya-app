@@ -1,0 +1,127 @@
+// Replit prompt: Redesign the current Dopaya "About Us" page to reflect our new structure and content.
+// Use the same visual style as the current live page (see screenshots): clean typography, white or beige background, lightly bordered sections, SDG icons, orange accents.
+
+// PAGE STRUCTURE & CONTENT
+
+///////////////////////////////////////
+// SECTION 1 – Name Meaning (Keep as-is)
+///////////////////////////////////////
+
+Keep the existing layout and content:
+- Show: [du·pa·ya]
+- Subtitle: Origin: Sanskrit & English, Meaning: Taking action toward real solutions
+- Two definition cards:
+  - DO: Action, making things happen.
+  - UPAYA: A skillful means, an effective method, a path toward a goal.
+
+///////////////////////////////////////
+// SECTION 2 – The Problem / Why We Exist
+///////////////////////////////////////
+
+Headline: “Why Another Impact Platform?”
+
+Paragraph:
+"Despite billions in giving, change still feels too slow. Funding gets lost, impact remains invisible, and those doing the work — social enterprises — often go unseen. We believe in a better way — one that’s transparent, rewarding, and built around people-powered solutions."
+
+Layout:  
+- Left side: Visual block (image of changemakers, action, etc.)  
+- Right side: This paragraph, formatted with bullets or short lines for readability  
+- Style: Same as current section layout – image + text side-by-side, vertically aligned
+
+///////////////////////////////////////
+// SECTION 3 – Our Belief (One Statement, No Header)
+///////////////////////////////////////
+
+Centered statement in bold serif or large font:
+
+> “We believe in a future where impact matters more than money.”
+
+Layout: centered block with whitespace around. No extra headline. Use Dopaya orange for accent underline or dots.
+
+///////////////////////////////////////
+// SECTION 4 – What We’re Trying to Build
+///////////////////////////////////////
+
+Headline: “What We’re Trying to Build”
+
+Subheadline (styled as muted subtitle):  
+> The most transparent, efficient and engaging giving platform.
+
+Below that, show **4 icon cards** for each ecosystem pillar in horizontal row (desktop) or stacked (mobile):
+
+1. **Transparent Giving**  
+   Track every rupee, every result — live on your dashboard.
+
+2. **Empowered Social Enterprises**  
+   Fund sustainable changemakers with long-term impact.
+
+3. **Rewarded Generosity**  
+   Earn points and perks for doing good.
+
+4. **Community-Led Movement**  
+   Join a network where people drive progress together.
+
+///////////////////////////////////////
+// SECTION 5 – Comparison Table
+///////////////////////////////////////
+
+
+Layout: 3 or 4 simple steps, side-by-side with icons or numbers.
+
+Title: “How Dopaya Works (For Donors)”
+
+Steps:
+   1. Pick a Project or Let Us Recommend One
+Explore vetted social enterprises or get matched based on your interests.
+   2. Donate with Transparency
+Track your impact points and follow your contribution via your dashboard.
+   3. Earn & Redeem Rewards
+Unlock perks from purpose-driven brands.
+   4. Repeat, Share, Rise in Ranks
+Invite friends, climb levels, and grow your impact.
+
+✅ Optional variant: Include a mini toggle above:
+“[ For Donors ] [ For Brands ] [ For Social Enterprises ]”
+Each shows a slightly different 3-step version. (Advanced, but great UX.)
+
+After that the comparison table:
+Keep current Dopaya vs. Traditional Sites table  
+- No change to format or layout  
+- You may update one label if needed (e.g., "Curated SEs" → "Vetted Changemakers")
+
+///////////////////////////////////////
+// SECTION 6 – Team (Updated Titles)
+///////////////////////////////////////
+
+Headline: “Meet the People Behind Dopaya”
+
+Keep the card format from the screenshot  
+Change **all titles to:** “Impact Partner”
+
+If possible, allow space for a short personal quote or purpose line under each person. (e.g., “Believes in impact at scale”)
+
+///////////////////////////////////////
+// SECTION 7 – Final CTA Block
+///////////////////////////////////////
+
+Centered block with bold CTA text:
+
+> “Want to co-build the Dopaya ecosystem with us?”
+
+Button:  
+Text: “Join the Community”  
+Link: `/contact` or to your waitlist page
+
+///////////////////////////////////////
+// DESIGN NOTES
+///////////////////////////////////////
+
+
+//  Overall layout: Keep the current layout & Look and feel
+// Fonts: Use existing typography settings from current layout.
+// Section spacing: Use current padding/margins from About page.
+// Responsive design: Stack sections vertically on mobile.
+// Icons: Use soft flat-style illustrations for the 4 pillars (optional placeholder SVGs).
+
+
+Do not directly jump into code. Show me your plan of action, take a confirmation and only then proceed to implement these changes.

@@ -1,0 +1,125 @@
+<!-- CONTEXT -->
+You're redesigning the landing page for social enterprises https://dopaya.com/social-enterprises. Keep the existing layout, fonts, styles, colors, spacing, and component structure intact. Your job is to **update the content and structure** as outlined below. No styling or theming changes are needed at this stage.
+Please duplicate the page before making any changes.
+
+Following the rough overview, but feel free to adapt the commands to ensure an alignment to the existing look and feel
+
+<!-- HERO SECTION -->
+<section class="hero">
+  <h1>Unlock funding, visibility, and support to scale your social enterprise.</h1>
+  <p>Get donations, meet investors, and access smart grant tools — all in one place.</p>
+  <a href="#apply" class="btn-primary">Apply Now</a>
+</section>
+
+<!-- PROBLEM SECTION -->
+<section class="problem">
+  <h2>Funding is out there — but hard to access.</h2>
+  <p>Early-stage social enterprises often struggle to tap into funding streams designed for NGOs or established ventures. Tax limitations, high grant complexity, and investor access barriers make it hard to grow despite proven impact.</p>
+  <p>Dopaya opens new and existing channels so you can focus on what really matters: your mission.</p>
+</section>
+
+<!-- THREE PILLARS SECTION -->
+<section class="pillars">
+  <h2>How We Support You</h2>
+  <div class="pillar">
+    <h3>1. Individual Donations</h3>
+    <p>Receive donations from individuals directly via our platform — even if you can’t normally accept them due to taxation or legal limits.</p>
+  </div>
+  <div class="pillar">
+    <h3>2. Access to Impact Investors</h3>
+    <p>Get matched with angel and impact investors through curated intros and speed dating formats that accelerate partnerships.</p>
+  </div>
+  <div class="pillar">
+    <h3>3. AI-Powered Grant Support</h3>
+    <p>Find relevant grants and let our AI help you prepare high-quality applications, reducing admin time and increasing chances of success.</p>
+  </div>
+</section>
+
+<!-- HOW IT WORKS SECTION -->
+<section class="how-it-works">
+  <h2>How It Works</h2>
+  <div class="step">
+    <h3>Apply</h3>
+    <p>Submit your enterprise profile and impact information.</p>
+  </div>
+  <div class="step">
+    <h3>Get Selected</h3>
+    <p>Our team reviews your application and selects high-potential ventures based on clear criteria.</p>
+  </div>
+  <div class="step">
+    <h3>Access Funding Streams</h3>
+    <p>Start receiving donations, connect with investors, and apply for grants with our AI-powered tools.</p>
+  </div>
+</section>
+
+<!-- PROJECT SHOWCASE SECTION (unchanged) -->
+<section class="project-showcase">
+  <h2>Your Project Showcase</h2>
+  <!-- Existing cards and content remain -->
+</section>
+
+<!-- BENEFITS SECTION -->
+<section class="benefits">
+  <h2>Why Social Startups Choose Dopaya</h2>
+  <div class="benefit">
+    <h3>Unlock new funding</h3>
+    <p>Accept donations and funding that would otherwise be out of reach due to tax and legal challenges.</p>
+  </div>
+  <div class="benefit">
+    <h3>Meet aligned funders</h3>
+    <p>Engage with donors and investors who are impact-driven and startup-aligned.</p>
+  </div>
+  <div class="benefit">
+    <h3>Apply for grants more easily</h3>
+    <p>Use AI to match with relevant grants and get guidance through the application process.</p>
+  </div>
+  <div class="benefit">
+    <h3>Focus on your mission</h3>
+    <p>Skip the bureaucracy. We handle the fundraising infrastructure so you can deliver impact.</p>
+  </div>
+</section>
+
+<!-- ELIGIBILITY SECTION (4 columns) -->
+<section class="eligibility">
+  <h2>Eligibility Criteria</h2>
+  <div class="eligibility-grid">
+    <div>
+      <h4>Business Model & Stage</h4>
+      <p>Early-stage, legally registered, with proven revenue or potential.</p>
+    </div>
+    <div>
+      <h4>Organization Type</h4>
+      <p>Pvt Ltd, Section 8, or similar revenue-generating social ventures. NGOs not eligible.</p>
+    </div>
+    <div>
+      <h4>Impact Orientation</h4>
+      <p>Clear, measurable social or environmental impact, ideally quantifiable.</p>
+    </div>
+    <div>
+      <h4>Founder Profile</h4>
+      <p>Mission-driven, entrepreneurial founders committed to long-term change.</p>
+    </div>
+    <div>
+      <h4>Use of Funds</h4>
+      <p>Donations must be used for tangible impact with long-term sustainability.</p>
+    </div>
+    <div>
+      <h4>Sector</h4>
+      <p>All sectors welcome, as long as measurable impact is demonstrated.</p>
+    </div>
+    <div>
+      <h4>Region</h4>
+      <p>No geographic restrictions if measurable local outcomes are ensured.</p>
+    </div>
+  </div>
+</section>
+
+<!-- APPLY NOW SECTION -->
+<section class="apply">
+  <h2>It’s free. It’s simple. It’s for changemakers.</h2>
+  <p>Join the community of social enterprises making a meaningful impact across India.</p>
+  <a href="#apply" class="btn-primary">Apply Now</a>
+</section>
+
+
+<!-- IMPORTANT: DO NOT write or change any code until you have proposed your full implementation plan and received approval. -->

@@ -1,0 +1,95 @@
+Mood: Bold, modern, premium, slightly playful (think Creator NFT x UNDP collab)
+Fonts/Colors: Editorial headline fonts, soft gradients, profile-style layouts
+Vibe: “Creator meets change-maker” — aspirational but grounded in social impact
+
+⸻
+
+🔧 Shippable UI Components (Enhanced for Creators)
+
+⸻
+
+1. ✨ Hero Section (Full-bleed background or gradient)
+	•	Headline:
+“You create. You inspire. Now you can change the world.”
+	•	Subheadline:
+“Launch your own impact campaign. Raise funds for causes you love. Earn recognition, rewards, and a place on India’s Creator Impact Leaderboard.”
+	•	✅ CTA Button:
+Start Your Dopaya Campaign
+
+💡 Design Tip: Overlay Tanvi-style mock influencer image + stats over background gradient or split-screen
+
+⸻
+
+2. 📸 The Dopaya Creator Card (Personalized Showcase Mockup)
+	•	A card UI featuring:
+	•	@handle, profile picture
+	•	“Total Raised: ₹58,300”
+	•	“Impact Points: 980”
+	•	Custom badge (e.g., “Education Advocate”)
+	•	Followers who donated (“Tanvi’s top 5 supporters”)
+
+This shows the status and shareability they’ll earn by joining.
+
+⸻
+
+3. 🎯 3-Block “Why It’s Made for You” Section
+	•	🔥 Stand Out — with Purpose
+Be seen as more than a creator. Build a movement, not just a following.
+	•	🎁 Engage With Rewards
+Give your fans real benefits for giving — and earn exclusive badges yourself.
+	•	🚀 Grow Organically
+Dopaya campaigns are designed for virality and Instagram-native sharing.
+
+💡 Add interactive hover effects or scroll-triggered transitions for visual flair.
+
+⸻
+
+4. 🪄 How It Works (Story Format, Not Just Steps)
+
+Use creator lingo — not “Step 1, Step 2” but:
+	•	You Pick the Cause.
+Choose what you care about — from education to climate.
+	•	We Build Your Campaign.
+With your link, your look, and a live impact tracker.
+	•	You Post. They Donate. You Rise.
+Earn status. Track donations. Climb the leaderboard.
+
+💡 Animate this with IG story-style frames or creator flow carousel.
+
+⸻
+
+5. 🧢 Dopaya Creator Rewards (Gamified Showcase)
+	•	Grid of:
+	•	Digital badges (Gold Donor, Top 10 Creator, Climate Ally)
+	•	NFTs (if applicable)
+	•	Verified Impact Stickers (for Stories)
+	•	Exclusive invites to events or features
+
+⸻
+
+6. 🔝 Creator Impact Leaderboard (Preview Snippet)
+	•	Profile-style top 5 creators with:
+	•	Handle + cause supported
+	•	Funds raised
+	•	Points + badge
+
+💡 Option: Make this scrollable or animated in real-time.
+
+⸻
+
+7. 🔗 Social Proof / Creator Quote Section
+
+Include real or mock testimonial:
+
+“This isn’t just another collab. It’s the first time my audience gave back — and I got recognized for it.”
+— Tanvi, 92K followers
+
+💡 Include Instagram embed-style layout or TikTok frame mockups.
+
+⸻
+
+8. 🧲 Sticky Final CTA Section (or Animated Footer)
+	•	Headline:
+“You already have the influence. Now use it for impact.”
+	•	CTA Button:
+Launch My Campaign
