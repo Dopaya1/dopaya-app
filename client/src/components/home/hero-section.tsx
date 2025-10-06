@@ -68,12 +68,21 @@ export function HeroSection() {
               </div>
 
               <h1 className="text-4xl sm:text-5xl font-bold text-dark font-heading tracking-tight md:leading-tight">
+<<<<<<< HEAD
                 Support Social Enterprises → Get 150% Value Back in Rewards
                 <span className="text-primary block mt-2">$100 Support = $150+ Brand Rewards + Verified Impact Stories</span>
               </h1>
               
               <p className="mt-3 text-lg text-neutral max-w-3xl">
                 Join the coalition where your giving creates more value than investing. <strong>$1 = 10 Impact Points</strong> that never expire and unlock exclusive rewards from sustainable brands.
+=======
+                Support social enterprises. Get rewarded. 
+                <span className="text-primary"> Create verified impact.</span>
+              </h1>
+              
+              <p className="mt-3 text-lg text-neutral max-w-3xl">
+                Donate to vetted social enterprises, earn rewards worth more than you give, and track your real-world impact with transparent reporting.
+>>>>>>> 30c0addf
               </p>
               
               {/* Value Guarantee Display */}
