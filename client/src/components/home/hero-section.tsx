@@ -63,12 +63,12 @@ export function HeroSection() {
             {/* Left Side - Text Content */}
             <div className="order-1 lg:order-1 flex flex-col justify-center">
               <h1 className="text-4xl sm:text-5xl font-bold text-dark font-heading tracking-tight md:leading-tight">
-                Track your impact. See where every dollar goes. 
-                <span className="text-primary"> Earn rewards you love.</span>
+                Support social enterprises. Get rewarded. 
+                <span className="text-primary"> Create verified impact.</span>
               </h1>
               
               <p className="mt-3 text-lg text-neutral max-w-3xl">
-                Support impactful projects, track your donations' impact in real-time, and earn Impact Points for making a difference.
+                Donate to vetted social enterprises, earn rewards worth more than you give, and track your real-world impact with transparent reporting.
               </p>
               
               <div className="mt-8 flex flex-col sm:flex-row">
