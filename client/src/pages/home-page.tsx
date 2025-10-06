@@ -6,11 +6,6 @@ import { RewardsSection } from "@/components/home/rewards-section";
 
 import { ImpactPointsSection } from "@/components/home/impact-points-section";
 import { ImpactDashboardSection } from "@/components/home/impact-dashboard-section";
-<<<<<<< HEAD
-import { ValueGuaranteeCalculator } from "@/components/home/value-guarantee-calculator";
-=======
-import { ImpactValueDemo } from "@/components/home/impact-value-demo";
->>>>>>> 30c0addf
 import { FAQSection } from "@/components/home/faq-section";
 import { SignupCTA } from "@/components/home/signup-cta";
 import { SEOHead } from "@/components/seo/seo-head";
@@ -71,13 +66,7 @@ export default function HomePage() {
       {/* 5. Get Rewarded for Your Generosity */}
       <RewardsSection />
       
-<<<<<<< HEAD
-      {/* 6. Value Guarantee Calculator */}
-      <ValueGuaranteeCalculator />
-=======
-      {/* 6. Visual Impact Value Demo */}
-      <ImpactValueDemo />
->>>>>>> 30c0addf
+
       
       {/* 7. Impact Dashboard & Gamification */}
       <ImpactDashboardSection />

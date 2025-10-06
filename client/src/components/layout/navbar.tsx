@@ -36,7 +36,7 @@ export function Navbar() {
   }, [dropdownRef]);
 
   const links = [
-    { href: "/projects", label: "Social Enterprises" },
+    { href: "/projects", label: "Social Projects" },
     { href: "/rewards", label: "Rewards" },
     { href: "/about", label: "About Us" },
     { href: "/contact", label: "Contact" },
@@ -152,20 +152,13 @@ export function Navbar() {
                 </Button>
               </>
             ) : (
-              <>
-                <button 
-                  onClick={() => openAuthModal("login")}
-                  className="text-dark hover:text-primary px-4 py-2 text-sm font-medium"
-                >
-                  Log In
-                </button>
-                <Button 
-                  onClick={() => openAuthModal("register")}
-                  className="ml-3"
-                >
-                  Sign Up
-                </Button>
-              </>
+              <Button 
+                onClick={() => window.open("https://tally.so/r/m6MqAe", "_blank")}
+                className="ml-3"
+                data-testid="button-waitlist"
+              >
+                Join Waitlist
+              </Button>
             )}
           </div>
           
@@ -243,26 +236,16 @@ export function Navbar() {
                 </Button>
               </>
             ) : (
-              <>
-                <button
-                  onClick={() => {
-                    openAuthModal("login");
-                    setIsMenuOpen(false);
-                  }}
-                  className="block px-3 py-2 rounded-md text-base font-medium text-dark hover:text-primary"
-                >
-                  Log In
-                </button>
-                <button
-                  onClick={() => {
-                    openAuthModal("register");
-                    setIsMenuOpen(false);
-                  }}
-                  className="block px-3 py-2 rounded-md text-base font-medium text-white bg-primary hover:bg-primary/90"
-                >
-                  Sign Up
-                </button>
-              </>
+              <button
+                onClick={() => {
+                  window.open("https://tally.so/r/m6MqAe", "_blank");
+                  setIsMenuOpen(false);
+                }}
+                className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-white bg-primary hover:bg-primary/90"
+                data-testid="button-waitlist-mobile"
+              >
+                Join Waitlist
+              </button>
             )}
           </div>
         </div>

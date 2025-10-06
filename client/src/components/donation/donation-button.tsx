@@ -1,7 +1,14 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Heart } from "lucide-react";
-import { DonationModal } from "./donation-modal";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription,
+  DialogFooter 
+} from "@/components/ui/dialog";
 import { Project } from "@shared/schema";
 
 interface DonationButtonProps {
@@ -21,7 +28,7 @@ export function DonationButton({
   children,
   generalDonation = false
 }: DonationButtonProps) {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   return (
     <>
@@ -29,7 +36,8 @@ export function DonationButton({
         variant={variant}
         size={size}
         className={className}
-        onClick={() => setIsModalOpen(true)}
+        onClick={() => setIsDialogOpen(true)}
+        data-testid="button-support-project"
       >
         {children || (
           <>
@@ -39,12 +47,33 @@ export function DonationButton({
         )}
       </Button>
 
-      <DonationModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        project={project}
-        generalDonation={generalDonation}
-      />
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-center">We're Almost There Yet...</DialogTitle>
+            <DialogDescription className="text-center pt-4">
+              We are launching soon! Join our waitlist....
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex flex-col sm:flex-col gap-3 pt-4">
+            <Button 
+              onClick={() => window.open("https://tally.so/r/m6MqAe", "_blank")}
+              className="w-full"
+              data-testid="button-join-waitlist-dialog"
+            >
+              Join Our Waitlist
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsDialogOpen(false)}
+              className="w-full"
+              data-testid="button-close-dialog"
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

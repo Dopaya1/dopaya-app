@@ -2,9 +2,9 @@ import { Card, CardContent } from "@/components/ui/card";
 
 export function ImpactPointsSection() {
   const sampleRewards = [
-    { points: 500, description: "Brand Discounts ($75 value)", dollarValue: "$50 donation" },
-    { points: 1000, description: "Premium Products ($150 value)", dollarValue: "$100 donation" },
-    { points: 2000, description: "Exclusive Experiences ($300 value)", dollarValue: "$200 donation" }
+    { points: 500, description: "Store Vouchers" },
+    { points: 1000, description: "Eco-friendly Products" },
+    { points: 2000, description: "Premium Experiences" }
   ];
 
   return (
@@ -21,13 +21,13 @@ export function ImpactPointsSection() {
               </div>
               
               <h2 className="text-3xl font-bold text-dark font-heading mb-4">
-                $1 = 10 Impact Points. Points never expire. Rewards grow over time.
+                The more you donate, the more rewards you earn
               </h2>
               
               <p className="text-neutral mb-6">
-                Our transparent Impact Points system: <strong>$1 donation = 10 Impact Points</strong> 
-                that unlock brand rewards worth 150% of your original donation. The more you give, 
-                the more exclusive rewards and experiences you unlock.
+                Our Impact Points system rewards your generosity. Each donation earns you 
+                points based on the amount and the project's multiplier. Some projects offer 
+                bonus point multipliers for even greater rewards.
               </p>
             </div>
             
@@ -38,12 +38,9 @@ export function ImpactPointsSection() {
                   
                   <div className="space-y-4">
                     {sampleRewards.map((reward, index) => (
-                      <div key={index} className="space-y-1">
-                        <div className="flex justify-between items-center">
-                          <span className="font-medium text-primary">{reward.points} points</span>
-                          <span className="text-sm text-neutral">{reward.dollarValue}</span>
-                        </div>
-                        <div className="text-sm text-dark font-medium">{reward.description}</div>
+                      <div key={index} className="flex justify-between items-center">
+                        <span className="font-medium">{reward.points} points</span>
+                        <span className="text-neutral">{reward.description}</span>
                       </div>
                     ))}
                   </div>

@@ -49,20 +49,11 @@ export default function ProjectsPage() {
       />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Development Status Banner */}
-        <div className="mb-8 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <div className="text-center">
-            <span className="text-sm font-medium text-green-800">
-              ✅ <strong>Live Platform:</strong> All social enterprises verified and ready for support • Launching full rewards system November 2025
-            </span>
-          </div>
-        </div>
-
         <div className="text-center mb-10">
-          <h1 className="text-3xl font-bold text-dark font-heading mb-4">Verified Social Enterprises</h1>
+          <h1 className="text-3xl font-bold text-dark font-heading mb-4">Discover Projects</h1>
           <p className="text-neutral max-w-2xl mx-auto">
-            Support these high-impact social enterprises and earn <strong>10 Impact Points per $1</strong> donated.
-            Each enterprise is verified by Dopaya and tracked for real impact delivery.
+            Support these high-impact initiatives and track how your donations make real-world change.
+            Each project is carefully vetted by the Dopaya team.
           </p>
         </div>
       </div>

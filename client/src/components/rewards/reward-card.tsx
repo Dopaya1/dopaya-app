@@ -42,15 +42,6 @@ export function RewardCard({ reward, onRedeem }: RewardCardProps) {
           <p className="text-sm text-gray-600 font-medium mb-3">{reward.companyName}</p>
         )}
         <p className="text-sm text-neutral mb-5 flex-grow">{reward.description}</p>
-        
-        <Button 
-          className="w-full border border-[#e94e35] hover:bg-[#e94e35] hover:text-white transition-colors mt-auto"
-          variant="ghost"
-          style={{ color: '#e94e35' }}
-          onClick={onRedeem}
-        >
-          Redeem Reward
-        </Button>
       </CardContent>
     </Card>
   );

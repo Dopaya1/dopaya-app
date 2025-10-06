@@ -18,10 +18,6 @@ let db;
 
 if (!connectionString) {
   console.error('DATABASE_URL environment variable is empty or not set');
-  // For local preview, we'll continue without DB
-  if (process.env.NODE_ENV === 'development') {
-    console.log('Running in preview mode without database');
-  }
 }
 
 try {

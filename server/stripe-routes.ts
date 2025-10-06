@@ -3,16 +3,12 @@ import express from "express";
 import Stripe from "stripe";
 
 if (!process.env.STRIPE_SECRET_KEY) {
-  if (process.env.NODE_ENV === 'development' && process.env.PREVIEW_MODE) {
-    console.log('Running in preview mode - Stripe disabled');
-  } else {
-    throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
-  }
+  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
 }
 
-const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-07-30.basil",
-}) : null;
+});
 
 export function setupStripeRoutes(app: Express) {
   // Create Stripe checkout session for donations
