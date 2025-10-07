@@ -12,6 +12,7 @@ import { SEOHead } from "@/components/seo/seo-head";
 import { DbStatusAlert } from "@/components/system/db-status-alert";
 import { useDbStatus } from "@/hooks/use-db-status";
 import { SuccessBanner } from "@/components/donation/success-banner";
+import { SupabaseTest } from "@/components/debug/supabase-test";
 
 export default function HomePage() {
   // Initialize database status check
@@ -49,6 +50,7 @@ export default function HomePage() {
       {/* Database connectivity alert will only show if there's a connection error */}
       <div className="container mx-auto px-4 mt-4">
         <DbStatusAlert />
+        <SupabaseTest />
       </div>
       
       {/* 1. Hero Section */}
