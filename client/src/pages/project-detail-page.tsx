@@ -4,12 +4,32 @@ import { Project } from "@shared/schema";
 import { ProjectDetailNew } from "@/components/projects/project-detail-new";
 import { SEOHead } from "@/components/seo/seo-head";
 import { Loader2 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 export default function ProjectDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   
-  const { data: project, isLoading, error } = useQuery<Project>({
-    queryKey: [`/api/projects/by-slug/${slug}`],
+  const { data: project, isLoading, error } = useQuery<Project | null>({
+    queryKey: ["project-detail", slug],
+    queryFn: async () => {
+      if (!slug) return null;
+      
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('slug', slug)
+        .single();
+      
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No rows returned
+          return null;
+        }
+        throw error;
+      }
+      return data;
+    },
+    enabled: !!slug,
   });
 
   if (isLoading) {
