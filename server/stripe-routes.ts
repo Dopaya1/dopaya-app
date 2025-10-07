@@ -2,17 +2,23 @@ import type { Express, Request, Response } from "express";
 import express from "express";
 import Stripe from "stripe";
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
-}
+let stripe: Stripe | null = null;
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2025-07-30.basil",
-});
+if (process.env.STRIPE_SECRET_KEY) {
+  stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: "2025-07-30.basil",
+  });
+} else {
+  console.warn('STRIPE_SECRET_KEY not found - Stripe functionality will be disabled');
+}
 
 export function setupStripeRoutes(app: Express) {
   // Create Stripe checkout session for donations
   app.post("/api/create-checkout-session", async (req: Request, res: Response) => {
+    if (!stripe) {
+      return res.status(503).json({ error: "Payment processing is currently unavailable" });
+    }
+
     // For now, we'll accept the donation request if it has a valid amount
     // TODO: Implement proper Supabase auth verification
     console.log('Donation request received:', req.body);
@@ -79,6 +85,10 @@ export function setupStripeRoutes(app: Express) {
 
   // Stripe webhook to handle successful payments
   app.post("/api/stripe/webhook", express.raw({ type: 'application/json' }), async (req: Request, res: Response) => {
+    if (!stripe) {
+      return res.status(503).json({ error: "Payment processing is currently unavailable" });
+    }
+
     const sig = req.headers['stripe-signature'] as string;
     
     if (!process.env.STRIPE_WEBHOOK_SECRET) {

@@ -1,46 +1,69 @@
+/* Import Satoshi font first */
+@import url('https://fonts.cdnfonts.com/css/satoshi');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 44 43% 96%;  /* #F8F6EF */
-    --foreground: 20 14.3% 4.1%;
+    /* Brand Guide Colors - Minimal Palette */
+    --primary-navy: #1a1a3a;
+    --primary-orange: #f2662d;
     
-    --muted: 60 4.8% 95.9%;
-    --muted-foreground: 25 5.3% 44.7%;
+    /* Backgrounds - Neutral Only */
+    --bg-white: #fefefe;
+    --bg-beige: #f8f6f1;
+    --bg-cool: #F9FAFB;
+    --bg-gray: #f5f5f5;
+    
+    /* Text Hierarchy */
+    --text-primary: #1a1a3a;
+    --text-secondary: #6b7280;
+    --text-muted: #9ca3af;
+    
+    /* Borders & Functional */
+    --border-light: #f3f4f6;
+    --border-subtle: #e5e7eb;
+    
+    /* Tailwind CSS Variables (mapped to brand colors) */
+    --background: 0 0% 99.6%; /* #fefefe */
+    --foreground: 216 33% 9%; /* #1a1a3a */
+    
+    --muted: 220 13% 95%; /* #F9FAFB */
+    --muted-foreground: 220 9% 46%; /* #6b7280 */
     
     --popover: 0 0% 100%;
-    --popover-foreground: 20 14.3% 4.1%;
+    --popover-foreground: 216 33% 9%;
     
     --card: 0 0% 100%;
-    --card-foreground: 20 14.3% 4.1%;
+    --card-foreground: 216 33% 9%;
     
-    --border: 20 5.9% 90%;
-    --input: 20 5.9% 90%;
+    --border: 220 13% 91%; /* #e5e7eb */
+    --input: 220 13% 91%;
     
-    --primary: 20 96% 48%; /* #F55701 */
-    --primary-foreground: 60 9.1% 97.8%;
+    --primary: 15 86% 57%; /* #f2662d */
+    --primary-foreground: 0 0% 100%;
     
-    --secondary: 60 4.8% 95.9%;
-    --secondary-foreground: 24 9.8% 10%;
+    --secondary: 220 13% 95%;
+    --secondary-foreground: 216 33% 9%;
     
-    --accent: 20 96% 48%; /* #F55701 */
-    --accent-foreground: 60 9.1% 97.8%;
+    --accent: 15 86% 57%; /* #f2662d */
+    --accent-foreground: 0 0% 100%;
     
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 60 9.1% 97.8%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
     
-    --ring: 20 96% 48%; /* #F55701 */
+    --ring: 15 86% 57%; /* #f2662d */
     
     --radius: 0.5rem;
 
-    /* Chart colors */
-    --chart-1: 20 96% 48%;
-    --chart-2: 210 79% 65%;
-    --chart-3: 120 75% 60%;
-    --chart-4: 47 89% 61%;
-    --chart-5: 310 70% 60%;
+    /* Chart colors - Monochrome */
+    --chart-1: 216 33% 9%;  /* Navy */
+    --chart-2: 220 9% 46%;  /* Gray */
+    --chart-3: 220 9% 60%;  /* Light Gray */
+    --chart-4: 220 13% 91%; /* Border Gray */
+    --chart-5: 15 86% 57%;  /* Orange accent only */
   }
 
   .dark {
@@ -94,7 +117,8 @@ html {
 
 @layer utilities {
   .font-heading {
-    font-family: 'Poppins', system-ui, sans-serif;
+    font-family: 'Satoshi', 'Inter', system-ui, -apple-system, sans-serif;
+    font-weight: 500; /* Medium weight for Satoshi */
   }
   .font-sans {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
