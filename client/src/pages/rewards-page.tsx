@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Search, X } from "lucide-react";
 import { RewardCard } from "@/components/rewards/reward-card";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
 
 // Import logo images - using relative paths
 import milletarianLogo from "../assets/milletarian.png";
@@ -28,7 +29,16 @@ export default function RewardsPage() {
   const { user } = useAuth();
 
   const { data: rewards, isLoading } = useQuery<Reward[]>({
-    queryKey: ["/api/rewards"],
+    queryKey: ["rewards"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('rewards')
+        .select('*')
+        .order('pointsCost', { ascending: true });
+      
+      if (error) throw error;
+      return data || [];
+    },
   });
 
   // Extract unique categories from actual rewards data

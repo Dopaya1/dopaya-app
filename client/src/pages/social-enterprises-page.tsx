@@ -6,6 +6,7 @@ import { ChevronRight, CheckCircle, Users, BarChart, Star, TrendingUp, Award, Ta
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import type { Project } from "@shared/schema";
+import { supabase } from "@/lib/supabase";
 
 export default function SocialEnterprisesPage() {
   const [isVisible, setIsVisible] = useState(false);
@@ -17,7 +18,16 @@ export default function SocialEnterprisesPage() {
 
   // Fetch projects from Supabase
   const { data: projects = [], isLoading } = useQuery<Project[]>({
-    queryKey: ["/api/projects"],
+    queryKey: ["projects-social-enterprises"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .order('createdAt', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    },
   });
 
   // Auto-scroll effect for projects

@@ -4,6 +4,7 @@ import { Project } from "@shared/schema";
 import { ProjectFilter, FilterValues } from "@/components/projects/project-filter";
 import { ProjectGrid } from "@/components/projects/project-grid";
 import { SEOHead } from "@/components/seo/seo-head";
+import { supabase } from "@/lib/supabase";
 
 // Import partner logo images
 import iimbNsrcelLogo from "../assets/iimb-nsrcel.png";
@@ -36,7 +37,31 @@ export default function ProjectsPage() {
   
   // Fetch projects with filters
   const { data: projects, isLoading, error } = useQuery<Project[]>({
-    queryKey: [`/api/projects${queryString ? `?${queryString}` : ""}`],
+    queryKey: [`projects-page-${queryString}`],
+    queryFn: async () => {
+      let query = supabase
+        .from('projects')
+        .select('*')
+        .order('createdAt', { ascending: false });
+      
+      // Apply filters
+      if (filters.search) {
+        query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
+      }
+      
+      if (filters.category) {
+        query = query.eq('category', filters.category);
+      }
+      
+      if (filters.country) {
+        query = query.eq('country', filters.country);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      return data || [];
+    },
   });
 
   return (

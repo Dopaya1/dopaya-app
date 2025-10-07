@@ -4,6 +4,7 @@ import { TrendingUp, Users, Gift, Target } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import type { Project, Reward } from "@shared/schema";
+import { supabase } from "@/lib/supabase";
 
 
 export function HeroSection() {
@@ -12,12 +13,32 @@ export function HeroSection() {
 
   // Fetch real projects for the image grid
   const { data: projects = [] } = useQuery<Project[]>({
-    queryKey: ["/api/projects"],
+    queryKey: ["projects-hero"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .order('createdAt', { ascending: false })
+        .limit(8);
+      
+      if (error) throw error;
+      return data || [];
+    },
   });
 
   // Fetch real rewards for the rewards section
   const { data: rewards = [] } = useQuery<Reward[]>({
-    queryKey: ["/api/rewards"],
+    queryKey: ["rewards-hero"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('rewards')
+        .select('*')
+        .order('pointsCost', { ascending: true })
+        .limit(8);
+      
+      if (error) throw error;
+      return data || [];
+    },
   });
 
   // Auto-scroll effect for projects (scrolls left)
