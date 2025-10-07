@@ -9,6 +9,7 @@ import { RewardCard } from "@/components/rewards/reward-card";
 import { toast } from "@/hooks/use-toast";
 import { DataError, EmptyState } from "@/components/ui/data-error";
 import { useDbStatus } from "@/hooks/use-db-status";
+import { supabase } from "@/lib/supabase";
 
 // Import logo images - using relative paths instead of aliases
 import milletarianLogo from "../../assets/milletarian.png";
@@ -60,7 +61,18 @@ function HomepageRewardCard({ reward }: { reward: Reward }) {
 
 export function RewardsSection() {
   const { data: rewards, isLoading, error, isError } = useQuery<Reward[]>({
-    queryKey: ["/api/rewards/featured"],
+    queryKey: ["rewards-featured"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('rewards')
+        .select('*')
+        .eq('featured', true)
+        .order('pointsCost', { ascending: true })
+        .limit(6);
+      
+      if (error) throw error;
+      return data || [];
+    },
   });
   
   const { isConnected } = useDbStatus();

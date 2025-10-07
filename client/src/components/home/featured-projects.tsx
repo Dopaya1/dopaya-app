@@ -8,11 +8,23 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { DataError, EmptyState } from "@/components/ui/data-error";
 import { useDbStatus } from "@/hooks/use-db-status";
 import { getCategoryColors } from "@/lib/category-colors";
+import { supabase } from "@/lib/supabase";
 
 
 export function FeaturedProjects() {
   const { data: projects, isLoading, error, isError } = useQuery<Project[]>({
-    queryKey: ["/api/projects/featured"],
+    queryKey: ["projects-featured"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('featured', true)
+        .order('createdAt', { ascending: false })
+        .limit(4);
+      
+      if (error) throw error;
+      return data || [];
+    },
   });
   
   const { isConnected } = useDbStatus();

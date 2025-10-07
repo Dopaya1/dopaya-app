@@ -11,6 +11,7 @@ import {
 import { Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Project } from "@shared/schema";
+import { supabase } from "@/lib/supabase";
 
 interface ProjectFilterProps {
   onFilterChange: (filters: FilterValues) => void;
@@ -30,7 +31,16 @@ export function ProjectFilter({ onFilterChange }: ProjectFilterProps) {
 
   // Fetch all projects to extract available countries
   const { data: projects } = useQuery<Project[]>({
-    queryKey: ["/api/projects"],
+    queryKey: ["projects"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .order('createdAt', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    },
   });
 
   // Extract unique countries from projects
