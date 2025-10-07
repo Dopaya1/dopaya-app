@@ -67,6 +67,7 @@ export function RewardsSection() {
         .from('rewards')
         .select('*')
         .eq('featured', true)
+        .eq('active', true)
         .order('pointsCost', { ascending: true })
         .limit(6);
       

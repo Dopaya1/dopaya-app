@@ -11,13 +11,15 @@ export function HeroSection() {
   const projectsRef = useRef<HTMLDivElement>(null);
   const rewardsRef = useRef<HTMLDivElement>(null);
 
-  // Fetch real projects for the image grid
+  // Fetch specific featured projects for the image grid
   const { data: projects = [] } = useQuery<Project[]>({
     queryKey: ["projects-hero"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('projects')
         .select('*')
+        .eq('featured', true)
+        .eq('active', true)
         .order('createdAt', { ascending: false })
         .limit(8);
       
@@ -26,13 +28,14 @@ export function HeroSection() {
     },
   });
 
-  // Fetch real rewards for the rewards section
+  // Fetch specific featured rewards for the rewards section
   const { data: rewards = [] } = useQuery<Reward[]>({
     queryKey: ["rewards-hero"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('rewards')
         .select('*')
+        .eq('featured', true)
         .order('pointsCost', { ascending: true })
         .limit(8);
       

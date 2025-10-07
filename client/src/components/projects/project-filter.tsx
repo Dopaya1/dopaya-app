@@ -29,13 +29,14 @@ export function ProjectFilter({ onFilterChange }: ProjectFilterProps) {
   const [country, setCountry] = useState("all");
   const [availableCountries, setAvailableCountries] = useState<string[]>([]);
 
-  // Fetch all projects to extract available countries
+  // Fetch active projects to extract available countries
   const { data: projects } = useQuery<Project[]>({
-    queryKey: ["projects"],
+    queryKey: ["projects-filter"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('projects')
         .select('*')
+        .eq('active', true)
         .order('createdAt', { ascending: false });
       
       if (error) throw error;

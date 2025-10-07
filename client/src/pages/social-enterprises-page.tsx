@@ -16,13 +16,14 @@ export default function SocialEnterprisesPage() {
     setIsVisible(true);
   }, []);
 
-  // Fetch projects from Supabase
+  // Fetch active projects from Supabase
   const { data: projects = [], isLoading } = useQuery<Project[]>({
     queryKey: ["projects-social-enterprises"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('projects')
         .select('*')
+        .eq('active', true)
         .order('createdAt', { ascending: false });
       
       if (error) throw error;

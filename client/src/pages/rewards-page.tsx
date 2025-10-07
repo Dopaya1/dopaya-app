@@ -34,6 +34,7 @@ export default function RewardsPage() {
       const { data, error } = await supabase
         .from('rewards')
         .select('*')
+        .eq('active', true)
         .order('pointsCost', { ascending: true });
       
       if (error) throw error;

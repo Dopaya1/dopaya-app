@@ -35,13 +35,14 @@ export default function ProjectsPage() {
     setQueryString(params.toString());
   }, [filters]);
   
-  // Fetch projects with filters
+  // Fetch projects with filters - only show active projects
   const { data: projects, isLoading, error } = useQuery<Project[]>({
     queryKey: [`projects-page-${queryString}`],
     queryFn: async () => {
       let query = supabase
         .from('projects')
         .select('*')
+        .eq('active', true)
         .order('createdAt', { ascending: false });
       
       // Apply filters
