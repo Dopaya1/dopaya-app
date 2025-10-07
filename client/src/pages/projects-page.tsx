@@ -43,6 +43,7 @@ export default function ProjectsPage() {
         .from('projects')
         .select('*')
         .eq('status', 'active')
+        .order('featured', { ascending: false })
         .order('createdAt', { ascending: false });
       
       // Apply filters

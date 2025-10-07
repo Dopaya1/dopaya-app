@@ -24,6 +24,7 @@ export default function SocialEnterprisesPage() {
         .from('projects')
         .select('*')
         .eq('status', 'active')
+        .order('featured', { ascending: false })
         .order('createdAt', { ascending: false });
       
       if (error) throw error;
