@@ -1,6 +1,19 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, Users, Gift, Target, ArrowRight, Play } from "lucide-react";
+
+// Brand Guide Colors - Only for optimized homepage
+const BRAND_COLORS = {
+  primaryNavy: '#1a1a3a',
+  primaryOrange: '#f2662d', 
+  bgWhite: '#fefefe',
+  bgBeige: '#f8f6f1',
+  bgCool: '#F9FAFB',
+  textPrimary: '#1a1a3a',
+  textSecondary: '#6b7280',
+  textMuted: '#9ca3af',
+  borderSubtle: '#e5e7eb'
+};
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import type { Project, Reward } from "@shared/schema";
@@ -88,18 +101,18 @@ export function HeroSection() {
   }, [rewards]);
 
   return (
-    <section className="relative overflow-hidden min-h-[90vh] flex items-center" style={{ backgroundColor: 'var(--bg-white)' }}>
+    <section className="relative overflow-hidden min-h-[90vh] flex items-center" style={{ backgroundColor: BRAND_COLORS.bgWhite }}>
       <div className="container mx-auto px-4 py-16">
         <div className="grid lg:grid-cols-2 gap-12 items-center max-w-7xl mx-auto">
           {/* Left Column - Hero Content */}
           <div className="space-y-8 text-center lg:text-left">
             <div>
-              <h1 className="text-4xl md:text-5xl font-heading font-medium leading-tight">
-                <span style={{ color: 'var(--text-primary)' }}>Support Social Change.</span>
+              <h1 className="text-4xl md:text-5xl font-bold leading-tight" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
+                <span style={{ color: BRAND_COLORS.textPrimary }}>Support Social Change.</span>
                 <br />
-                <span style={{ color: 'var(--primary-orange)' }}>Get More Back.</span>
+                <span style={{ color: BRAND_COLORS.primaryOrange }}>Get More Back.</span>
               </h1>
-              <p className="text-lg mt-6 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+              <p className="text-lg mt-6 leading-relaxed" style={{ color: BRAND_COLORS.textSecondary }}>
                 Support social enterprises creating lasting change + unlock exclusive rewards and community access
               </p>
             </div>
@@ -107,20 +120,20 @@ export function HeroSection() {
             {/* Key Benefits */}
             <div className="grid grid-cols-2 gap-4 max-w-md mx-auto lg:mx-0">
               <div className="flex items-center space-x-2">
-                <TrendingUp className="h-5 w-5" style={{ color: 'var(--text-secondary)' }} />
-                <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Sustainable Impact</span>
+                <TrendingUp className="h-5 w-5" style={{ color: BRAND_COLORS.textSecondary }} />
+                <span className="text-sm" style={{ color: BRAND_COLORS.textSecondary }}>Sustainable Impact</span>
               </div>
               <div className="flex items-center space-x-2">
-                <Gift className="h-5 w-5" style={{ color: 'var(--text-secondary)' }} />
-                <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Exclusive Rewards</span>
+                <Gift className="h-5 w-5" style={{ color: BRAND_COLORS.textSecondary }} />
+                <span className="text-sm" style={{ color: BRAND_COLORS.textSecondary }}>Exclusive Rewards</span>
               </div>
               <div className="flex items-center space-x-2">
-                <Users className="h-5 w-5" style={{ color: 'var(--text-secondary)' }} />
-                <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Community Access</span>
+                <Users className="h-5 w-5" style={{ color: BRAND_COLORS.textSecondary }} />
+                <span className="text-sm" style={{ color: BRAND_COLORS.textSecondary }}>Community Access</span>
               </div>
               <div className="flex items-center space-x-2">
-                <Target className="h-5 w-5" style={{ color: 'var(--text-secondary)' }} />
-                <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Verified Outcomes</span>
+                <Target className="h-5 w-5" style={{ color: BRAND_COLORS.textSecondary }} />
+                <span className="text-sm" style={{ color: BRAND_COLORS.textSecondary }}>Verified Outcomes</span>
               </div>
             </div>
 
@@ -129,7 +142,7 @@ export function HeroSection() {
               <Button 
                 size="lg" 
                 className="text-white px-8 py-4 text-lg font-medium"
-                style={{ backgroundColor: 'var(--primary-orange)' }}
+                style={{ backgroundColor: BRAND_COLORS.primaryOrange }}
                 asChild
               >
                 <Link href="#explore">
@@ -142,7 +155,7 @@ export function HeroSection() {
                 size="lg" 
                 variant="outline" 
                 className="px-8 py-4 text-lg font-medium border-gray-300 hover:bg-gray-50"
-                style={{ color: 'var(--text-primary)' }}
+                style={{ color: BRAND_COLORS.textPrimary }}
               >
                 <Play className="h-5 w-5 mr-2" style={{ color: 'var(--text-secondary)' }} />
                 Watch Demo

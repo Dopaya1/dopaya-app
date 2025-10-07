@@ -2,6 +2,19 @@ import { Button } from "@/components/ui/button";
 import { BarChart3, TrendingUp, Users, Award, Eye, Calendar, Target } from "lucide-react";
 import { Link } from "wouter";
 
+// Brand Guide Colors - Only for optimized homepage
+const BRAND_COLORS = {
+  primaryNavy: '#1a1a3a',
+  primaryOrange: '#f2662d', 
+  bgWhite: '#fefefe',
+  bgBeige: '#f8f6f1',
+  bgCool: '#F9FAFB',
+  textPrimary: '#1a1a3a',
+  textSecondary: '#6b7280',
+  textMuted: '#9ca3af',
+  borderSubtle: '#e5e7eb'
+};
+
 export function ImpactDashboardSection() {
   // Sample impact data for dashboard preview
   const impactData = [
@@ -18,13 +31,13 @@ export function ImpactDashboardSection() {
   ];
 
   return (
-    <section id="impact-dashboard" className="py-16" style={{ backgroundColor: 'var(--bg-beige)' }}>
+    <section id="impact-dashboard" className="py-16" style={{ backgroundColor: BRAND_COLORS.bgBeige }}>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h2 className="text-2xl md:text-3xl font-heading font-medium mb-4" style={{ color: 'var(--text-primary)' }}>
+          <h2 className="text-2xl md:text-3xl font-bold mb-4" style={{ color: BRAND_COLORS.textPrimary, fontFamily: "'Inter', system-ui, sans-serif" }}>
             Your Impact Dashboard Preview
           </h2>
-          <p className="text-lg max-w-3xl mx-auto" style={{ color: 'var(--text-secondary)' }}>
+          <p className="text-lg max-w-3xl mx-auto" style={{ color: BRAND_COLORS.textSecondary }}>
             See exactly how your support creates change. Track real impact, connect with your community, 
             and access exclusive benefits—all in one place.
           </p>
@@ -164,7 +177,7 @@ export function ImpactDashboardSection() {
             asChild
             size="lg" 
             className="text-white px-8 py-4"
-            style={{ backgroundColor: 'var(--primary-orange)' }}
+            style={{ backgroundColor: BRAND_COLORS.primaryOrange }}
           >
             <Link href="#community">
               Join the Community
