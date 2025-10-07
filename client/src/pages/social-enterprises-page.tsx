@@ -23,7 +23,7 @@ export default function SocialEnterprisesPage() {
       const { data, error } = await supabase
         .from('projects')
         .select('*')
-        .eq('active', true)
+        .eq('status', 'active')
         .order('createdAt', { ascending: false });
       
       if (error) throw error;

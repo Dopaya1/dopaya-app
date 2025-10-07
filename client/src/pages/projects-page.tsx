@@ -42,7 +42,7 @@ export default function ProjectsPage() {
       let query = supabase
         .from('projects')
         .select('*')
-        .eq('active', true)
+        .eq('status', 'active')
         .order('createdAt', { ascending: false });
       
       // Apply filters

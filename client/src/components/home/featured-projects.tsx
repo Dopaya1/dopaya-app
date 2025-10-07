@@ -19,7 +19,7 @@ export function FeaturedProjects() {
         .from('projects')
         .select('*')
         .eq('featured', true)
-        .eq('active', true)
+        .eq('status', 'active')
         .order('createdAt', { ascending: false })
         .limit(4);
       
