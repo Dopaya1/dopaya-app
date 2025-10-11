@@ -9,20 +9,11 @@ export default defineConfig({
       "@": path.resolve(import.meta.dirname, "client", "src"),
       "@shared": path.resolve(import.meta.dirname, "shared"),
       "@assets": path.resolve(import.meta.dirname, "attached_assets"),
-      "use-sync-external-store/shim": path.resolve(import.meta.dirname, "node_modules", "use-sync-external-store", "shim"),
-      "use-sync-external-store": path.resolve(import.meta.dirname, "node_modules", "use-sync-external-store"),
     },
   },
   root: path.resolve(import.meta.dirname, "client"),
   build: {
     outDir: path.resolve(import.meta.dirname, "dist"),
     emptyOutDir: true,
-    commonjsOptions: {
-      include: [/node_modules/],
-      transformMixedEsModules: true,
-    },
-  },
-  optimizeDeps: {
-    include: ['use-sync-external-store/shim', 'use-sync-external-store'],
   },
 });
