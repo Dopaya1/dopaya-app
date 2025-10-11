@@ -439,27 +439,27 @@ ${url}
                   items={[
                     {
                       name: 'Acumen',
-                      logo: '/src/assets/SE_Backers/Acumen.png',
+                      logo: acumenLogo,
                       description: 'Global leader in social impact education and measurement frameworks'
                     },
                     {
                       name: 'Dasra',
-                      logo: '/src/assets/SE_Backers/dasra.png',
+                      logo: dasraLogo,
                       description: 'Strategic philanthropy foundation accelerating social change in India'
                     },
                     {
                       name: 'GrayMatters Capital',
-                      logo: '/src/assets/SE_Backers/Graymatters Capital.png',
+                      logo: graymattersLogo,
                       description: 'Impact investment firm focused on early-stage social enterprises'
                     },
                     {
                       name: 'Miller Center',
-                      logo: '/src/assets/SE_Backers/Miller Center.png',
+                      logo: millerCenterLogo,
                       description: 'Global accelerator for social entrepreneurs'
                     },
                     {
                       name: 'Yunus Social Business',
-                      logo: '/src/assets/SE_Backers/Yunus Social Business.png',
+                      logo: yunusLogo,
                       description: 'Pioneering social business model and impact investment'
                     }
                   ]}
