@@ -181,12 +181,13 @@ const SESpectrumSlider = React.forwardRef<HTMLDivElement, SESpectrumSliderProps>
                     }}
                     transition={transition}
                   >
-                    Typically NGOs
+                    <span className="md:hidden">Typically<br />NGOs</span>
+                    <span className="hidden md:inline">Typically NGOs</span>
                   </motion.span>
                 </div>
                 
                 <div className="flex-1 text-center">
-                  <div className="flex flex-col items-center gap-2">
+                  <div className="flex flex-col items-center gap-4 md:gap-6">
                     <motion.div
                       className="w-16 h-16 md:w-20 md:h-20 bg-white rounded-lg shadow-sm p-3 md:p-4 flex items-center justify-center"
                       animate={{ 
@@ -242,7 +243,7 @@ const SESpectrumSlider = React.forwardRef<HTMLDivElement, SESpectrumSliderProps>
                 {spectrumStates.map((_, i) => (
                   <button
                     key={i}
-                    className="z-[2] h-6 w-6 md:h-7 md:w-7 rounded-full absolute top-1/2 -translate-y-1/2 border-3 border-white shadow-md hover:scale-110 transition-transform"
+                    className="z-[2] h-4 w-4 md:h-5 md:w-5 rounded-full absolute top-1/2 -translate-y-1/2 border-2 border-white shadow-md hover:scale-110 transition-transform"
                     onClick={() => setSelectedIndex(i)}
                     style={{ 
                       left: `${i * 50}%`,
@@ -253,7 +254,7 @@ const SESpectrumSlider = React.forwardRef<HTMLDivElement, SESpectrumSliderProps>
                 ))}
                 
                 <motion.div
-                  className="absolute z-[3] flex h-16 w-16 -translate-x-1/2 items-center justify-center rounded-full p-2 shadow-lg"
+                  className="absolute z-[3] flex h-12 w-12 md:h-14 md:w-14 -translate-x-1/2 items-center justify-center rounded-full p-1.5 md:p-2 shadow-lg"
                   animate={{
                     left: currentAnim.indicatorLeft,
                     rotate: currentAnim.indicatorRotate,
