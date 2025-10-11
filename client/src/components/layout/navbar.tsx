@@ -26,7 +26,7 @@ export function Navbar() {
   };
 
   const links = [
-    { href: "/projects", label: "Social Startups" },
+    { href: "/projects", label: "Social Enterprises" },
     { href: "/about", label: "About Us" },
     { href: "/contact", label: "Contact" },
   ];

@@ -158,7 +158,7 @@ export function HeroSection() {
                 asChild
               >
                 <Link href="/projects">
-                  See social projects
+                  See Social Enterprises
                 </Link>
               </Button>
             </div>
