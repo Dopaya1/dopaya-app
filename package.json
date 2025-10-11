@@ -11,8 +11,8 @@
     "check": "tsc",
     "db:push": "drizzle-kit push"
   },
-  "resolutions": {
-    "use-sync-external-store": "^1.2.0"
+  "overrides": {
+    "use-sync-external-store": "^1.2.2"
   },
   "dependencies": {
     "@base-ui-components/react": "^1.0.0-beta.4",
