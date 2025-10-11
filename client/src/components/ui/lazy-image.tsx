@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, ImgHTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
-import { performanceMonitor } from '@/lib/performance-monitor';
+// import { performanceMonitor } from '@/lib/performance-monitor';
 
 interface LazyImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'onLoad' | 'onError'> {
   src: string;
@@ -79,20 +79,20 @@ export function LazyImage({
 
   useEffect(() => {
     if (isInView && !isLoaded && !hasError) {
-      performanceMonitor.startImageLoad();
+      // performanceMonitor.startImageLoad();
       setCurrentSrc(src);
     }
   }, [isInView, isLoaded, hasError, src]);
 
   const handleLoad = () => {
-    performanceMonitor.endImageLoad(true);
+    // performanceMonitor.endImageLoad(true);
     setIsLoaded(true);
     setHasError(false);
     onLoad?.();
   };
 
   const handleError = () => {
-    performanceMonitor.endImageLoad(false);
+    // performanceMonitor.endImageLoad(false);
     setHasError(true);
     if (fallbackSrc && currentSrc !== fallbackSrc) {
       setCurrentSrc(fallbackSrc);
@@ -112,8 +112,8 @@ export function LazyImage({
         onLoad={handleLoad}
         onError={handleError}
         className={cn(
-          'transition-opacity duration-300',
-          isLoaded ? 'opacity-100' : 'opacity-0',
+          'w-full h-full object-cover transition-opacity duration-300',
+          isLoaded ? 'opacity-100' : 'opacity-50',
           className
         )}
         loading={loading}
@@ -121,9 +121,9 @@ export function LazyImage({
       />
       
       {/* Loading indicator */}
-      {!isLoaded && !hasError && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-          <div className="animate-pulse text-gray-400 text-sm">Loading...</div>
+      {!isLoaded && !hasError && currentSrc !== placeholder && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 bg-opacity-50">
+          <div className="animate-pulse text-gray-600 text-sm font-medium">Loading...</div>
         </div>
       )}
       

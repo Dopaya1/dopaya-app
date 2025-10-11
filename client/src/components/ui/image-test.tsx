@@ -3,7 +3,7 @@ import { OptimizedImage, EagerOptimizedImage } from './optimized-image';
 import { LazyImage, FallbackImage } from './lazy-image';
 import { useIntersectionObserver } from './lazy-image';
 import { Button } from './button';
-import { performanceMonitor, logPerformanceReport, getPerformanceReport } from '@/lib/performance-monitor';
+// import { performanceMonitor, logPerformanceReport, getPerformanceReport } from '@/lib/performance-monitor';
 
 export function ImageTest() {
   const [testResults, setTestResults] = useState<string[]>([]);
@@ -36,7 +36,7 @@ export function ImageTest() {
 
   const runTests = () => {
     setTestResults([]);
-    performanceMonitor.reset();
+    // performanceMonitor.reset();
     addResult('🧪 Starting image optimization tests...');
     
     // Test 1: Intersection Observer support
@@ -59,10 +59,11 @@ export function ImageTest() {
   };
 
   const showPerformanceReport = () => {
-    const report = getPerformanceReport();
-    const reportLines = report.split('\n');
-    setTestResults(prev => [...prev, ...reportLines]);
-    logPerformanceReport();
+    // const report = getPerformanceReport();
+    // const reportLines = report.split('\n');
+    // setTestResults(prev => [...prev, ...reportLines]);
+    // logPerformanceReport();
+    addResult('Performance reporting temporarily disabled');
   };
 
   return (
