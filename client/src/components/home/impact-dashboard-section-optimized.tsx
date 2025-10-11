@@ -1,191 +1,961 @@
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { BarChart3, TrendingUp, Users, Award, Eye, Calendar, Target } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Link } from "wouter";
+import { motion, AnimatePresence } from "framer-motion";
+import { TYPOGRAPHY } from "@/constants/typography";
+import { BRAND_COLORS } from "@/constants/colors";
 
-// Brand Guide Colors - Only for optimized homepage
-const BRAND_COLORS = {
-  primaryNavy: '#1a1a3a',
-  primaryOrange: '#f2662d', 
-  bgWhite: '#fefefe',
-  bgBeige: '#f8f6f1',
-  bgCool: '#F9FAFB',
-  textPrimary: '#1a1a3a',
-  textSecondary: '#6b7280',
-  textMuted: '#9ca3af',
-  borderSubtle: '#e5e7eb'
-};
+interface DashboardFeature {
+  step: string
+  title: string
+  content: string
+  image: string
+}
 
-export function ImpactDashboardSection() {
-  // Sample impact data for dashboard preview
-  const impactData = [
-    { metric: "Lives Impacted", value: "1,247", change: "+23%" },
-    { metric: "Social Enterprises Supported", value: "8", change: "+2%" },
-    { metric: "Impact Points Earned", value: "2,450", change: "+180%" },
-    { metric: "Community Connections", value: "34", change: "+12%" }
-  ];
-
-  const recentActivity = [
-    { action: "Supported Clean Water Initiative", points: "+150 points", impact: "Provided 15 families with clean water access", date: "2 days ago" },
-    { action: "Unlocked Sustainable Products Reward", points: "-300 points", impact: "Exclusive discount on eco-friendly products", date: "5 days ago" },
-    { action: "Referred Sarah to join community", points: "+100 points", impact: "New community member creating impact", date: "1 week ago" }
-  ];
-
+// Dashboard Mockup Renderer
+const DashboardMockup = ({ type }: { type: string }) => {
+  const renderDashboard = () => {
+    switch (type) {
+      case 'dashboard-individual':
   return (
-    <section id="impact-dashboard" className="py-16" style={{ backgroundColor: BRAND_COLORS.bgBeige }}>
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-2xl md:text-3xl font-bold mb-4" style={{ color: BRAND_COLORS.textPrimary, fontFamily: "'Inter', system-ui, sans-serif" }}>
-            Your Impact Dashboard Preview
-          </h2>
-          <p className="text-lg max-w-3xl mx-auto" style={{ color: BRAND_COLORS.textSecondary }}>
-            See exactly how your support creates change. Track real impact, connect with your community, 
-            and access exclusive benefits—all in one place.
-          </p>
+          <div className="w-full h-full bg-white rounded-lg p-6 shadow-lg">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold" style={{ color: BRAND_COLORS.textPrimary }}>Your Dashboard</h3>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm" style={{ color: BRAND_COLORS.textSecondary }}>Live</span>
+              </div>
         </div>
 
-        {/* Dashboard Preview */}
-        <div className="bg-white rounded-2xl p-8 mb-8" style={{ boxShadow: 'var(--shadow-hover, 0 4px 12px rgba(0,0,0,0.1))' }}>
-          {/* Header */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
-            <div>
-              <h3 className="text-xl font-heading font-medium mb-2" style={{ color: 'var(--text-primary)' }}>Welcome back, Future Changemaker!</h3>
-              <p style={{ color: 'var(--text-secondary)' }}>Here's your impact overview for this month</p>
+            {/* Main Chart Area with Filled Graph */}
+            <div className="h-40 bg-gray-50 rounded-lg mb-6 relative overflow-hidden">
+              <svg className="absolute inset-0 w-full h-full" style={{ zIndex: 10 }}>
+                {/* Filled Area */}
+                <path
+                  d="M 10 120 L 50 100 L 90 80 L 130 60 L 170 40 L 210 20 L 250 10 L 250 120 L 10 120 Z"
+                  fill={BRAND_COLORS.primaryOrange}
+                  fillOpacity="0.3"
+                />
+                {/* Trend Line */}
+                <polyline
+                  points="10,120 50,100 90,80 130,60 170,40 210,20 250,10"
+                  fill="none"
+                  stroke={BRAND_COLORS.primaryOrange}
+                  strokeWidth="5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                {/* Data Points */}
+                <circle cx="10" cy="120" r="5" fill={BRAND_COLORS.primaryOrange} />
+                <circle cx="50" cy="100" r="5" fill={BRAND_COLORS.primaryOrange} />
+                <circle cx="90" cy="80" r="5" fill={BRAND_COLORS.primaryOrange} />
+                <circle cx="130" cy="60" r="5" fill={BRAND_COLORS.primaryOrange} />
+                <circle cx="170" cy="40" r="5" fill={BRAND_COLORS.primaryOrange} />
+                <circle cx="210" cy="20" r="5" fill={BRAND_COLORS.primaryOrange} />
+                <circle cx="250" cy="10" r="5" fill={BRAND_COLORS.primaryOrange} />
+                {/* Trend Arrow */}
+                <polygon
+                  points="245,12 255,8 245,4"
+                  fill={BRAND_COLORS.primaryOrange}
+                />
+              </svg>
+              <div className="absolute top-3 left-4 text-sm font-medium" style={{ color: BRAND_COLORS.textPrimary }}>
+                Impact Growth ↗️
+              </div>
             </div>
-            <div className="mt-4 md:mt-0">
-              <div className="text-white px-6 py-3 rounded-lg" style={{ backgroundColor: 'var(--primary-orange)' }}>
-                <div className="text-center">
-                  <div className="text-sm opacity-90">Founding Member Status</div>
-                  <div className="text-lg font-medium">Lifetime Benefits</div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="text-center p-3 bg-gray-50 rounded-lg">
+                <div className="text-xl font-bold mb-1" style={{ color: BRAND_COLORS.primaryOrange }}>$1,250</div>
+                <div className="text-xs" style={{ color: BRAND_COLORS.textSecondary }}>Donated</div>
+              </div>
+              <div className="text-center p-3 bg-gray-50 rounded-lg">
+                <div className="text-xl font-bold mb-1" style={{ color: BRAND_COLORS.primaryOrange }}>8</div>
+                <div className="text-xs" style={{ color: BRAND_COLORS.textSecondary }}>Projects</div>
+                </div>
+              <div className="text-center p-3 bg-gray-50 rounded-lg">
+                <div className="text-xl font-bold mb-1" style={{ color: BRAND_COLORS.primaryOrange }}>650</div>
+                <div className="text-xs" style={{ color: BRAND_COLORS.textSecondary }}>Points</div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'dashboard-ranking':
+        return (
+          <div className="w-full h-full bg-white rounded-lg p-6 shadow-lg">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold" style={{ color: BRAND_COLORS.textPrimary }}>Impact Ranking</h3>
+              <div className="px-3 py-1 rounded-full text-xs font-medium" 
+                   style={{ backgroundColor: '#FFF4ED', color: BRAND_COLORS.primaryOrange }}>
+                Impact Hero
+            </div>
+          </div>
+
+            {/* Current Rank */}
+            <div className="mb-6 p-4 rounded-lg" style={{ backgroundColor: BRAND_COLORS.bgCool }}>
+              <div className="text-center mb-3">
+                <div className="text-2xl font-bold mb-1" style={{ color: BRAND_COLORS.primaryOrange }}>#42</div>
+                <div className="text-sm" style={{ color: BRAND_COLORS.textSecondary }}>Your Current Rank</div>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                <div className="bg-gradient-to-r from-orange-400 to-orange-500 h-2 rounded-full" style={{ width: '65%' }}></div>
+              </div>
+              <div className="text-center text-xs" style={{ color: BRAND_COLORS.textSecondary }}>650/1000 pts to next rank</div>
+          </div>
+
+            {/* Next Stages */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                    <span className="text-orange-600 text-sm font-bold">43</span>
+                  </div>
+                  <div>
+                    <div className="font-medium text-sm" style={{ color: BRAND_COLORS.textPrimary }}>Impact Champion</div>
+                    <div className="text-xs" style={{ color: BRAND_COLORS.textSecondary }}>1000 pts • Premium rewards</div>
+                  </div>
+                </div>
+                <div className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600">Next</div>
+              </div>
+              
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                    <span className="text-purple-600 text-sm font-bold">44</span>
+          </div>
+            <div>
+                    <div className="font-medium text-sm" style={{ color: BRAND_COLORS.textPrimary }}>Impact Legend</div>
+                    <div className="text-xs" style={{ color: BRAND_COLORS.textSecondary }}>2000 pts • Exclusive access</div>
+                  </div>
+                </div>
+                <div className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600">Future</div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'dashboard-impact-tracking':
+        return (
+          <div className="w-full h-full bg-white rounded-lg p-6 shadow-lg">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold" style={{ color: BRAND_COLORS.textPrimary }}>Impact Tracking</h3>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm" style={{ color: BRAND_COLORS.textSecondary }}>Live</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="text-2xl font-bold mb-1" style={{ color: BRAND_COLORS.primaryOrange }}>$2,450</div>
+                <div className="text-sm" style={{ color: BRAND_COLORS.textSecondary }}>Total Donated</div>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="text-2xl font-bold mb-1" style={{ color: BRAND_COLORS.primaryOrange }}>1,250</div>
+                <div className="text-sm" style={{ color: BRAND_COLORS.textSecondary }}>Impact Points</div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <span className="text-blue-600 text-sm">📚</span>
+                  </div>
+                  <div>
+                    <div className="font-medium text-sm" style={{ color: BRAND_COLORS.textPrimary }}>Education Project</div>
+                    <div className="text-xs" style={{ color: BRAND_COLORS.textSecondary }}>5 children supported</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-medium" style={{ color: BRAND_COLORS.primaryOrange }}>+150 pts</div>
+                  <div className="text-xs" style={{ color: BRAND_COLORS.textSecondary }}>$500</div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                    <span className="text-green-600 text-sm">🌱</span>
+                  </div>
+                  <div>
+                    <div className="font-medium text-sm" style={{ color: BRAND_COLORS.textPrimary }}>Environmental</div>
+                    <div className="text-xs" style={{ color: BRAND_COLORS.textSecondary }}>20 trees planted</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-medium" style={{ color: BRAND_COLORS.primaryOrange }}>+200 pts</div>
+                  <div className="text-xs" style={{ color: BRAND_COLORS.textSecondary }}>$300</div>
                 </div>
               </div>
             </div>
           </div>
+        );
 
-          {/* Impact Metrics Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {impactData.map((item, index) => (
-              <div key={index} className="rounded-lg p-4" style={{ backgroundColor: 'var(--bg-cool)' }}>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-2xl font-heading font-medium" style={{ color: 'var(--text-primary)' }}>{item.value}</div>
-                  <div className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>{item.change}</div>
-                </div>
-                <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>{item.metric}</div>
-              </div>
-            ))}
-          </div>
+      case 'dashboard-visualizations':
+        return (
+          <div className="w-full h-full bg-white rounded-lg p-6 shadow-lg">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold" style={{ color: BRAND_COLORS.textPrimary }}>Impact Analytics</h3>
+              <div className="text-sm" style={{ color: BRAND_COLORS.textSecondary }}>Last 6 months</div>
+        </div>
 
-          {/* Recent Activity */}
-          <div className="grid md:grid-cols-2 gap-8">
-            <div>
-              <h4 className="text-lg font-heading font-medium mb-4 flex items-center" style={{ color: 'var(--text-primary)' }}>
-                <BarChart3 className="h-5 w-5 mr-2" style={{ color: 'var(--text-secondary)' }} />
-                Recent Activity
-              </h4>
-              <div className="space-y-4">
-                {recentActivity.map((activity, index) => (
-                  <div key={index} className="border-l-4 pl-4 py-2" style={{ borderColor: 'var(--primary-orange)' }}>
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>{activity.action}</div>
-                        <div className="text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>{activity.impact}</div>
-                        <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{activity.date}</div>
-                      </div>
-                      <div className="text-sm font-medium" style={{ color: 'var(--primary-orange)' }}>{activity.points}</div>
-                    </div>
+            {/* Chart Area */}
+            <div className="h-32 bg-gray-50 rounded-lg mb-4 relative overflow-hidden">
+              <div className="absolute inset-0 flex items-end justify-between px-4 pb-4">
+                {[40, 65, 45, 80, 70, 90].map((height, i) => (
+                  <div key={i} className="flex flex-col items-center">
+                    <div 
+                      className="w-6 rounded-t-sm transition-all duration-1000"
+                      style={{ 
+                        height: `${height}%`,
+                        backgroundColor: BRAND_COLORS.primaryOrange,
+                        opacity: 0.8
+                      }}
+                    ></div>
                   </div>
                 ))}
               </div>
+              <div className="absolute top-2 left-4 text-sm font-medium" style={{ color: BRAND_COLORS.textPrimary }}>
+                Impact Growth
+              </div>
             </div>
 
-            <div>
-              <h4 className="text-lg font-semibold text-[#1a1a3a] mb-4 flex items-center">
-                <Users className="h-5 w-5 mr-2 text-[#e94e35]" />
-                Community Connections
-              </h4>
-              <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                <div className="flex items-center space-x-4 mb-4">
-                  <div className="w-10 h-10 bg-[#e94e35] rounded-full flex items-center justify-center text-white font-semibold">
-                    J
-                  </div>
-                  <div>
-                    <div className="font-medium text-[#1a1a3a]">Join Impact Groups</div>
-                    <div className="text-sm text-gray-600">Connect with other changemakers</div>
-                  </div>
-                </div>
-                <div className="text-sm text-gray-500">
-                  • Clean Water Advocates (23 members)
-                  • Education Innovation Group (45 members)
-                  • Sustainable Agriculture Network (67 members)
-                </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="text-center">
+                <div className="text-lg font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>12</div>
+                <div className="text-xs" style={{ color: BRAND_COLORS.textSecondary }}>Projects</div>
               </div>
-
-              <div className="bg-blue-50 rounded-lg p-4">
-                <h5 className="font-medium text-blue-900 mb-2 flex items-center">
-                  <Award className="h-4 w-4 mr-2" />
-                  Founding Member Benefits
-                </h5>
-                <ul className="text-sm text-blue-800 space-y-1">
-                  <li>• Early access to new social enterprises</li>
-                  <li>• Exclusive founder dinner invitations</li>
-                  <li>• Direct connection with SE founders</li>
-                  <li>• Priority support and community access</li>
-                </ul>
+              <div className="text-center">
+                <div className="text-lg font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>85%</div>
+                <div className="text-xs" style={{ color: BRAND_COLORS.textSecondary }}>Success</div>
+              </div>
+          <div className="text-center">
+                <div className="text-lg font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>#42</div>
+                <div className="text-xs" style={{ color: BRAND_COLORS.textSecondary }}>Rank</div>
               </div>
             </div>
           </div>
+        );
+
+      case 'dashboard-rewards':
+        return (
+          <div className="w-full h-full bg-white rounded-lg p-6 shadow-lg">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold" style={{ color: BRAND_COLORS.textPrimary }}>Rewards & Rank</h3>
+              <div className="px-3 py-1 rounded-full text-xs font-medium" 
+                   style={{ backgroundColor: '#FFF4ED', color: BRAND_COLORS.primaryOrange }}>
+                Impact Hero
+              </div>
+            </div>
+            
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm" style={{ color: BRAND_COLORS.textSecondary }}>Progress to next rank</span>
+                <span className="text-sm font-medium" style={{ color: BRAND_COLORS.textPrimary }}>750/1000 pts</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="bg-gradient-to-r from-orange-400 to-orange-500 h-2 rounded-full" style={{ width: '75%' }}></div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-400 rounded-lg flex items-center justify-center">
+                  <span className="text-white text-sm">🎁</span>
+                </div>
+                <div className="flex-1">
+                  <div className="font-medium text-sm" style={{ color: BRAND_COLORS.textPrimary }}>Starbucks Gift Card</div>
+                  <div className="text-xs" style={{ color: BRAND_COLORS.textSecondary }}>500 pts • 20% off</div>
+                </div>
+                <div className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">Available</div>
+          </div>
+
+              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-lg flex items-center justify-center">
+                  <span className="text-white text-sm">✈️</span>
+                </div>
+                <div className="flex-1">
+                  <div className="font-medium text-sm" style={{ color: BRAND_COLORS.textPrimary }}>Travel Voucher</div>
+                  <div className="text-xs" style={{ color: BRAND_COLORS.textSecondary }}>1000 pts • $50 value</div>
+                </div>
+                <div className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600">Locked</div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'dashboard-founding':
+        return (
+          <div className="w-full h-full bg-white rounded-lg p-6 shadow-lg">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold" style={{ color: BRAND_COLORS.textPrimary }}>Founding Member</h3>
+              <div className="px-3 py-1 rounded-full text-xs font-medium text-white" 
+                   style={{ backgroundColor: BRAND_COLORS.primaryOrange }}>
+                VIP
+              </div>
+          </div>
+
+            <div className="mb-6 p-4 rounded-lg" style={{ backgroundColor: '#FFF4ED' }}>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-lg">👑</span>
+                <span className="font-semibold text-sm" style={{ color: BRAND_COLORS.primaryOrange }}>Exclusive Benefits</span>
+              </div>
+              <div className="text-xs" style={{ color: BRAND_COLORS.textSecondary }}>
+                Lifetime access to all premium features
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+                  <span className="text-green-600 text-xs">✓</span>
+                </div>
+                <span className="text-sm" style={{ color: BRAND_COLORS.textPrimary }}>Priority support</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+                  <span className="text-green-600 text-xs">✓</span>
+                </div>
+                <span className="text-sm" style={{ color: BRAND_COLORS.textPrimary }}>Skip impact ranks</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+                  <span className="text-green-600 text-xs">✓</span>
+                </div>
+                <span className="text-sm" style={{ color: BRAND_COLORS.textPrimary }}>Exclusive rewards</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+                  <span className="text-green-600 text-xs">✓</span>
+                </div>
+                <span className="text-sm" style={{ color: BRAND_COLORS.textPrimary }}>Early feature access</span>
+              </div>
+            </div>
+
+            <div className="mt-6 p-3 rounded-lg border-2 border-dashed" style={{ borderColor: BRAND_COLORS.borderSubtle }}>
+          <div className="text-center">
+                <div className="text-sm font-medium mb-1" style={{ color: BRAND_COLORS.textPrimary }}>Join 2,847 founding members</div>
+                <div className="text-xs" style={{ color: BRAND_COLORS.textSecondary }}>Limited time offer</div>
+              </div>
+            </div>
+          </div>
+        );
+
+      default:
+        return <div className="w-full h-full bg-gray-100 rounded-lg"></div>;
+    }
+  };
+
+  return renderDashboard();
+};
+
+export function ImpactDashboardSection() {
+  const [activeVariant, setActiveVariant] = useState<'feature-steps' | 'animated-cards' | 'split-view' | 'minimal-list'>('animated-cards');
+  const [currentFeature, setCurrentFeature] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const autoPlayInterval = 4000;
+
+    const features: DashboardFeature[] = [
+      {
+        step: "",
+        title: "Individual dashboard",
+        content: "Your personal command center to track every donation, see real impact, and monitor your growth journey with beautiful visualizations.",
+        image: "dashboard-individual"
+      },
+      {
+        step: "",
+        title: "Impact ranking with higher benefits",
+        content: "See where you stand now and unlock the next stages. Progress through ranks to access exclusive rewards and premium partner benefits.",
+        image: "dashboard-ranking"
+      },
+      {
+        step: "Our goal",
+        title: "Real time impact tracking",
+        content: "Transparent tracking of every dollar donated and its real-world impact. See verified outcomes from projects you support.",
+        image: "dashboard-impact-tracking"
+      },
+      {
+        step: "Founding member",
+        title: "Early advantage",
+        content: "Join as a founding member and get lifetime access to all premium features, priority support, and exclusive founding member perks.",
+        image: "dashboard-founding"
+      }
+    ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (progress < 100) {
+        setProgress((prev) => prev + 100 / (autoPlayInterval / 100));
+      } else {
+        setCurrentFeature((prev) => (prev + 1) % features.length);
+        setProgress(0);
+      }
+    }, 100);
+
+    return () => clearInterval(timer);
+  }, [progress, features.length]);
+
+  return (
+    <>
+
+      {/* VARIANT 1: Feature Steps (Current) */}
+      {activeVariant === 'feature-steps' && (
+    <section id="impact-dashboard" className="py-24" style={{ backgroundColor: BRAND_COLORS.bgBeige }}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        {/* Header */}
+        <div className="text-center mb-16">
+          <h2 className={`${TYPOGRAPHY.section} mb-4`} style={{ 
+            color: BRAND_COLORS.textPrimary, 
+            fontFamily: "'Satoshi', 'Inter', system-ui, sans-serif" 
+          }}>
+            Transparent impact tracking
+          </h2>
+          <p className="text-xl max-w-2xl mx-auto" style={{ color: BRAND_COLORS.textSecondary }}>
+            Your personal dashboard shows real impact, not just points
+          </p>
         </div>
 
-        {/* Key Features Highlight */}
-        <div className="grid md:grid-cols-3 gap-8 mb-8">
-          <div className="text-center">
-            <div className="w-12 h-12 bg-[#e94e35]/10 rounded-full mx-auto mb-4 flex items-center justify-center">
-              <Eye className="h-6 w-6 text-[#e94e35]" />
-            </div>
-            <h3 className="font-semibold text-[#1a1a3a] mb-2">Full Transparency</h3>
-            <p className="text-sm text-gray-600">
-              See exactly where your support goes and track real outcomes with verified impact reports.
-            </p>
+        {/* Feature Steps - Elegant Auto-Playing Design */}
+        <div className="grid md:grid-cols-2 gap-12 items-center mb-16">
+          
+          {/* Left: Feature List with Progress Indicators */}
+          <div className="space-y-8">
+            {features.map((feature, index) => (
+              <motion.div
+                key={index}
+                className="flex items-start gap-6 cursor-pointer"
+                initial={{ opacity: 0.4 }}
+                animate={{ opacity: index === currentFeature ? 1 : 0.4 }}
+                transition={{ duration: 0.5 }}
+                onClick={() => {
+                  setCurrentFeature(index);
+                  setProgress(0);
+                }}
+              >
+                {/* Step Indicator with Check/Number */}
+                <motion.div
+                  className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all duration-300"
+                  style={{
+                    backgroundColor: index === currentFeature ? BRAND_COLORS.primaryOrange : BRAND_COLORS.bgWhite,
+                    borderColor: index === currentFeature ? BRAND_COLORS.primaryOrange : BRAND_COLORS.borderSubtle,
+                    color: index === currentFeature ? 'white' : BRAND_COLORS.textMuted,
+                    transform: index === currentFeature ? 'scale(1.1)' : 'scale(1)'
+                  }}
+                >
+                  {index < currentFeature ? (
+                    <span className="text-xl font-bold">✓</span>
+                  ) : (
+                    <span className="text-lg font-semibold">{index + 1}</span>
+                  )}
+                </motion.div>
+
+                {/* Feature Content */}
+                <div className="flex-1">
+                  <h3 className="text-2xl font-bold mb-2" style={{ 
+                    color: index === currentFeature ? BRAND_COLORS.textPrimary : BRAND_COLORS.textSecondary 
+                  }}>
+                    {feature.title}
+                  </h3>
+                  <p className="text-base leading-relaxed" style={{ 
+                    color: BRAND_COLORS.textSecondary 
+                  }}>
+                    {feature.content}
+                  </p>
+
+                  {/* Progress Bar for Active Feature */}
+                  {index === currentFeature && (
+                    <div className="mt-4 h-1 bg-gray-200 rounded-full overflow-hidden">
+                      <motion.div
+                        className="h-full rounded-full"
+                        style={{ 
+                          backgroundColor: BRAND_COLORS.primaryOrange,
+                          width: `${progress}%`
+                        }}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progress}%` }}
+                        transition={{ duration: 0.1 }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            ))}
           </div>
 
-          <div className="text-center">
-            <div className="w-12 h-12 bg-[#e94e35]/10 rounded-full mx-auto mb-4 flex items-center justify-center">
-              <Users className="h-6 w-6 text-[#e94e35]" />
-            </div>
-            <h3 className="font-semibold text-[#1a1a3a] mb-2">Community Connection</h3>
-            <p className="text-sm text-gray-600">
-              Connect with other changemakers, join impact groups, and participate in exclusive events.
-            </p>
-          </div>
-
-          <div className="text-center">
-            <div className="w-12 h-12 bg-[#e94e35]/10 rounded-full mx-auto mb-4 flex items-center justify-center">
-              <Target className="h-6 w-6 text-[#e94e35]" />
-            </div>
-            <h3 className="font-semibold text-[#1a1a3a] mb-2">Meaningful Progress</h3>
-            <p className="text-sm text-gray-600">
-              Track your impact journey with functional dashboards that show real change, not just points.
-            </p>
+          {/* Right: Animated Dashboard Screenshot */}
+          <div className="relative h-[400px] md:h-[500px] overflow-hidden rounded-2xl shadow-2xl" style={{ 
+            border: `1px solid ${BRAND_COLORS.borderSubtle}` 
+          }}>
+            <AnimatePresence mode="wait">
+              {features.map(
+                (feature, index) =>
+                  index === currentFeature && (
+                    <motion.div
+                      key={index}
+                      className="absolute inset-0 rounded-2xl overflow-hidden"
+                      initial={{ y: 100, opacity: 0, rotateX: -20 }}
+                      animate={{ y: 0, opacity: 1, rotateX: 0 }}
+                      exit={{ y: -100, opacity: 0, rotateX: 20 }}
+                      transition={{ duration: 0.6, ease: "easeInOut" }}
+                    >
+                      <DashboardMockup type={feature.image} />
+                      
+                      {/* Feature Label Overlay */}
+                      <div className="absolute bottom-8 left-8 right-8">
+                        <div className="inline-block px-4 py-2 rounded-full text-white text-sm font-medium mb-3" 
+                             style={{ backgroundColor: BRAND_COLORS.primaryOrange }}>
+                          {feature.step}
+                        </div>
+                        <h4 className="text-2xl font-bold text-white mb-2">
+                          {feature.title}
+                        </h4>
+                      </div>
+                    </motion.div>
+                  ),
+              )}
+            </AnimatePresence>
           </div>
         </div>
 
-        {/* CTA */}
-        <div className="text-center">
-          <p className="mb-6" style={{ color: 'var(--text-secondary)' }}>
-            Ready to see your impact in action?
+        {/* CTA - Founding Member */}
+        <div className="max-w-3xl mx-auto text-center p-8 rounded-2xl" style={{ backgroundColor: BRAND_COLORS.bgWhite }}>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4" 
+               style={{ backgroundColor: '#FFF4ED', color: BRAND_COLORS.primaryOrange }}>
+            🎁 Founding Member Benefits
+          </div>
+          <h3 className="text-2xl font-bold mb-3" style={{ color: BRAND_COLORS.textPrimary }}>
+            Get lifetime access to all features
+          </h3>
+          <p className="text-base mb-6" style={{ color: BRAND_COLORS.textSecondary }}>
+            Join now as a Founding Member and skip the ranks, enjoy priority access, and unlock exclusive perks forever
           </p>
           <Button 
-            asChild
             size="lg" 
-            className="text-white px-8 py-4"
+            className="text-white font-semibold px-8"
             style={{ backgroundColor: BRAND_COLORS.primaryOrange }}
+            asChild
           >
-            <Link href="#community">
-              Join the Community
-              <TrendingUp className="h-5 w-5 ml-2" />
+            <Link href="https://tally.so/r/m6MqAe" target="_blank">
+              Join the Waitlist
+              <ArrowRight className="h-5 w-5 ml-2" />
             </Link>
           </Button>
         </div>
+
       </div>
     </section>
+      )}
+
+      {/* VARIANT 2: Animated Cards (Testimonial Style) */}
+      {activeVariant === 'animated-cards' && (
+        <section id="impact-dashboard" className="py-24" style={{ backgroundColor: BRAND_COLORS.bgWhite }}>
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            
+            {/* Header */}
+            <div className="text-center mb-16">
+              <h2 className={`${TYPOGRAPHY.section} mb-4`} style={{ 
+                color: BRAND_COLORS.textPrimary, 
+                fontFamily: "'Satoshi', 'Inter', system-ui, sans-serif" 
+              }}>
+                Transparent impact tracking
+              </h2>
+              <p className="text-xl max-w-2xl mx-auto" style={{ color: BRAND_COLORS.textSecondary }}>
+                Your personal dashboard shows real impact, not just points
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-12 items-center">
+              {/* Left: Stacked Images with Animation */}
+              <div className="relative h-96">
+                <AnimatePresence>
+                  {features.map((feature, index) => (
+                    <motion.div
+                      key={feature.step}
+                      initial={{
+                        opacity: 0,
+                        scale: 0.9,
+                        z: -100,
+                        rotate: Math.floor(Math.random() * 21) - 10,
+                      }}
+                      animate={{
+                        opacity: index === currentFeature ? 1 : 0.7,
+                        scale: index === currentFeature ? 1 : 0.95,
+                        z: index === currentFeature ? 0 : -100,
+                        rotate: index === currentFeature ? 0 : Math.floor(Math.random() * 21) - 10,
+                        zIndex: index === currentFeature ? 999 : features.length + 2 - index,
+                        y: index === currentFeature ? [0, -40, 0] : 0,
+                      }}
+                      exit={{
+                        opacity: 0,
+                        scale: 0.9,
+                        z: 100,
+                      }}
+                      transition={{
+                        duration: 0.6,
+                        ease: "easeInOut",
+                      }}
+                      className="absolute inset-0 origin-bottom cursor-pointer"
+                      onClick={() => {
+                        setCurrentFeature(index);
+                        setProgress(0);
+                      }}
+                    >
+                      <div className="h-full w-full rounded-3xl shadow-2xl overflow-hidden">
+                        <DashboardMockup type={feature.image} />
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+
+              {/* Right: Content with Blur Animation */}
+              <div className="flex flex-col justify-between py-4">
+                <motion.div
+                  key={currentFeature}
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -20, opacity: 0 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                >
+                  <div className="inline-block px-3 py-1 rounded-full text-xs font-medium mb-4" 
+                       style={{ backgroundColor: BRAND_COLORS.primaryOrange, color: 'white' }}>
+                    {features[currentFeature].step}
+                  </div>
+                  <h3 className="text-3xl font-bold mb-3" style={{ color: BRAND_COLORS.textPrimary }}>
+                    {features[currentFeature].title}
+                  </h3>
+                  <motion.p className="text-lg leading-relaxed" style={{ color: BRAND_COLORS.textSecondary }}>
+                    {features[currentFeature].content.split(" ").map((word, index) => (
+                      <motion.span
+                        key={index}
+                        initial={{ filter: "blur(10px)", opacity: 0, y: 5 }}
+                        animate={{ filter: "blur(0px)", opacity: 1, y: 0 }}
+                        transition={{ duration: 0.2, ease: "easeInOut", delay: 0.02 * index }}
+                        className="inline-block"
+                      >
+                        {word}&nbsp;
+                      </motion.span>
+                    ))}
+                  </motion.p>
+                </motion.div>
+
+                {/* Navigation Dots */}
+                <div className="flex gap-2 mt-8">
+                  {features.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setCurrentFeature(index);
+                        setProgress(0);
+                      }}
+                      className="w-2 h-2 rounded-full transition-all"
+                      style={{
+                        backgroundColor: index === currentFeature ? BRAND_COLORS.primaryOrange : BRAND_COLORS.borderSubtle,
+                        width: index === currentFeature ? '24px' : '8px'
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* CTA - Founding Member */}
+            <div className="max-w-4xl mx-auto mt-20 p-12 rounded-3xl" style={{ backgroundColor: BRAND_COLORS.bgBeige }}>
+              <div className="text-center mb-12">
+                <h3 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: BRAND_COLORS.textPrimary }}>
+                  Sign up now and become a Founding member
+                </h3>
+                <p className="text-lg" style={{ color: BRAND_COLORS.textSecondary }}>
+                  Join now and get permanent "Founder" designation with special benefits
+                </p>
+              </div>
+
+              {/* Benefits Grid */}
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <div className="text-center p-4 rounded-xl" style={{ backgroundColor: BRAND_COLORS.bgWhite, border: `1px solid ${BRAND_COLORS.borderSubtle}` }}>
+                  <div className="w-10 h-10 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FFF4ED' }}>
+                    <span className="text-lg" style={{ color: BRAND_COLORS.primaryOrange }}>🧡</span>
+                  </div>
+                  <h4 className="font-semibold mb-1 text-sm" style={{ color: BRAND_COLORS.textPrimary }}>Immediate $5 Value</h4>
+                  <p className="text-xs" style={{ color: BRAND_COLORS.textSecondary }}>Get instant access to $5 in rewards upon signup</p>
+                </div>
+
+                <div className="text-center p-4 rounded-xl" style={{ backgroundColor: BRAND_COLORS.bgWhite, border: `1px solid ${BRAND_COLORS.borderSubtle}` }}>
+                  <div className="w-10 h-10 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FFF4ED' }}>
+                    <span className="text-lg" style={{ color: BRAND_COLORS.primaryOrange }}>🧡</span>
+                  </div>
+                  <h4 className="font-semibold mb-1 text-sm" style={{ color: BRAND_COLORS.textPrimary }}>Lifetime Founding Member</h4>
+                  <p className="text-xs" style={{ color: BRAND_COLORS.textSecondary }}>Permanent "Founder" status with exclusive benefits forever</p>
+                </div>
+
+                <div className="text-center p-4 rounded-xl" style={{ backgroundColor: BRAND_COLORS.bgWhite, border: `1px solid ${BRAND_COLORS.borderSubtle}` }}>
+                  <div className="w-10 h-10 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FFF4ED' }}>
+                    <span className="text-lg" style={{ color: BRAND_COLORS.primaryOrange }}>🧡</span>
+                  </div>
+                  <h4 className="font-semibold mb-1 text-sm" style={{ color: BRAND_COLORS.textPrimary }}>New Sustainable Brand Rewards</h4>
+                  <p className="text-xs" style={{ color: BRAND_COLORS.textSecondary }}>Access to exclusive rewards from sustainable brands</p>
+                </div>
+
+                <div className="text-center p-4 rounded-xl" style={{ backgroundColor: BRAND_COLORS.bgWhite, border: `1px solid ${BRAND_COLORS.borderSubtle}` }}>
+                  <div className="w-10 h-10 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FFF4ED' }}>
+                    <span className="text-lg" style={{ color: BRAND_COLORS.primaryOrange }}>🧡</span>
+                  </div>
+                  <h4 className="font-semibold mb-1 text-sm" style={{ color: BRAND_COLORS.textPrimary }}>Exclusive Experiences</h4>
+                  <p className="text-xs" style={{ color: BRAND_COLORS.textSecondary }}>Founder dinners, SE site visits, and VIP events</p>
+                </div>
+              </div>
+
+              {/* CTA Button */}
+              <div className="text-center">
+                <Button 
+                  size="lg"
+                  className="text-white font-semibold px-16 py-5 text-xl"
+                  style={{ backgroundColor: BRAND_COLORS.primaryOrange }}
+                  asChild
+                >
+                  <a href="https://tally.so/r/m6MqAe" target="_blank" rel="noopener noreferrer">
+                    Join Waitlist
+                    <ArrowRight className="h-6 w-6 ml-2" />
+                  </a>
+                </Button>
+                <p className="text-sm mt-4" style={{ color: BRAND_COLORS.textMuted }}>
+                  Limited availability • No costs • Cancel anytime
+                </p>
+              </div>
+            </div>
+
+          </div>
+        </section>
+      )}
+
+      {/* VARIANT 3: Split View (Clay.com Style) */}
+      {activeVariant === 'split-view' && (
+        <section id="impact-dashboard" className="py-24" style={{ backgroundColor: BRAND_COLORS.bgCool }}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            
+            {/* Header */}
+            <div className="text-center mb-16">
+              <h2 className={`${TYPOGRAPHY.section} mb-4`} style={{ 
+                color: BRAND_COLORS.textPrimary, 
+                fontFamily: "'Satoshi', 'Inter', system-ui, sans-serif" 
+              }}>
+                One dashboard, complete transparency
+              </h2>
+              <p className="text-xl max-w-2xl mx-auto" style={{ color: BRAND_COLORS.textSecondary }}>
+                Track every dollar, see every impact
+              </p>
+            </div>
+
+            <div className="grid lg:grid-cols-5 gap-8 items-start">
+              
+              {/* Left: Large Dashboard Preview (60%) */}
+              <div className="lg:col-span-3">
+                <div className="sticky top-24">
+                  <div className="relative h-[500px] rounded-2xl overflow-hidden shadow-2xl" style={{ 
+                    backgroundColor: BRAND_COLORS.bgWhite,
+                    border: `1px solid ${BRAND_COLORS.borderSubtle}` 
+                  }}>
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={currentFeature}
+                        className="w-full h-full"
+                        initial={{ opacity: 0, scale: 1.1 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{ duration: 0.5 }}
+                      >
+                        <DashboardMockup type={features[currentFeature].image} />
+                      </motion.div>
+                    </AnimatePresence>
+                    <div className="absolute bottom-8 left-8 right-8">
+                      <motion.h4 
+                        key={`title-${currentFeature}`}
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        className="text-3xl font-bold text-white"
+                      >
+                        {features[currentFeature].title}
+                      </motion.h4>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: Feature List (40%) */}
+              <div className="lg:col-span-2 space-y-6">
+                {features.map((feature, index) => (
+                  <motion.div
+                    key={index}
+                    className="p-6 rounded-xl cursor-pointer transition-all"
+                    style={{
+                      backgroundColor: index === currentFeature ? BRAND_COLORS.bgWhite : 'transparent',
+                      border: `1px solid ${index === currentFeature ? BRAND_COLORS.borderSubtle : 'transparent'}`,
+                      boxShadow: index === currentFeature ? '0 4px 6px -1px rgb(0 0 0 / 0.1)' : 'none'
+                    }}
+                    onClick={() => {
+                      setCurrentFeature(index);
+                      setProgress(0);
+                    }}
+                    whileHover={{ scale: 1.02 }}
+                  >
+                    <div className="flex items-start gap-4">
+                      <div 
+                        className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+                        style={{
+                          backgroundColor: index === currentFeature ? BRAND_COLORS.primaryOrange : BRAND_COLORS.bgCool,
+                          color: index === currentFeature ? 'white' : BRAND_COLORS.textMuted
+                        }}
+                      >
+                        {index + 1}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold mb-1" style={{ 
+                          color: index === currentFeature ? BRAND_COLORS.textPrimary : BRAND_COLORS.textSecondary 
+                        }}>
+                          {feature.title}
+                        </h3>
+                        <p className="text-sm" style={{ color: BRAND_COLORS.textMuted }}>
+                          {feature.content}
+                        </p>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+
+                {/* CTA in sidebar */}
+                <div className="p-6 rounded-xl" style={{ backgroundColor: '#FFF4ED' }}>
+                  <div className="text-sm font-semibold mb-2" style={{ color: BRAND_COLORS.primaryOrange }}>
+                    🎁 Founding Member
+                  </div>
+                  <p className="text-sm mb-4" style={{ color: BRAND_COLORS.textSecondary }}>
+                    Lifetime benefits + skip the ranks
+                  </p>
+                  <Button 
+                    size="sm"
+                    className="text-white font-semibold w-full"
+                    style={{ backgroundColor: BRAND_COLORS.primaryOrange }}
+                    asChild
+                  >
+                    <a href="https://tally.so/r/m6MqAe" target="_blank" rel="noopener noreferrer">
+                      Join Waitlist
+                    </a>
+                  </Button>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </section>
+      )}
+
+      {/* VARIANT 4: Minimal List (Clean & Simple) */}
+      {activeVariant === 'minimal-list' && (
+        <section id="impact-dashboard" className="py-24" style={{ backgroundColor: BRAND_COLORS.bgWhite }}>
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            
+            {/* Header */}
+            <div className="text-center mb-20">
+              <h2 className={`${TYPOGRAPHY.section} mb-4`} style={{ 
+                color: BRAND_COLORS.textPrimary, 
+                fontFamily: "'Satoshi', 'Inter', system-ui, sans-serif" 
+              }}>
+                Track your impact
+              </h2>
+              <p className="text-xl max-w-2xl mx-auto" style={{ color: BRAND_COLORS.textSecondary }}>
+                Everything you need in one beautiful dashboard
+              </p>
+            </div>
+
+            {/* Minimal Feature List */}
+            <div className="space-y-16">
+              {features.map((feature, index) => (
+                <motion.div
+                  key={index}
+                  className="grid md:grid-cols-2 gap-12 items-center"
+                  initial={{ opacity: 0, y: 40 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-100px" }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                >
+                  {/* Alternate layout */}
+                  {index % 2 === 0 ? (
+                    <>
+                      <div>
+                        <div className="inline-block px-3 py-1 rounded-full text-xs font-medium mb-4" 
+                             style={{ backgroundColor: BRAND_COLORS.bgCool, color: BRAND_COLORS.textMuted }}>
+                          {feature.step}
+                        </div>
+                        <h3 className="text-3xl font-bold mb-4" style={{ color: BRAND_COLORS.textPrimary }}>
+                          {feature.title}
+                        </h3>
+                        <p className="text-lg leading-relaxed mb-6" style={{ color: BRAND_COLORS.textSecondary }}>
+                          {feature.content}
+                        </p>
+                      </div>
+                      <div className="rounded-2xl overflow-hidden shadow-lg" style={{ border: `1px solid ${BRAND_COLORS.borderSubtle}` }}>
+                        <img
+                          src={feature.image}
+                          alt={feature.title}
+                          className="w-full h-64 object-cover"
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="rounded-2xl overflow-hidden shadow-lg md:order-1" style={{ border: `1px solid ${BRAND_COLORS.borderSubtle}` }}>
+                        <img
+                          src={feature.image}
+                          alt={feature.title}
+                          className="w-full h-64 object-cover"
+                        />
+                      </div>
+                      <div className="md:order-2">
+                        <div className="inline-block px-3 py-1 rounded-full text-xs font-medium mb-4" 
+                             style={{ backgroundColor: BRAND_COLORS.bgCool, color: BRAND_COLORS.textMuted }}>
+                          {feature.step}
+                        </div>
+                        <h3 className="text-3xl font-bold mb-4" style={{ color: BRAND_COLORS.textPrimary }}>
+                          {feature.title}
+                        </h3>
+                        <p className="text-lg leading-relaxed mb-6" style={{ color: BRAND_COLORS.textSecondary }}>
+                          {feature.content}
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+
+            {/* CTA */}
+            <div className="max-w-3xl mx-auto text-center mt-20 p-10 rounded-2xl" style={{ backgroundColor: BRAND_COLORS.bgBeige }}>
+              <h3 className="text-2xl font-bold mb-3" style={{ color: BRAND_COLORS.textPrimary }}>
+                Ready to amplify your impact?
+              </h3>
+              <p className="text-base mb-6" style={{ color: BRAND_COLORS.textSecondary }}>
+                Join as a Founding Member and get lifetime benefits, skip the ranks, and enjoy exclusive perks
+              </p>
+              <Button 
+                size="lg"
+                className="text-white font-semibold px-8"
+                style={{ backgroundColor: BRAND_COLORS.primaryOrange }}
+                asChild
+              >
+                <Link href="https://tally.so/r/m6MqAe" target="_blank">
+                  Join the Waitlist
+                  <ArrowRight className="h-5 w-5 ml-2" />
+                </Link>
+              </Button>
+            </div>
+
+          </div>
+        </section>
+      )}
+    </>
   );
 }

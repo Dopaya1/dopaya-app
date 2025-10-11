@@ -1,15 +1,12 @@
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import NotFound from "@/pages/not-found";
-import HomePage from "@/pages/home-page-optimized";
+import HomePage from "@/pages/home-page";
 import ProjectsPage from "@/pages/projects-page";
 import ProjectDetailPage from "@/pages/project-detail-page";
 import DashboardPage from "@/pages/dashboard-page";
 import ContactPage from "@/pages/contact-page";
-import AboutPageV2 from "@/pages/about-page-v2";
+import AboutPage from "@/pages/about-page";
 import RewardsPage from "@/pages/rewards-page";
 import ThankYouPage from "@/pages/thank-you-page";
 import BrandsPage from "@/pages/brands-page";
@@ -19,6 +16,8 @@ import PrivacyPolicy from "@/pages/privacy-policy";
 import CookiePolicy from "@/pages/cookie-policy";
 import EligibilityGuidelines from "@/pages/eligibility-guidelines";
 import AuthCallback from "@/pages/auth-callback";
+import PerformanceTestPage from "@/pages/performance-test";
+import AnalyticsTestPage from "@/pages/analytics-test";
 
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
@@ -26,22 +25,19 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { AuthRedirect } from "@/components/auth/auth-redirect";
 import { useScrollToTop } from "@/hooks/use-scroll-to-top";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AuthModal } from "@/components/auth/auth-modal";
+import { trackPageView } from "@/lib/simple-analytics";
 
 function Router({ onOpenAuthModal }: { onOpenAuthModal: (tab: "login" | "register") => void }) {
   return (
     <Switch>
       <Route path="/" component={HomePage} />
       <Route path="/projects" component={ProjectsPage} />
-      <Route path="/projects/:slug" component={ProjectDetailPage} />
-      <Route path="/auth">
-        <AuthRedirect onOpenModal={onOpenAuthModal} />
-      </Route>
-      <Route path="/auth/callback" component={AuthCallback} />
-      <ProtectedRoute path="/dashboard" component={DashboardPage} />
+      <Route path="/project/:slug" component={ProjectDetailPage} />
+      <Route path="/dashboard" component={ProtectedRoute(DashboardPage)} />
       <Route path="/contact" component={ContactPage} />
-      <Route path="/about" component={AboutPageV2} />
+      <Route path="/about" component={AboutPage} />
       <Route path="/rewards" component={RewardsPage} />
       <Route path="/thank-you" component={ThankYouPage} />
       <Route path="/brands" component={BrandsPage} />
@@ -50,41 +46,43 @@ function Router({ onOpenAuthModal }: { onOpenAuthModal: (tab: "login" | "registe
       <Route path="/privacy" component={PrivacyPolicy} />
       <Route path="/cookies" component={CookiePolicy} />
       <Route path="/eligibility" component={EligibilityGuidelines} />
-      <Route component={NotFound} />
+      <Route path="/auth/callback" component={AuthCallback} />
+      <Route path="/performance-test" component={PerformanceTestPage} />
+      <Route path="/analytics-test" component={AnalyticsTestPage} />
+      <Route component={() => <div className="min-h-screen flex items-center justify-center"><h1 className="text-2xl">Page not found</h1></div>} />
     </Switch>
   );
 }
 
 function App() {
-  // Enable scroll-to-top on route changes
-  useScrollToTop();
-  
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalTab, setAuthModalTab] = useState<"login" | "register">("login");
+
+  // Simple page view tracking
+  useEffect(() => {
+    trackPageView(window.location.pathname, document.title);
+  }, []);
 
   const openAuthModal = (tab: "login" | "register") => {
     setAuthModalTab(tab);
     setShowAuthModal(true);
   };
 
+  useScrollToTop();
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <div className="flex flex-col min-h-screen">
-            <Navbar />
-            <main className="flex-grow">
-              <Router onOpenAuthModal={openAuthModal} />
-            </main>
-            <Footer />
-          </div>
+        <div className="min-h-screen">
+          <Navbar onOpenAuthModal={openAuthModal} />
+          <Router onOpenAuthModal={openAuthModal} />
+          <Footer />
           <AuthModal 
             isOpen={showAuthModal} 
-            onClose={() => setShowAuthModal(false)}
+            onClose={() => setShowAuthModal(false)} 
             defaultTab={authModalTab}
           />
-        </TooltipProvider>
+        </div>
       </AuthProvider>
     </QueryClientProvider>
   );

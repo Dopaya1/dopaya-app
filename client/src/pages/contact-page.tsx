@@ -52,13 +52,32 @@ export default function ContactPage() {
   return (
     <>
       <SEOHead
-        title="Contact Us"
-        description="Contact the Dopaya team with your questions or feedback about donations, partnerships, and social impact."
-        keywords="contact Dopaya, customer support, partnerships, donations help, platform support"
+        title="Contact Us | Get in Touch with Dopaya | Social Impact Platform"
+        description="Contact the Dopaya team with your questions about donations, partnerships, social enterprises, or platform support. We're here to help you make a real impact."
+        keywords="contact Dopaya, customer support, partnerships, donations help, platform support, social enterprise support, impact platform contact, get in touch"
         canonicalUrl="https://dopaya.org/contact"
+        ogType="website"
+        ogImage="https://dopaya.org/og-contact.jpg"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "ContactPage",
+          "name": "Contact Dopaya",
+          "description": "Get in touch with the Dopaya team for support and partnerships",
+          "url": "https://dopaya.org/contact",
+          "mainEntity": {
+            "@type": "Organization",
+            "name": "Dopaya",
+            "contactPoint": {
+              "@type": "ContactPoint",
+              "contactType": "customer service",
+              "email": "hello@dopaya.org",
+              "availableLanguage": "English"
+            }
+          }
+        }}
       />
 
-      <div className="container mx-auto py-12 px-4 md:px-6 lg:py-16">
+      <div className={`container mx-auto py-24 px-4 md:px-6`}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-16">
           {/* Left column */}
           <div>

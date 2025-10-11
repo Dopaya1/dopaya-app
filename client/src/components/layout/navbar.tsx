@@ -1,18 +1,22 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Menu, X, ChevronDown } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { AuthModal } from "@/components/auth/auth-modal";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import dopayaLogo from "@assets/Dopaya Logo.png";
+import { trackEvent } from "@/lib/simple-analytics";
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [showJoinDropdown, setShowJoinDropdown] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalTab, setAuthModalTab] = useState<"login" | "register">("login");
-  const dropdownRef = useRef<HTMLDivElement | null>(null);
   const [location] = useLocation();
   const { user, logoutMutation } = useAuth();
 
@@ -21,30 +25,10 @@ export function Navbar() {
     setShowAuthModal(true);
   };
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setShowJoinDropdown(false);
-      }
-    }
-    
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [dropdownRef]);
-
   const links = [
-    { href: "/projects", label: "Social Projects" },
-    { href: "/rewards", label: "Rewards" },
+    { href: "/projects", label: "Social Startups" },
     { href: "/about", label: "About Us" },
     { href: "/contact", label: "Contact" },
-  ];
-  
-  const joinUsLinks = [
-    { href: "/brands", label: "For Brands" },
-    { href: "/social-enterprises", label: "For Social Enterprises" },
   ];
 
   const isActive = (path: string) => {
@@ -66,7 +50,11 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
-            <Link href="/" className="flex-shrink-0 flex items-center">
+            <Link 
+              href="/" 
+              className="flex-shrink-0 flex items-center"
+                  onClick={() => trackEvent('logo_click', 'navigation', 'home')}
+            >
               <img 
                 src={dopayaLogo} 
                 alt="Dopaya - Social Impact Platform Logo" 
@@ -79,47 +67,6 @@ export function Navbar() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center justify-center flex-1">
             <div className="flex space-x-6">
-              {/* Join Us Dropdown */}
-              <div className="relative" ref={dropdownRef}>
-                <button
-                  className={`flex items-center px-3 py-2 text-sm font-medium ${
-                    isActive("/brands") || isActive("/social-enterprises")
-                      ? "text-primary"
-                      : "text-dark hover:text-primary"
-                  }`}
-                  onClick={() => setShowJoinDropdown(!showJoinDropdown)}
-                  onMouseEnter={() => setShowJoinDropdown(true)}
-                >
-                  Join Us
-                  <ChevronDown className={`ml-1 h-4 w-4 transition-transform ${showJoinDropdown ? 'rotate-180' : ''}`} />
-                </button>
-                
-                {/* Dropdown Menu */}
-                {showJoinDropdown && (
-                  <div 
-                    className="absolute mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
-                    onMouseLeave={() => setShowJoinDropdown(false)}
-                  >
-                    <div className="py-1">
-                      {joinUsLinks.map((link) => (
-                        <Link
-                          key={link.href}
-                          href={link.href}
-                          className={`block px-4 py-2 text-sm ${
-                            isActive(link.href)
-                              ? "bg-gray-100 text-primary"
-                              : "text-gray-700 hover:bg-gray-100 hover:text-primary"
-                          }`}
-                          onClick={() => setShowJoinDropdown(false)}
-                        >
-                          {link.label}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-              
               {links.map((link) => (
                 <Link
                   key={link.href}
@@ -129,6 +76,7 @@ export function Navbar() {
                       ? "text-primary"
                       : "text-dark hover:text-primary"
                   }`}
+                  onClick={() => trackEvent('nav_link_click', 'navigation', link.label)}
                 >
                   {link.label}
                 </Link>
@@ -136,7 +84,7 @@ export function Navbar() {
             </div>
           </div>
           
-          <div className="hidden md:flex items-center">
+          <div className="hidden md:flex items-center space-x-3">
             {user ? (
               <>
                 <Link href="/dashboard" className="text-dark hover:text-primary px-4 py-2 text-sm font-medium">
@@ -152,18 +100,43 @@ export function Navbar() {
                 </Button>
               </>
             ) : (
-              <Button 
-                onClick={() => window.open("https://tally.so/r/m6MqAe", "_blank")}
-                className="ml-3"
-                data-testid="button-waitlist"
-              >
-                Join Waitlist
-              </Button>
+              <>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="text-dark hover:text-primary px-3 py-2 text-sm font-medium">
+                      Join us
+                      <ChevronDown className="ml-1 h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-96 p-0">
+                    <div className="grid grid-cols-2 gap-0">
+                      <div className="p-4 hover:bg-[#f8f6f1] transition-colors">
+                        <Link href="/brands" className="block">
+                          <div className="font-semibold text-base text-gray-900 mb-2">As Brand</div>
+                          <div className="text-sm text-gray-600 leading-relaxed">Partner with us to reach conscious consumers and build brand loyalty through impact</div>
+                        </Link>
+                      </div>
+                      <div className="p-4 hover:bg-[#f8f6f1] transition-colors">
+                        <Link href="/social-enterprises" className="block">
+                          <div className="font-semibold text-base text-gray-900 mb-2">As Social Enterprise</div>
+                          <div className="text-sm text-gray-600 leading-relaxed">Get funding from supporters who understand your value and mission</div>
+                        </Link>
+                      </div>
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <Button 
+                  onClick={() => window.open("https://tally.so/r/m6MqAe", "_blank")}
+                  data-testid="button-waitlist"
+                >
+                  Join Waitlist
+                </Button>
+              </>
             )}
           </div>
           
           {/* Mobile menu button */}
-          <div className="flex items-center md:hidden">
+          <div className="md:hidden items-center">
             <Button variant="ghost" onClick={toggleMenu} aria-expanded={isMenuOpen} aria-controls="mobile-menu">
               <span className="sr-only">Open main menu</span>
               {isMenuOpen ? (
@@ -179,25 +152,6 @@ export function Navbar() {
       {/* Mobile menu */}
       <div className={`md:hidden ${isMenuOpen ? "block" : "hidden"}`} id="mobile-menu">
         <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-          {/* Join Us section in mobile menu */}
-          <div className="border-b border-gray-200 pb-2 mb-2">
-            <div className="px-3 py-2 text-base font-medium text-gray-900">Join Us</div>
-            {joinUsLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`block px-3 py-2 pl-6 rounded-md text-sm font-medium ${
-                  isActive(link.href)
-                    ? "text-primary"
-                    : "text-gray-600 hover:text-primary"
-                }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
-          
           {links.map((link) => (
             <Link
               key={link.href}
@@ -212,6 +166,24 @@ export function Navbar() {
               {link.label}
             </Link>
           ))}
+          {/* Mobile Join us options */}
+          <div className="px-3 py-2">
+            <div className="text-sm font-medium text-gray-500 mb-2">Join us</div>
+            <Link
+              href="/brands"
+              className="block px-3 py-2 rounded-md text-base font-medium text-dark hover:text-primary"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              As Brand
+            </Link>
+            <Link
+              href="/social-enterprises"
+              className="block px-3 py-2 rounded-md text-base font-medium text-dark hover:text-primary"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              As Social Enterprise
+            </Link>
+          </div>
         </div>
         <div className="pt-4 pb-3 border-t border-gray-200">
           <div className="px-2 space-y-1">

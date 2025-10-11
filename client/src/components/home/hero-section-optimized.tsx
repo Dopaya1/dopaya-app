@@ -1,19 +1,13 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, Users, Gift, Target, ArrowRight, Play } from "lucide-react";
-
-// Brand Guide Colors - Only for optimized homepage
-const BRAND_COLORS = {
-  primaryNavy: '#1a1a3a',
-  primaryOrange: '#f2662d', 
-  bgWhite: '#fefefe',
-  bgBeige: '#f8f6f1',
-  bgCool: '#F9FAFB',
-  textPrimary: '#1a1a3a',
-  textSecondary: '#6b7280',
-  textMuted: '#9ca3af',
-  borderSubtle: '#e5e7eb'
-};
+import { TrendingUp, Users, Gift, Target, Play, Eye, ChevronRight, ArrowUp } from "lucide-react";
+import { TextRotate } from "@/components/ui/text-rotate";
+import { LayoutGroup, motion } from "motion/react";
+import { useState } from "react";
+import { InteractiveValueCalculator } from "@/components/ui/interactive-value-calculator";
+import { TYPOGRAPHY } from "@/constants/typography";
+import { BRAND_COLORS } from "@/constants/colors";
+import { MOBILE } from "@/constants/mobile";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import type { Project, Reward } from "@shared/schema";
@@ -23,8 +17,23 @@ export function HeroSection() {
   const projectsRef = useRef<HTMLDivElement>(null);
   const rewardsRef = useRef<HTMLDivElement>(null);
 
+  // Fallback data for when database is not available
+  const fallbackProjects = [
+    { id: 1, title: "Sanitrust Pads", imageUrl: "", category: "Health", featured: true },
+    { id: 2, title: "PanjurliLabs", imageUrl: "", category: "Environment", featured: true },
+    { id: 3, title: "Allika", imageUrl: "", category: "Women Empowerment", featured: true },
+    { id: 4, title: "Ignis Careers", imageUrl: "", category: "Education", featured: true },
+    { id: 5, title: "Khadyam", imageUrl: "", category: "Agriculture", featured: true },
+  ];
+
+  const fallbackRewards = [
+    { id: 1, title: "Herbal Face Wash", imageUrl: "", category: "Beauty", pointsCost: 150, featured: true },
+    { id: 2, title: "Eco Bag", imageUrl: "", category: "Lifestyle", pointsCost: 100, featured: true },
+    { id: 3, title: "Gift Card", imageUrl: "", category: "Shopping", pointsCost: 500, featured: true },
+  ];
+
   // Fetch specific featured projects for the image grid (limit to featured only)
-  const { data: projects = [] } = useQuery<Project[]>({
+  const { data: projects = fallbackProjects, isError: projectsError } = useQuery<Project[]>({
     queryKey: ["projects-hero"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -36,12 +45,14 @@ export function HeroSection() {
         .limit(6); // Reduced from 8 to keep focused
       
       if (error) throw error;
-      return data || [];
+      return data || fallbackProjects;
     },
+    retry: false,
+    staleTime: Infinity,
   });
 
   // Fetch specific featured rewards for the rewards section
-  const { data: rewards = [] } = useQuery<Reward[]>({
+  const { data: rewards = fallbackRewards, isError: rewardsError } = useQuery<Reward[]>({
     queryKey: ["rewards-hero"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -52,246 +63,193 @@ export function HeroSection() {
         .limit(6); // Reduced from 8 to keep focused
       
       if (error) throw error;
-      return data || [];
+      return data || fallbackRewards;
     },
+    retry: false,
+    staleTime: Infinity,
   });
 
-  // Auto-scroll effect for projects (scrolls left)
-  useEffect(() => {
-    const projectsContainer = projectsRef.current;
-    if (!projectsContainer) return;
-
-    const scrollDistance = 2;
-    const scrollInterval = 50;
-    let scrollPosition = 0;
-
-    const interval = setInterval(() => {
-      if (projectsContainer.scrollLeft >= projectsContainer.scrollWidth - projectsContainer.clientWidth) {
-        scrollPosition = 0;
-        projectsContainer.scrollTo({ left: 0, behavior: 'smooth' });
-      } else {
-        scrollPosition += scrollDistance;
-        projectsContainer.scrollTo({ left: scrollPosition, behavior: 'auto' });
-      }
-    }, scrollInterval);
-
-    return () => clearInterval(interval);
-  }, [projects]);
-
-  // Auto-scroll effect for rewards (scrolls right)
-  useEffect(() => {
-    const rewardsContainer = rewardsRef.current;
-    if (!rewardsContainer) return;
-
-    const scrollDistance = -2;
-    const scrollInterval = 50;
-    let scrollPosition = 0;
-
-    const interval = setInterval(() => {
-      if (rewardsContainer.scrollLeft <= 0) {
-        scrollPosition = rewardsContainer.scrollWidth - rewardsContainer.clientWidth;
-        rewardsContainer.scrollTo({ left: scrollPosition, behavior: 'smooth' });
-      } else {
-        scrollPosition += scrollDistance;
-        rewardsContainer.scrollTo({ left: scrollPosition, behavior: 'auto' });
-      }
-    }, scrollInterval);
-
-    return () => clearInterval(interval);
-  }, [rewards]);
+  // Auto-scroll effects disabled - static display only
 
   return (
-    <section className="relative overflow-hidden min-h-[90vh] flex items-center" style={{ backgroundColor: BRAND_COLORS.bgWhite }}>
-      <div className="container mx-auto px-4 py-16">
-        <div className="grid lg:grid-cols-2 gap-12 items-center max-w-7xl mx-auto">
+    <section className="relative overflow-hidden min-h-[80vh] md:min-h-[90vh] flex items-center" style={{ backgroundColor: BRAND_COLORS.bgBeige }}>
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-16">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 lg:gap-12 items-center">
           {/* Left Column - Hero Content */}
-          <div className="space-y-8 text-center lg:text-left">
+          <div className="space-y-6 md:space-y-8 text-center lg:text-left">
             <div>
-              <h1 className="text-4xl md:text-5xl font-bold leading-tight" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
-                <span style={{ color: BRAND_COLORS.textPrimary }}>Support Social Change.</span>
-                <br />
-                <span style={{ color: BRAND_COLORS.primaryOrange }}>Get More Back.</span>
-              </h1>
-              <p className="text-lg mt-6 leading-relaxed" style={{ color: BRAND_COLORS.textSecondary }}>
-                Support social enterprises creating lasting change + unlock exclusive rewards and community access
+              <LayoutGroup>
+                <motion.h1 
+                  className={TYPOGRAPHY.hero}
+                  style={{ fontFamily: "'Satoshi', 'Inter', system-ui, sans-serif" }}
+                  layout
+                >
+                  <motion.div
+                    className="mb-2"
+                    layout
+                    transition={{ type: "spring", damping: 30, stiffness: 400 }}
+                    style={{ color: BRAND_COLORS.textPrimary }}
+                  >
+                    Supporting real impact
+                  </motion.div>
+                  <motion.div 
+                    className="flex flex-wrap items-center gap-2"
+                    layout
+                    transition={{ type: "spring", damping: 30, stiffness: 400 }}
+                  >
+                    <motion.span
+                      style={{ color: BRAND_COLORS.textPrimary }}
+                      layout
+                    >
+                      made{" "}
+                    </motion.span>
+                    <div style={{ color: BRAND_COLORS.primaryOrange }}>
+                      <TextRotate
+                        texts={[
+                          "rewarding",
+                          "transparent", 
+                          "efficient",
+                          "meaningful"
+                        ]}
+                        mainClassName="px-3 py-1 rounded-lg overflow-hidden justify-center inline-flex bg-white"
+                        staggerFrom="last"
+                        initial={{ y: "100%" }}
+                        animate={{ y: 0 }}
+                        exit={{ y: "-120%" }}
+                        staggerDuration={0.025}
+                        splitLevelClassName="overflow-hidden pb-1"
+                        transition={{ type: "spring", damping: 30, stiffness: 400 }}
+                        rotationInterval={2500}
+                      />
+                    </div>
+                  </motion.div>
+                </motion.h1>
+              </LayoutGroup>
+              
+              {/* Value Proposition - Right below H1 */}
+              <div className="mt-4 mb-4">
+                <p className="text-base font-medium text-center lg:text-left" style={{ color: BRAND_COLORS.textPrimary }}>
+                  Support SEs {'>'} Earn Points {'>'} Get Rewards
+                </p>
+              </div>
+              
+              <p className={`${TYPOGRAPHY.bodyLarge} mt-2`} style={{ color: BRAND_COLORS.textSecondary }}>
+                Where your investments create lasting change AND unlock exclusive access to sustainable brands you already love.
               </p>
             </div>
 
-            {/* Key Benefits */}
-            <div className="grid grid-cols-2 gap-4 max-w-md mx-auto lg:mx-0">
-              <div className="flex items-center space-x-2">
-                <TrendingUp className="h-5 w-5" style={{ color: BRAND_COLORS.textSecondary }} />
-                <span className="text-sm" style={{ color: BRAND_COLORS.textSecondary }}>Sustainable Impact</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Gift className="h-5 w-5" style={{ color: BRAND_COLORS.textSecondary }} />
-                <span className="text-sm" style={{ color: BRAND_COLORS.textSecondary }}>Exclusive Rewards</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Users className="h-5 w-5" style={{ color: BRAND_COLORS.textSecondary }} />
-                <span className="text-sm" style={{ color: BRAND_COLORS.textSecondary }}>Community Access</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Target className="h-5 w-5" style={{ color: BRAND_COLORS.textSecondary }} />
-                <span className="text-sm" style={{ color: BRAND_COLORS.textSecondary }}>Verified Outcomes</span>
-              </div>
-            </div>
-
-            {/* CTA Buttons - Only ONE primary button per brand guide */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+            {/* CTA Buttons - Moved up below subheadline */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start w-full sm:w-auto">
               <Button 
                 size="lg" 
-                className="text-white px-8 py-4 text-lg font-medium"
+                className="text-white px-6 py-3 text-base md:text-lg font-medium w-full sm:w-auto"
                 style={{ backgroundColor: BRAND_COLORS.primaryOrange }}
                 asChild
               >
-                <Link href="#explore">
-                  See How It Works
-                  <ArrowRight className="h-5 w-5 ml-2" />
-                </Link>
+                <a href="https://tally.so/r/m6MqAe" target="_blank" rel="noopener noreferrer">
+                  Become a Founding Member
+                </a>
               </Button>
               
               <Button 
                 size="lg" 
-                variant="outline" 
-                className="px-8 py-4 text-lg font-medium border-gray-300 hover:bg-gray-50"
+                className="px-6 py-3 text-base md:text-lg font-medium bg-white hover:bg-gray-50 w-full sm:w-auto"
                 style={{ color: BRAND_COLORS.textPrimary }}
+                asChild
               >
-                <Play className="h-5 w-5 mr-2" style={{ color: 'var(--text-secondary)' }} />
-                Watch Demo
+                <Link href="/projects">
+                  See social projects
+                </Link>
               </Button>
             </div>
 
-            {/* Trust Indicator */}
-            <div className="pt-6" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-              <p className="text-sm mb-2" style={{ color: 'var(--text-muted)' }}>Trusted by leading institutions</p>
-              <div className="flex items-center justify-center lg:justify-start space-x-6 opacity-60">
-                <div className="w-16 h-8 rounded flex items-center justify-center" style={{ backgroundColor: 'var(--bg-gray)' }}>
-                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Logo</span>
-                </div>
-                <div className="w-16 h-8 rounded flex items-center justify-center" style={{ backgroundColor: 'var(--bg-gray)' }}>
-                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Logo</span>
-                </div>
-                <div className="w-16 h-8 rounded flex items-center justify-center" style={{ backgroundColor: 'var(--bg-gray)' }}>
-                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Logo</span>
-                </div>
+            {/* Trust Indicators */}
+            <div className="flex justify-center lg:justify-start">
+              <div className="text-sm text-secondary">
+                100% goes to impact • No platform fees • Cancel anytime
               </div>
             </div>
+
           </div>
 
-          {/* Right Column - Visual Impact Display */}
-          <div className="space-y-8">
-            {/* Projects Slider */}
-            <div className="bg-white rounded-2xl p-6" style={{ boxShadow: 'var(--shadow-card, 0 1px 3px rgba(0,0,0,0.1))' }}>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-heading font-medium flex items-center" style={{ color: 'var(--text-primary)' }}>
-                  <TrendingUp className="h-5 w-5 mr-2" style={{ color: 'var(--text-secondary)' }} />
-                  Creating Impact
-                </h3>
-                <Link href="/projects" className="text-sm hover:underline" style={{ color: 'var(--primary-orange)' }}>
-                  View All
-                </Link>
-              </div>
-              
+          {/* Right Column - Unified Impact Box */}
+          <div className="bg-white rounded-2xl p-8" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+            {/* Top: Projects Slider - smaller cards with white labels */}
+            <div className="mb-8">
               <div 
                 ref={projectsRef}
-                className="flex space-x-4 overflow-x-hidden scrollbar-hide"
+                className="flex space-x-3 overflow-x-hidden scrollbar-hide"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               >
-                {projects.map((project) => (
+                {/* Static projects display */}
+                {projects.map((project, index) => (
                   <div
-                    key={project.id}
-                    className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden bg-gray-200"
+                    key={`${project.id}-${index}`}
+                    className="flex-shrink-0 w-32 h-32 rounded-xl overflow-hidden relative group cursor-pointer transition-all duration-300"
+                    style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
                   >
                     {project.imageUrl ? (
-                      <img
-                        src={project.imageUrl}
-                        alt={project.title}
-                        className="w-full h-full object-cover"
-                      />
+                      <>
+                        <img
+                          src={project.imageUrl}
+                          alt={project.title}
+                          className="w-full h-full object-cover opacity-40 group-hover:opacity-100 transition-all duration-300"
+                        />
+                        <div className="absolute bottom-2 left-2 bg-white text-gray-800 text-xs font-medium px-2 py-1 rounded-md shadow-sm">
+                          {project.category || 'Education'}
+                        </div>
+                      </>
                     ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-[#e94e35]/20 to-[#1a1a3a]/20 flex items-center justify-center">
-                        <span className="text-xs text-gray-500 text-center px-1">
-                          {project.title?.slice(0, 15)}...
-                        </span>
+                      <div className="w-full h-full bg-gradient-to-br from-blue-100 to-green-100 flex flex-col items-center justify-center p-2 opacity-40 group-hover:opacity-100 transition-all duration-300">
+                        <div className="absolute bottom-2 left-2 bg-white text-gray-800 text-xs font-medium px-2 py-1 rounded-md shadow-sm">
+                          {project.category || 'Impact'}
+                        </div>
                       </div>
                     )}
                   </div>
                 ))}
               </div>
-              
-              <p className="text-sm mt-3" style={{ color: 'var(--text-secondary)' }}>
-                Featured social enterprises with verified impact
-              </p>
             </div>
 
-            {/* Rewards Slider */}
-            <div className="bg-white rounded-2xl p-6" style={{ boxShadow: 'var(--shadow-card, 0 1px 3px rgba(0,0,0,0.1))' }}>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-heading font-medium flex items-center" style={{ color: 'var(--text-primary)' }}>
-                  <Gift className="h-5 w-5 mr-2" style={{ color: 'var(--text-secondary)' }} />
-                  Unlock Rewards
-                </h3>
-                <Link href="/rewards" className="text-sm hover:underline" style={{ color: 'var(--primary-orange)' }}>
-                  View All
-                </Link>
-              </div>
-              
+            {/* Middle: Interactive Value Calculator */}
+            <div className="mb-8">
+              <InteractiveValueCalculator />
+            </div>
+
+            {/* Bottom: Rewards Slider - smaller cards with white labels, scrolling opposite direction */}
+            <div>
               <div 
                 ref={rewardsRef}
-                className="flex space-x-4 overflow-x-hidden scrollbar-hide"
+                className="flex space-x-3 overflow-x-hidden scrollbar-hide"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               >
-                {rewards.map((reward) => (
+                {/* Static rewards display */}
+                {rewards.map((reward, index) => (
                   <div
-                    key={reward.id}
-                    className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden bg-gray-200"
+                    key={`${reward.id}-${index}`}
+                    className="flex-shrink-0 w-32 h-32 rounded-xl overflow-hidden relative group cursor-pointer transition-all duration-300"
+                    style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
                   >
                     {reward.imageUrl ? (
-                      <img
-                        src={reward.imageUrl}
-                        alt={reward.title}
-                        className="w-full h-full object-cover"
-                      />
+                      <>
+                        <img
+                          src={reward.imageUrl}
+                          alt={reward.title}
+                          className="w-full h-full object-cover opacity-40 group-hover:opacity-100 transition-all duration-300"
+                        />
+                        <div className="absolute bottom-2 left-2 bg-white text-gray-800 text-xs font-medium px-2 py-1 rounded-md shadow-sm">
+                          {reward.category || 'Reward'}
+                        </div>
+                      </>
                     ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-[#e94e35]/20 to-[#1a1a3a]/20 flex items-center justify-center">
-                        <span className="text-xs text-gray-500 text-center px-1">
-                          {reward.title?.slice(0, 15)}...
-                        </span>
+                      <div className="w-full h-full bg-gradient-to-br from-orange-100 to-red-100 flex items-center justify-center opacity-40 group-hover:opacity-100 transition-all duration-300">
+                        <div className="absolute bottom-2 left-2 bg-white text-gray-800 text-xs font-medium px-2 py-1 rounded-md shadow-sm">
+                          Reward
+                        </div>
                       </div>
                     )}
                   </div>
                 ))}
-              </div>
-              
-              <p className="text-sm mt-3" style={{ color: 'var(--text-secondary)' }}>
-                Exclusive rewards from verified partners
-              </p>
-            </div>
-
-            {/* Impact Preview */}
-            <div className="rounded-2xl p-6" style={{ backgroundColor: 'var(--bg-cool)' }}>
-              <h3 className="font-heading font-medium mb-4 flex items-center" style={{ color: 'var(--text-primary)' }}>
-                <Target className="h-5 w-5 mr-2" style={{ color: 'var(--text-secondary)' }} />
-                Your Impact Journey
-              </h3>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Support</span>
-                  <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Create lasting change</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Impact</span>
-                  <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Verified outcomes</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Rewards</span>
-                  <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Exclusive access</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Community</span>
-                  <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Connect with changemakers</span>
-                </div>
               </div>
             </div>
           </div>

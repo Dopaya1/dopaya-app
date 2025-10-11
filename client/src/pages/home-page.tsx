@@ -1,37 +1,29 @@
-import { HeroSection } from "@/components/home/hero-section";
-import { FeaturedProjects } from "@/components/home/featured-projects";
-import { HowItWorks } from "@/components/home/how-it-works";
-import { ChangeWorldSection } from "@/components/home/change-world-section";
-import { RewardsSection } from "@/components/home/rewards-section";
-
-import { ImpactPointsSection } from "@/components/home/impact-points-section";
-import { ImpactDashboardSection } from "@/components/home/impact-dashboard-section";
+import { HeroSection } from "@/components/home/hero-section-optimized";
+import { CaseStudyModernSection } from "@/components/home/case-study-modern-section";
+import { PartnerShowcaseSection } from "@/components/home/partner-showcase-section-optimized";
+import { ImpactDashboardSection } from "@/components/home/impact-dashboard-section-optimized";
+import { InstitutionalProofSimple } from "@/components/home/institutional-proof-simple";
 import { FAQSection } from "@/components/home/faq-section";
-import { SignupCTA } from "@/components/home/signup-cta";
+import { FoundingMemberCTA } from "@/components/home/founding-member-cta";
 import { SEOHead } from "@/components/seo/seo-head";
-import { DbStatusAlert } from "@/components/system/db-status-alert";
-import { useDbStatus } from "@/hooks/use-db-status";
-import { SuccessBanner } from "@/components/donation/success-banner";
 
 export default function HomePage() {
-  // Initialize database status check
-  const { isConnected } = useDbStatus();
-  
   return (
     <>
       <SEOHead
-        title="Dopaya - Make an Impact"
-        description="Support high-impact social enterprises, track your impact in real-time, and earn rewards for making a difference. Join thousands of changemakers creating positive social impact."
-        keywords="social impact, donations, social enterprises, impact tracking, rewards, charitable giving, sustainability, SDGs"
+        title="Dopaya - Social Impact Platform | Support Social Enterprises & Earn Rewards"
+        description="Join Dopaya to support high-impact social enterprises, earn impact points, and drive meaningful change. 100% of donations go to verified social causes. Get exclusive rewards for your impact."
+        keywords="social impact platform, impact investing, social enterprise funding, donate social causes, impact rewards, social impact points, sustainable development, social enterprise support"
         canonicalUrl="https://dopaya.org/"
+        ogType="website"
+        ogImage="https://dopaya.org/og-homepage.jpg"
         structuredData={{
           "@context": "https://schema.org",
           "@type": "Organization",
           "name": "Dopaya",
+          "description": "Social impact platform connecting supporters with verified social enterprises",
           "url": "https://dopaya.org",
           "logo": "https://dopaya.org/logo.png",
-          "description": "Platform connecting donors with high-impact social enterprises through transparent, gamified giving experiences.",
-          "foundingDate": "2023",
           "sameAs": [
             "https://twitter.com/dopaya",
             "https://linkedin.com/company/dopaya"
@@ -39,44 +31,55 @@ export default function HomePage() {
           "contactPoint": {
             "@type": "ContactPoint",
             "contactType": "customer service",
-            "url": "https://dopaya.org/contact"
+            "email": "hello@dopaya.org"
+          },
+          "offers": {
+            "@type": "Offer",
+            "description": "Support social enterprises and earn impact points",
+            "price": "0",
+            "priceCurrency": "USD"
           }
         }}
       />
       
-      <SuccessBanner />
+      {/* Additional WebSite Schema for Search Functionality */}
+      <script type="application/ld+json">
+        {JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "name": "Dopaya",
+          "description": "Social impact platform connecting supporters with verified social enterprises",
+          "url": "https://dopaya.org",
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://dopaya.org/projects?search={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        })}
+      </script>
       
-      {/* Database connectivity alert will only show if there's a connection error */}
-      <div className="container mx-auto px-4 mt-4">
-        <DbStatusAlert />
-      </div>
+      <div className="min-h-screen bg-white">
+        {/* 1. Hero Section */}
+        <HeroSection />
       
-      {/* 1. Hero Section */}
-      <HeroSection />
+      {/* 2. Case Study Section - Modern Card Layout */}
+      <CaseStudyModernSection />
       
-      {/* 2. How do you want to change the world today? */}
-      <ChangeWorldSection />
+      {/* 3. Partner Showcase Section */}
+      <PartnerShowcaseSection />
       
-      {/* 3. Three Simple Steps */}
-      <HowItWorks />
-      
-      {/* 4. Latest Projects */}
-      <FeaturedProjects />
-      
-      {/* 5. Get Rewarded for Your Generosity */}
-      <RewardsSection />
-      
-
-      
-      {/* 7. Impact Dashboard & Gamification */}
+      {/* 4. Impact Dashboard Section */}
       <ImpactDashboardSection />
-      <ImpactPointsSection />
       
-      {/* 8. Frequently Asked Questions */}
+      {/* 5. Institutional Proof Section */}
+      <InstitutionalProofSimple />
+      
+      {/* 6. FAQ Section */}
       <FAQSection />
       
-      {/* 9. Call to Action */}
-      <SignupCTA />
+      {/* 7. Founding Member CTA */}
+      <FoundingMemberCTA />
+      </div>
     </>
   );
 }

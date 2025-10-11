@@ -54,13 +54,13 @@ export function ProjectGrid({ projects, isLoading, error }: ProjectGridProps) {
             rel="noopener noreferrer"
             className="inline-block"
           >
-            <Button className="bg-[#e94e35] hover:bg-[#cc4530] text-white min-w-[200px]">
+            <Button className="text-white min-w-[200px]" style={{ backgroundColor: '#f2662d' }}>
               Apply with my project
             </Button>
           </a>
           
           <Link href="/contact">
-            <Button variant="outline" className="bg-white border-[#e94e35] text-[#e94e35] hover:bg-[#fff8f7] min-w-[200px]">
+            <Button variant="outline" className="bg-white border-[#f2662d] text-[#f2662d] hover:bg-[#fff8f7] min-w-[200px]">
               Nominate a project
             </Button>
           </Link>

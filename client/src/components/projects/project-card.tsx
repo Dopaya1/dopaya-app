@@ -4,6 +4,8 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getCategoryColors } from "@/lib/category-colors";
+import { OptimizedImage } from "@/components/ui/optimized-image";
+import { trackProjectClick } from "@/lib/simple-analytics";
 
 interface ProjectCardProps {
   project: Project;
@@ -11,14 +13,23 @@ interface ProjectCardProps {
 
 export function ProjectCard({ project }: ProjectCardProps) {
   const categoryColors = getCategoryColors(project.category || '');
+
+  const handleProjectClick = () => {
+    trackProjectClick(project.slug, project.title);
+  };
   
   return (
     <Card className="impact-card overflow-hidden flex flex-col h-full">
       <div className="w-full h-48 overflow-hidden">
-        <img 
-          src={project.imageUrl}
+        <OptimizedImage
+          src={project.imageUrl || '/placeholder-project.png'}
           alt={project.title}
+          width={400}
+          height={192}
+          quality={85}
           className="w-full h-full object-cover"
+          fallbackSrc="/placeholder-project.png"
+          onError={() => console.warn(`Failed to load image for project: ${project.title}`)}
         />
       </div>
       <CardContent className="p-4 flex-grow">
@@ -40,8 +51,12 @@ export function ProjectCard({ project }: ProjectCardProps) {
         <p className="text-sm text-neutral mb-4 line-clamp-3">{project.description}</p>
       </CardContent>
       <CardFooter className="p-4 pt-0 mt-auto">
-        <Link href={`/projects/${project.slug}`}>
-          <Button className="w-full bg-[#e94e35] hover:bg-[#cc4530] text-white">
+        <Link href={`/project/${project.slug}`}>
+          <Button 
+            className="w-full text-white" 
+            style={{ backgroundColor: '#f2662d' }}
+            onClick={handleProjectClick}
+          >
             View Project
           </Button>
         </Link>

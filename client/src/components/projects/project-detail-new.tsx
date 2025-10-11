@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { DonationButton } from "@/components/donation/donation-button";
+import { OptimizedImage, EagerOptimizedImage } from "@/components/ui/optimized-image";
 import { 
   FaFacebook, 
   FaTwitter, 
@@ -27,6 +28,8 @@ import {
   FaLeaf
 } from "react-icons/fa";
 import { getCategoryColors } from "@/lib/category-colors";
+import { MobileSlider } from "@/components/ui/mobile-slider";
+import { SEOHead } from "@/components/seo/seo-head";
 
 interface ProjectDetailProps {
   project: Project;
@@ -54,37 +57,131 @@ export function ProjectDetailNew({ project }: ProjectDetailProps) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
   
-  // Function to handle social media sharing
+  // Fallback function for copying to clipboard on older browsers
+  const copyToClipboardFallback = (text: string) => {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+      document.execCommand('copy');
+      toast({
+        title: "📋 Ready to Share!",
+        description: "Text copied! Open Instagram and paste in your story or post.",
+      });
+      // Try to open Instagram app or web version
+      setTimeout(() => {
+        window.open('https://www.instagram.com/', '_blank');
+      }, 1500);
+    } catch (err) {
+      toast({
+        title: "❌ Copy Failed",
+        description: "Please manually copy the text and share on Instagram.",
+      });
+    } finally {
+      document.body.removeChild(textArea);
+    }
+  };
+
+  // Function to handle social media sharing with proper text, link, and image
   const handleShare = (platform: string) => {
+    console.log(`Sharing to ${platform}...`);
     const url = window.location.href;
-    const text = `Check out ${project.title} on Dopaya - ${project.description.substring(0, 100)}...`;
+    const title = project.title;
+    const description = project.description?.substring(0, 150) || 'Check out this amazing social impact project';
+    const imageUrl = project.coverImage ? `${window.location.origin}${project.coverImage}` : `${window.location.origin}/src/assets/Dopaya Logo.png`;
+    
     let shareUrl = '';
     
     switch(platform) {
-      case 'facebook':
-        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
-        break;
-      case 'twitter':
-        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
-        break;
-      case 'linkedin':
-        shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
-        break;
-      case 'instagram':
-        // Instagram doesn't have a direct share URL, show a message instead
-        toast({
-          title: "Instagram Sharing",
-          description: "Copy the link and share it on Instagram",
-        });
-        navigator.clipboard.writeText(url);
-        return;
       case 'email':
-        shareUrl = `mailto:?subject=${encodeURIComponent(`Dopaya Project: ${project.title}`)}&body=${encodeURIComponent(`Check out this amazing project: ${project.title}\n\n${project.description}\n\n${url}`)}`;
+        console.log('Opening email client...');
+        const emailSubject = `Check out ${title} - Making a Real Impact`;
+        const emailBody = `Hi there!
+
+I found this amazing social impact project on Dopaya that I thought you'd be interested in:
+
+${title}
+
+${description}
+
+You can support this project and earn impact points for exclusive rewards. Check it out here:
+${url}
+
+Best regards!`;
+        shareUrl = `mailto:?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+        console.log('Email URL:', shareUrl);
+        window.location.href = shareUrl;
+        return;
+        
+      case 'facebook':
+        console.log('Opening Facebook sharer...');
+        // Facebook's sharer API - the quote parameter doesn't work reliably anymore
+        // We'll use the basic URL sharing and let Facebook pull the Open Graph data
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+        console.log('Facebook URL:', shareUrl);
         break;
+        
+      case 'instagram':
+        console.log('Handling Instagram sharing...');
+        // Instagram doesn't support direct URL sharing, so we'll copy to clipboard and show instructions
+        const instagramText = `🌟 Check out ${title} on Dopaya! 
+
+${description}
+
+Support this amazing social impact project and earn rewards! 
+
+${url}
+
+#SocialImpact #Dopaya #MakeADifference`;
+        console.log('Instagram text:', instagramText);
+        
+        // Try to copy to clipboard
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          console.log('Using modern clipboard API...');
+          navigator.clipboard.writeText(instagramText).then(() => {
+            console.log('Text copied successfully!');
+            toast({
+              title: "📋 Ready to Share!",
+              description: "Text copied! Open Instagram and paste in your story or post.",
+            });
+            // Try to open Instagram app or web version
+            setTimeout(() => {
+              console.log('Opening Instagram...');
+              window.open('https://www.instagram.com/', '_blank');
+            }, 1500);
+          }).catch((error) => {
+            console.error('Clipboard API failed:', error);
+            // Fallback for clipboard API failure
+            copyToClipboardFallback(instagramText);
+          });
+        } else {
+          console.log('Using fallback clipboard method...');
+          // Fallback for older browsers
+          copyToClipboardFallback(instagramText);
+        }
+        return;
+        
+      case 'twitter':
+        const twitterText = `Check out ${title} on Dopaya! ${description.substring(0, 100)}... Support this project: ${url}`;
+        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(twitterText)}`;
+        break;
+        
+      case 'linkedin':
+        shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}&summary=${encodeURIComponent(description)}`;
+        break;
+        
+      default:
+        return;
     }
     
     if (shareUrl) {
-      window.open(shareUrl, '_blank', 'noopener,noreferrer');
+      window.open(shareUrl, '_blank', 'width=600,height=400,scrollbars=yes,resizable=yes');
     }
   };
   
@@ -151,13 +248,34 @@ export function ProjectDetailNew({ project }: ProjectDetailProps) {
   ].filter(link => link.url); // Only keep links that exist
 
   return (
-    <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 ${showStickyBar ? 'pb-24' : ''}`}>
-      <Link href="/projects" className="inline-flex items-center text-primary hover:underline mb-6">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-          <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
-        </svg>
-        Back to Projects
-      </Link>
+    <>
+      <SEOHead
+        title={project.title}
+        description={project.description || project.summary || `Support ${project.title} on Dopaya - Make a real social impact and earn rewards`}
+        keywords={`${project.title}, social impact, ${project.category}, Dopaya, social enterprise, impact investing, rewards`}
+        ogImage={project.coverImage ? `${window.location.origin}${project.coverImage}` : `${window.location.origin}/src/assets/Dopaya Logo.png`}
+        ogType="article"
+        canonicalUrl={`${window.location.origin}/project/${project.slug || project.id}`}
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          "name": project.title,
+          "description": project.description || project.summary,
+          "url": `${window.location.origin}/project/${project.slug || project.id}`,
+          "image": project.coverImage ? `${window.location.origin}${project.coverImage}` : `${window.location.origin}/src/assets/Dopaya Logo.png`,
+          "category": project.category,
+          "foundingDate": project.foundedYear?.toString(),
+          "location": project.location
+        }}
+      />
+      
+      <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 ${showStickyBar ? 'pb-24' : ''}`}>
+        <Link href="/projects" className="inline-flex items-center text-primary hover:underline mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+          </svg>
+          Back to Projects
+        </Link>
 
       <div className="lg:grid lg:grid-cols-12 lg:gap-8">
         {/* Left Side (2/3 width) */}
@@ -182,20 +300,27 @@ export function ProjectDetailNew({ project }: ProjectDetailProps) {
           )}
 
           <div className="mb-6">
-            <img 
+            <EagerOptimizedImage
               src={projectImages[selectedImageIndex]} 
               alt={`${project.title} - Social impact project in ${project.category} category`} 
+              width={800}
+              height={600}
+              quality={90}
               className="w-full h-auto max-h-[600px] object-contain rounded-lg"
+              fallbackSrc="/placeholder-project.png"
             />
           </div>
 
           {projectImages.length > 1 && (
             <div className="grid grid-cols-4 gap-2 mb-8">
               {projectImages.map((img, index) => (
-                <img 
+                <OptimizedImage
                   key={index}
                   src={img} 
                   alt={`${project.title} - Image ${index + 1}`}
+                  width={200}
+                  height={133}
+                  quality={80}
                   className={`w-full h-auto aspect-[3/2] object-cover rounded cursor-pointer border-2 ${
                     selectedImageIndex === index ? 'border-primary' : 'border-transparent'
                   }`}
@@ -205,9 +330,9 @@ export function ProjectDetailNew({ project }: ProjectDetailProps) {
             </div>
           )}
 
-          {/* About This Social Project */}
+          {/* About this Social Enterprise */}
           <div className="mb-8">
-            <h2 className="text-xl font-bold text-dark font-heading mb-4">About This Social Project</h2>
+            <h2 className="text-xl font-bold text-dark font-heading mb-4">About this Social Enterprise</h2>
             <p className="text-neutral mb-4 leading-relaxed">
               {project.description}
             </p>
@@ -215,6 +340,116 @@ export function ProjectDetailNew({ project }: ProjectDetailProps) {
               <p className="text-neutral mb-4 leading-relaxed">{project.aboutUs}</p>
             )}
           </div>
+
+          {/* Trusted by Leading Organizations */}
+          {project.slug === 'ignis-careers' && (
+            <div className="mb-6">
+              <h2 className="text-xl font-bold text-dark font-heading mb-4">Trusted by Leading Organizations</h2>
+              {/* Desktop: Grid Layout */}
+              <div className="hidden md:grid md:grid-cols-5 gap-1 items-center justify-items-center">
+                {[
+                  {
+                    name: 'Acumen',
+                    logo: '/src/assets/SE_Backers/Acumen.png',
+                    description: 'Global leader in social impact education and measurement frameworks'
+                  },
+                  {
+                    name: 'Dasra',
+                    logo: '/src/assets/SE_Backers/dasra.png',
+                    description: 'Strategic philanthropy foundation accelerating social change in India'
+                  },
+                  {
+                    name: 'GrayMatters Capital',
+                    logo: '/src/assets/SE_Backers/Graymatters Capital.png',
+                    description: 'Impact investment firm focused on early-stage social enterprises'
+                  },
+                  {
+                    name: 'Miller Center',
+                    logo: '/src/assets/SE_Backers/Miller Center.png',
+                    description: 'Global accelerator for social entrepreneurs'
+                  },
+                  {
+                    name: 'Yunus Social Business',
+                    logo: '/src/assets/SE_Backers/Yunus Social Business.png',
+                    description: 'Pioneering social business model and impact investment'
+                  }
+                ].map((institution, index) => (
+                  <div key={index} className="group relative">
+                    <div className="bg-white rounded-lg p-2 shadow-sm border hover:shadow-md transition-shadow duration-200 w-full max-w-[120px]">
+                      <OptimizedImage
+                        src={institution.logo}
+                        alt={`${institution.name} logo`}
+                        width={120}
+                        height={48}
+                        quality={85}
+                        className="w-full h-auto object-contain max-h-12 mx-auto"
+                        fallbackSrc="/placeholder-logo.png"
+                        onError={() => console.warn(`Failed to load logo for ${institution.name}`)}
+                      />
+                    </div>
+                    {/* Tooltip */}
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                      <div className="font-semibold">{institution.name}</div>
+                      <div className="text-gray-300 max-w-xs">{institution.description}</div>
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Mobile: Slider Layout */}
+              <div className="md:hidden">
+                <MobileSlider
+                  items={[
+                    {
+                      name: 'Acumen',
+                      logo: '/src/assets/SE_Backers/Acumen.png',
+                      description: 'Global leader in social impact education and measurement frameworks'
+                    },
+                    {
+                      name: 'Dasra',
+                      logo: '/src/assets/SE_Backers/dasra.png',
+                      description: 'Strategic philanthropy foundation accelerating social change in India'
+                    },
+                    {
+                      name: 'GrayMatters Capital',
+                      logo: '/src/assets/SE_Backers/Graymatters Capital.png',
+                      description: 'Impact investment firm focused on early-stage social enterprises'
+                    },
+                    {
+                      name: 'Miller Center',
+                      logo: '/src/assets/SE_Backers/Miller Center.png',
+                      description: 'Global accelerator for social entrepreneurs'
+                    },
+                    {
+                      name: 'Yunus Social Business',
+                      logo: '/src/assets/SE_Backers/Yunus Social Business.png',
+                      description: 'Pioneering social business model and impact investment'
+                    }
+                  ]}
+                  renderItem={(institution, index) => (
+                    <div className="px-4">
+                      <div className="bg-white rounded-lg p-4 shadow-sm border text-center">
+                        <OptimizedImage
+                          src={institution.logo}
+                          alt={`${institution.name} logo`}
+                          width={80}
+                          height={48}
+                          quality={85}
+                          className="w-20 h-12 object-contain mx-auto mb-3"
+                          fallbackSrc="/placeholder-logo.png"
+                          onError={() => console.warn(`Failed to load logo for ${institution.name}`)}
+                        />
+                        <h3 className="font-semibold text-gray-900 mb-2">{institution.name}</h3>
+                        <p className="text-sm text-gray-600 leading-relaxed">{institution.description}</p>
+                      </div>
+                    </div>
+                  )}
+                  gap="gap-4"
+                />
+              </div>
+            </div>
+          )}
 
           {/* Impact Achievements */}
           {project.impactAchievements && (
@@ -471,39 +706,35 @@ export function ProjectDetailNew({ project }: ProjectDetailProps) {
 
       {/* Sticky bottom bar for mobile support */}
       {showStickyBar && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-100 p-4 flex justify-between items-center z-50">
+        <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-100 p-4 flex justify-between items-center z-50 safe-area-pb">
           <div className="flex items-center space-x-2">
-            <span className="text-sm font-medium text-gray-600">Share this project</span>
-            <a
-              href={`mailto:?subject=Check out ${project.title}&body=I found this amazing social project: ${window.location.href}`}
+            <span className="text-sm font-medium text-gray-600 hidden sm:block">Share this project</span>
+            <button
+              onClick={() => handleShare('email')}
               className="p-2 text-gray-600 hover:text-primary transition-colors"
               title="Share via Email"
             >
               <FaEnvelope className="h-4 w-4" />
-            </a>
-            <a
-              href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`}
-              target="_blank"
-              rel="noopener noreferrer"
+            </button>
+            <button
+              onClick={() => handleShare('facebook')}
               className="p-2 text-gray-600 hover:text-blue-600 transition-colors"
               title="Share on Facebook"
             >
               <FaFacebook className="h-4 w-4" />
-            </a>
-            <a
-              href={`https://www.instagram.com/`}
-              target="_blank"
-              rel="noopener noreferrer"
+            </button>
+            <button
+              onClick={() => handleShare('instagram')}
               className="p-2 text-gray-600 hover:text-pink-500 transition-colors"
               title="Share on Instagram"
             >
               <FaInstagram className="h-4 w-4" />
-            </a>
+            </button>
           </div>
           
           <DonationButton 
             project={project}
-            className="bg-primary hover:bg-primary/90 text-white font-bold px-6 py-2"
+            className="bg-primary hover:bg-primary/90 text-white font-bold px-4 sm:px-6 py-2 text-sm sm:text-base"
           >
             Support This Project
           </DonationButton>
@@ -576,6 +807,7 @@ export function ProjectDetailNew({ project }: ProjectDetailProps) {
 
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </>
   );
 }

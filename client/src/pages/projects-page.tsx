@@ -67,12 +67,26 @@ export default function ProjectsPage() {
   });
 
   return (
-    <div className="py-12">
+    <div className="py-24">
       <SEOHead
-        title="Social Impact Projects"
-        description="Discover and support carefully vetted high-impact social enterprises making a difference worldwide. Track your donations and see real-world change."
-        keywords="social projects, impact investing, social enterprises, charitable donations, development projects, sustainability projects"
+        title="Social Impact Projects | Support Verified Social Enterprises | Dopaya"
+        description="Discover and support carefully vetted high-impact social enterprises making a difference worldwide. Track your donations, earn impact points, and see real-world change."
+        keywords="social impact projects, social enterprises, impact investing, charitable donations, development projects, sustainability projects, social enterprise funding, impact measurement"
         canonicalUrl="https://dopaya.org/projects"
+        ogType="website"
+        ogImage="https://dopaya.org/og-projects.jpg"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          "name": "Social Impact Projects",
+          "description": "Discover and support carefully vetted high-impact social enterprises",
+          "url": "https://dopaya.org/projects",
+          "mainEntity": {
+            "@type": "ItemList",
+            "name": "Social Impact Projects",
+            "description": "Verified social enterprises making real-world impact"
+          }
+        }}
       />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -98,7 +112,7 @@ export default function ProjectsPage() {
       </div>
       
 
-      <div className="bg-[#e94e35] py-16 mt-16">
+      <div className={`py-24 mt-16`} style={{ backgroundColor: '#f2662d' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-white font-heading mb-4">Have a Social Enterprise?</h2>
@@ -109,7 +123,8 @@ export default function ProjectsPage() {
               href="https://tally.so/r/3EM0vA" 
               target="_blank" 
               rel="noopener noreferrer" 
-              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-[#e94e35] bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e94e35]"
+              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2"
+              style={{ color: '#f2662d' }}
             >
               Apply to Join
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">

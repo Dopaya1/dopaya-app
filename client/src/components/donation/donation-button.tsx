@@ -10,6 +10,7 @@ import {
   DialogFooter 
 } from "@/components/ui/dialog";
 import { Project } from "@shared/schema";
+import { trackDonation, trackWaitlistSignup } from "@/lib/simple-analytics";
 
 interface DonationButtonProps {
   project?: Project;
@@ -36,7 +37,10 @@ export function DonationButton({
         variant={variant}
         size={size}
         className={className}
-        onClick={() => setIsDialogOpen(true)}
+        onClick={() => {
+          trackDonation(project?.slug || 'general', 0);
+          setIsDialogOpen(true);
+        }}
         data-testid="button-support-project"
       >
         {children || (
@@ -57,7 +61,10 @@ export function DonationButton({
           </DialogHeader>
           <DialogFooter className="flex flex-col sm:flex-col gap-3 pt-4">
             <Button 
-              onClick={() => window.open("https://tally.so/r/m6MqAe", "_blank")}
+              onClick={() => {
+                trackWaitlistSignup(project?.slug || 'general');
+                window.open("https://tally.so/r/m6MqAe", "_blank");
+              }}
               className="w-full"
               data-testid="button-join-waitlist-dialog"
             >

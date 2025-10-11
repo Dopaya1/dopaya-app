@@ -122,13 +122,31 @@ export default function RewardsPage() {
   return (
     <>
       <SEOHead
-        title="Impact Rewards"
-        description="Redeem your impact points for exclusive rewards from sustainable brands. Earn rewards by supporting social enterprises."
-        keywords="impact rewards, sustainability rewards, social impact points, brand partnerships, sustainable products"
+        title="Impact Rewards | Redeem Points for Exclusive Sustainable Products | Dopaya"
+        description="Redeem your impact points for exclusive rewards from sustainable brands. Earn rewards by supporting social enterprises and making a real difference in the world."
+        keywords="impact rewards, sustainability rewards, social impact points, brand partnerships, sustainable products, eco-friendly rewards, social enterprise rewards, impact points redemption"
         canonicalUrl="https://dopaya.org/rewards"
+        ogType="website"
+        ogImage="https://dopaya.org/og-rewards.jpg"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "Product",
+          "name": "Impact Rewards Program",
+          "description": "Redeem impact points for exclusive rewards from sustainable brands",
+          "brand": {
+            "@type": "Brand",
+            "name": "Dopaya"
+          },
+          "offers": {
+            "@type": "Offer",
+            "description": "Earn rewards by supporting social enterprises",
+            "price": "0",
+            "priceCurrency": "USD"
+          }
+        }}
       />
 
-      <div className="container mx-auto py-12 px-4">
+      <div className={`container mx-auto py-24 px-4`}>
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-10">
             <h1 className="text-3xl font-bold mb-4">Impact Rewards</h1>
@@ -160,7 +178,7 @@ export default function RewardsPage() {
 
           {/* Rewards Grid */}
           {isLoading ? (
-            <div className="flex justify-center items-center py-20">
+            <div className="flex justify-center items-center py-24">
               <Loader2 className="h-10 w-10 text-primary animate-spin" />
             </div>
           ) : filteredRewards && filteredRewards.length > 0 ? (
@@ -170,7 +188,7 @@ export default function RewardsPage() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-20">
+            <div className="text-center py-24">
               <p className="text-xl font-semibold">No rewards match your filters</p>
               <p className="text-muted-foreground mt-2">Try adjusting your search or filters</p>
               <Button className="mt-4" onClick={() => {

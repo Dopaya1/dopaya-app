@@ -29,7 +29,7 @@ export function RewardCard({ reward, onRedeem }: RewardCardProps) {
       )}
       <CardContent className="p-5 flex flex-col flex-grow">
         <div className="flex items-center justify-between mb-2">
-          <span className="bg-[#e94e35] bg-opacity-10 text-[#e94e35] font-medium text-[0.7rem] px-3 py-0 rounded-full">
+          <span className="bg-opacity-10 font-medium text-[0.7rem] px-3 py-0 rounded-full" style={{ backgroundColor: 'rgba(242, 102, 45, 0.1)', color: '#f2662d' }}>
             {companyName}
           </span>
           {discountDisplay && (

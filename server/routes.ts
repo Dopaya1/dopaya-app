@@ -10,6 +10,8 @@ import { setupDatabase, createDatabaseHelperFunctions } from "./setup-db";
 import { logConnectionInfo, fixDatabaseConnection } from "./fix-db-connection";
 import { createDatabaseSchema } from "./direct-schema-setup";
 import { setupStripeRoutes } from "./stripe-routes";
+import { subscribeNewsletter, getNewsletterStats } from "./newsletter";
+import { getSitemapXML } from "./sitemap-generator";
 
 
 
@@ -621,7 +623,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Newsletter subscription endpoints
+  app.post("/api/newsletter/subscribe", subscribeNewsletter);
+  app.get("/api/newsletter/stats", getNewsletterStats);
 
+  // Dynamic sitemap generator
+  app.get("/sitemap.xml", async (_req, res) => {
+    try {
+      const sitemapXML = await getSitemapXML();
+      res.set('Content-Type', 'application/xml');
+      res.send(sitemapXML);
+    } catch (error) {
+      console.error('Error generating sitemap:', error);
+      res.status(500).send('Error generating sitemap');
+    }
+  });
+
+  // Dynamic robots.txt generator
+  app.get("/robots.txt", async (_req, res) => {
+    try {
+      const robotsTxt = `User-agent: *
+Allow: /
+
+# High priority pages
+Allow: /projects
+Allow: /social-enterprises
+Allow: /about
+Allow: /rewards
+Allow: /brands
+Allow: /contact
+Allow: /faq
+Allow: /eligibility
+
+# Low priority pages
+Allow: /privacy
+Allow: /cookies
+Allow: /thank-you
+
+# Disallow admin or sensitive paths
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /api/
+
+# Dynamic sitemap location (includes all project pages)
+Sitemap: https://dopaya.org/sitemap.xml
+
+# Crawl-delay (optional, set if needed)
+# Crawl-delay: 1`;
+      
+      res.set('Content-Type', 'text/plain');
+      res.send(robotsTxt);
+    } catch (error) {
+      console.error('Error generating robots.txt:', error);
+      res.status(500).send('Error generating robots.txt');
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

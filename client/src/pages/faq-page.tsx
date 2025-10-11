@@ -5,16 +5,50 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { SEOHead } from "@/components/seo/seo-head";
+import { SPACING } from "@/constants/spacing";
+import { TYPOGRAPHY } from "@/constants/typography";
 import { Link } from "wouter";
 
 export default function FAQPage() {
   return (
     <>
       <SEOHead
-        title="Frequently Asked Questions"
-        description="Get answers to common questions about Dopaya, social enterprise donations, platform fees, and how to join our community."
-        keywords="FAQ, frequently asked questions, social enterprise donations, platform fees, NGO vs social enterprise, donor questions"
+        title="FAQ | Frequently Asked Questions About Dopaya | Social Impact Platform"
+        description="Get answers to common questions about Dopaya, social enterprise donations, platform fees, impact points, and how to join our community of changemakers."
+        keywords="FAQ, frequently asked questions, social enterprise donations, platform fees, NGO vs social enterprise, donor questions, impact points, social impact platform, how does dopaya work"
         canonicalUrl="https://dopaya.org/faq"
+        ogType="website"
+        ogImage="https://dopaya.org/og-faq.jpg"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "How does Dopaya work?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Dopaya connects supporters with verified social enterprises. When you support a project, you earn impact points that can be redeemed for exclusive rewards from sustainable brands."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What are the platform fees?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Dopaya charges 0% platform fees. 100% of your donation goes directly to the social enterprise you choose to support."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What's the difference between NGOs and Social Enterprises?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Social enterprises are businesses that prioritize social impact alongside financial sustainability, while NGOs are typically non-profit organizations focused primarily on social causes."
+              }
+            }
+          ]
+        }}
       />
       <FAQContent />
     </>
@@ -29,7 +63,7 @@ function FAQContent() {
     },
     {
       question: "How much does Dopaya take from donations?",
-      answer: "Dopaya charges a small 10% fee to operate the platform and grow impact. This covers tech infrastructure, partner support, and verification. Our long-term goal is to reduce this fee even further as we scale with the help of brands and other partners."
+      answer: "Currently, 100% of your donation goes directly to social enterprises. We're supported by small community contributions and brand partnership fees. Our goal is to keep platform costs minimal while maximizing impact."
     },
     {
       question: "How does Dopaya ensure donations are used correctly?",
@@ -104,15 +138,15 @@ function FAQContent() {
         </section>
 
         {/* FAQ Content */}
-        <section className="py-16">
+        <section className={SPACING.section}>
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <Accordion type="multiple" defaultValue={["item-0", "item-1"]} className="w-full">
               {faqs.map((faq, index) => (
                 <AccordionItem key={index} value={`item-${index}`} className="border-b border-gray-200">
-                  <AccordionTrigger className="text-left font-medium py-6 text-lg hover:text-orange-600">
+                  <AccordionTrigger className={`text-left font-medium py-6 ${TYPOGRAPHY.subsection} hover:text-orange-600`}>
                     {faq.question}
                   </AccordionTrigger>
-                  <AccordionContent className="text-gray-600 pb-6 text-base leading-relaxed">
+                  <AccordionContent className={`text-gray-600 pb-6 ${TYPOGRAPHY.body}`}>
                     {faq.answer}
                   </AccordionContent>
                 </AccordionItem>

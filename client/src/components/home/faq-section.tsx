@@ -4,6 +4,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { TYPOGRAPHY } from "@/constants/typography";
+import { BRAND_COLORS } from "@/constants/colors";
 
 export function FAQSection() {
   const faqs = [
@@ -12,8 +14,8 @@ export function FAQSection() {
       answer: "Social enterprises use sustainable business models to create long-term impact. Unlike NGOs that often rely on recurring donations, social enterprises reinvest earnings into their mission — making your donation go further. Some even deliver a measurable social return on investment (SROI) of 2×, 3× or more."
     },
     {
-      question: "How much does Dopaya take from donations?",
-      answer: "Dopaya charges a small 10% fee to operate the platform and grow impact. This covers tech infrastructure, partner support, and verification. Our long-term goal is to reduce this fee even further as we scale with the help of brands and other partners."
+      question: "How does Dopaya make money?",
+      answer: "Currently, 100% of your investment goes directly to social enterprises. We're supported by small community contributions and brand partnership fees. Our goal is to keep platform costs minimal while maximizing impact."
     },
     {
       question: "How does Dopaya ensure donations are used correctly?",
@@ -34,22 +36,27 @@ export function FAQSection() {
   ];
 
   return (
-    <section className="py-16 bg-background">
+    <section className="py-24" style={{ backgroundColor: BRAND_COLORS.bgWhite }}>
       <div className="max-w-4xl mx-auto px-4 sm:px-6">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-[#1a1a3a] mb-4">Frequently Asked Questions</h2>
-          <p className="text-gray-600 max-w-2xl mx-auto">
+        <div className="text-center mb-16">
+          <h2 className={`${TYPOGRAPHY.section} mb-4`} style={{ 
+            color: BRAND_COLORS.textPrimary, 
+            fontFamily: "'Satoshi', 'Inter', system-ui, sans-serif" 
+          }}>
+            Frequently Asked Questions
+          </h2>
+          <p className="text-xl max-w-2xl mx-auto" style={{ color: BRAND_COLORS.textSecondary }}>
             Answers to common questions about our platform and how it works
           </p>
         </div>
         
-        <Accordion type="multiple" defaultValue={["item-0", "item-1"]} className="w-full">
+        <Accordion type="multiple" className="w-full">
           {faqs.map((faq, index) => (
-            <AccordionItem key={index} value={`item-${index}`} className="border-b border-gray-200">
-              <AccordionTrigger className="text-left font-medium py-4">
+            <AccordionItem key={index} value={`item-${index}`} className="border-b" style={{ borderColor: BRAND_COLORS.borderSubtle }}>
+              <AccordionTrigger className={`text-left font-medium py-6 hover:no-underline ${TYPOGRAPHY.subsection}`} style={{ color: BRAND_COLORS.textPrimary }}>
                 {faq.question}
               </AccordionTrigger>
-              <AccordionContent className="text-gray-600 pb-4">
+              <AccordionContent className={`pb-6 ${TYPOGRAPHY.body}`} style={{ color: BRAND_COLORS.textSecondary }}>
                 {faq.answer}
               </AccordionContent>
             </AccordionItem>

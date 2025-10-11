@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { ChevronRight, Gift, BarChart, Users, LineChart, CreditCard, TrendingUp } from "lucide-react";
 import { Link } from "wouter";
+import { SEOHead } from "@/components/seo/seo-head";
 
 // Import brand logos
 import milletarianLogo from "../assets/milletarian.png";
@@ -57,12 +58,34 @@ export default function BrandsPage() {
   ];
 
   return (
-    <div className={`transition-opacity duration-700 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+    <>
+      <SEOHead
+        title="For Brands | Partner with Dopaya | Social Impact Marketing Platform"
+        description="Partner with Dopaya to reach conscious consumers and support social enterprises. Offer exclusive rewards, build brand loyalty, and make a real impact in the social enterprise ecosystem."
+        keywords="brand partnerships, social impact marketing, conscious consumers, sustainable brands, social enterprise partnerships, impact marketing, brand loyalty, social responsibility"
+        canonicalUrl="https://dopaya.org/brands"
+        ogType="website"
+        ogImage="https://dopaya.org/og-brands.jpg"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "Service",
+          "name": "Brand Partnership Program",
+          "description": "Partner with Dopaya to reach conscious consumers and support social enterprises",
+          "provider": {
+            "@type": "Organization",
+            "name": "Dopaya"
+          },
+          "serviceType": "Marketing Partnership",
+          "areaServed": "Global"
+        }}
+      />
+      
+      <div className={`transition-opacity duration-700 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-50 to-indigo-50 py-20">
+      <section className="bg-gradient-to-br from-blue-50 to-indigo-50 py-24">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
-            <div className="lg:w-1/2">
+            <div className="lg:w-1/2 text-center lg:text-left">
               <h1 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight mb-4">
                 Reward customers for doing good — while growing your brand.
               </h1>
@@ -70,7 +93,7 @@ export default function BrandsPage() {
                 Join a new ecosystem where donations unlock your rewards.
               </p>
               <a href="https://tally.so/r/3lvVg5" target="_blank" rel="noopener noreferrer">
-                <Button className="bg-[#F05304] hover:bg-[#d43d25] text-white px-8 py-6 text-lg rounded-md">
+                <Button className="bg-[#F05304] hover:bg-[#d43d25] text-white px-8 py-6 text-lg rounded-md w-full sm:w-auto">
                   Become a Brand Partner
                 </Button>
               </a>
@@ -396,12 +419,12 @@ export default function BrandsPage() {
             <h2 className="text-3xl font-bold mb-6">Let your brand be part of the change.</h2>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <a href="https://tally.so/r/3lvVg5" target="_blank" rel="noopener noreferrer">
-                <Button className="bg-[#F05304] hover:bg-[#d43d25] text-white px-8 py-6 text-lg rounded-md">
+                <Button className="bg-[#F05304] hover:bg-[#d43d25] text-white px-8 py-6 text-lg rounded-md w-full sm:w-auto">
                   Become a Brand Partner
                 </Button>
               </a>
               <Link href="/contact">
-                <Button variant="outline" className="px-8 py-6 text-lg">
+                <Button variant="outline" className="px-8 py-6 text-lg w-full sm:w-auto">
                   Let's Talk
                 </Button>
               </Link>
@@ -415,12 +438,13 @@ export default function BrandsPage() {
         <div className="flex justify-between items-center">
           <p className="font-medium text-gray-800">Ready to partner with us?</p>
           <Link href="/contact">
-            <Button size="sm" className="bg-[#F05304] hover:bg-[#d43d25] text-white">
+            <Button size="sm" className="bg-[#F05304] hover:bg-[#d43d25] text-white w-full sm:w-auto">
               Get Started
             </Button>
           </Link>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

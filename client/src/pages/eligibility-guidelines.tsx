@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Building2, Target, User, DollarSign, Globe, MapPin } from "lucide-react";
+import { CheckCircle, Building2, Target, User, DollarSign, Globe, MapPin, Zap } from "lucide-react";
 import { SEOHead } from "@/components/seo/seo-head";
 
 export default function EligibilityGuidelines() {
@@ -74,6 +74,14 @@ function EligibilityContent() {
       bgColor: "bg-indigo-50",
       iconColor: "text-indigo-600",
       borderColor: "border-indigo-200"
+    },
+    {
+      icon: Zap,
+      title: "Efficiency",
+      description: "High dollar-to-impact ratio, now or in future. Highly efficient team using AI for operations and scaling.",
+      bgColor: "bg-yellow-50",
+      iconColor: "text-yellow-600",
+      borderColor: "border-yellow-200"
     }
   ];
 
@@ -95,7 +103,7 @@ function EligibilityContent() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="py-20 bg-gradient-to-r from-[#F9F7F0] to-white">
+      <section className="py-24 bg-gradient-to-r from-[#F9F7F0] to-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <motion.h1 
@@ -121,7 +129,7 @@ function EligibilityContent() {
               transition={{ duration: 0.6, delay: 0.4 }}
             >
               <a href="https://tally.so/r/3EM0vA" target="_blank" rel="noopener noreferrer">
-                <Button className="bg-[#F05304] hover:bg-[#d43d25] text-white px-8 py-3 text-lg">
+                <Button className="text-white px-8 py-3 text-lg" style={{ backgroundColor: '#f2662d' }}>
                   Apply Now
                 </Button>
               </a>
@@ -131,7 +139,7 @@ function EligibilityContent() {
       </section>
 
       {/* Criteria Section */}
-      <section className="py-20 bg-white">
+      <section className="py-24 bg-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Our Selection Criteria</h2>
@@ -166,7 +174,7 @@ function EligibilityContent() {
       </section>
 
       {/* Key Points Section */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-24 bg-gray-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Key Requirements Summary</h2>
@@ -228,14 +236,15 @@ function EligibilityContent() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-white">
+      <section className="py-24 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
-            className="bg-gradient-to-r from-[#F05304] to-[#d43d25] rounded-2xl p-12 text-white"
+            className="rounded-2xl p-12 text-white"
+            style={{ background: 'linear-gradient(to right, #f2662d, #e55a1f)' }}
           >
             <h2 className="text-3xl font-bold mb-4">Ready to Make an Impact?</h2>
             <p className="text-xl mb-8 opacity-90">
@@ -243,7 +252,7 @@ function EligibilityContent() {
               Join our community of changemakers today.
             </p>
             <a href="https://tally.so/r/3EM0vA" target="_blank" rel="noopener noreferrer">
-              <Button className="bg-white text-[#F05304] hover:bg-gray-100 px-8 py-3 text-lg font-semibold">
+              <Button className="bg-white hover:bg-gray-100 px-8 py-3 text-lg font-semibold" style={{ color: '#f2662d' }}>
                 Submit Your Application
               </Button>
             </a>
@@ -258,7 +267,7 @@ function EligibilityContent() {
           <p className="text-gray-600 mb-6">
             Our team is here to help you understand if your venture is a good fit for our platform.
           </p>
-          <a href="/contact" className="text-[#F05304] hover:text-[#d43d25] font-medium">
+          <a href="/contact" className="font-medium" style={{ color: '#f2662d' }}>
             Contact us for guidance →
           </a>
         </div>

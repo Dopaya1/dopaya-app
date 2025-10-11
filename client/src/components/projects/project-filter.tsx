@@ -133,7 +133,7 @@ export function ProjectFilter({ onFilterChange }: ProjectFilterProps) {
         </Select>
 
         <div className="flex gap-2 md:w-auto">
-          <Button type="submit" className="bg-[#e94e35] hover:bg-[#cc4530] text-white">Filter</Button>
+          <Button type="submit" className="text-white" style={{ backgroundColor: '#f2662d' }}>Filter</Button>
           <Button type="button" variant="outline" onClick={handleReset} className="bg-white">
             Reset
           </Button>

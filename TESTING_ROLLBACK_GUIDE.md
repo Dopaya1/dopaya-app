@@ -58,8 +58,11 @@ git restore client/src/app.tsx
 
 ### Modified Files (Can be reverted):
 - `client/src/app.tsx` - **Only line 7 changed** (import path)
-- `client/src/index.css` - New color variables + Satoshi font
 - `server/stripe-routes.ts` - Fixed Stripe errors (recommended to keep)
+
+### Global Files (Restored to original):
+- `client/src/index.css` - **RESTORED** to original (no global changes)
+- All other pages use original styling and colors
 
 ### Original Files (Still intact):
 - `client/src/pages/home-page.tsx` - **Original homepage untouched** ✅
