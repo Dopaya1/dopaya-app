@@ -91,10 +91,10 @@ export default function ProjectsPage() {
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-10">
-          <h1 className="text-3xl font-bold text-dark font-heading mb-4">Discover Projects</h1>
+          <h1 className="text-3xl font-bold text-dark font-heading mb-4">Discover Social Enterprises</h1>
           <p className="text-neutral max-w-2xl mx-auto">
-            Support these high-impact initiatives and track how your donations make real-world change.
-            Each project is carefully vetted by the Dopaya team.
+            Support these high-impact social enterprises and track how your contributions create real-world change.
+            Each enterprise is carefully vetted by the Dopaya team.
           </p>
         </div>
       </div>

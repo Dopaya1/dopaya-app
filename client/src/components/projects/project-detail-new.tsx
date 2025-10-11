@@ -805,7 +805,7 @@ ${url}
           <DialogHeader>
             <DialogTitle>Impact Multiplier</DialogTitle>
             <DialogDescription>
-              When you donate to this social project, we multiply your Impact Points with {project.impactPointsMultiplier || 10}.
+              When you donate to this social enterprise, we multiply your Impact Points with {project.impactPointsMultiplier || 10}.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
