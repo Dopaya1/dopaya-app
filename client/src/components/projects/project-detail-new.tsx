@@ -93,27 +93,26 @@ export function ProjectDetailNew({ project }: ProjectDetailProps) {
     console.log(`Sharing to ${platform}...`);
     const url = window.location.href;
     const title = project.title;
+    const shareMessage = `I am supporting ${title} to make a difference! 🌟`;
     const description = project.description?.substring(0, 150) || 'Check out this amazing social impact project';
-    const imageUrl = project.coverImage ? `${window.location.origin}${project.coverImage}` : `${window.location.origin}/src/assets/Dopaya Logo.png`;
+    const imageUrl = project.imageUrl || project.coverImage || '/src/assets/Dopaya Logo.png';
     
     let shareUrl = '';
     
     switch(platform) {
       case 'email':
         console.log('Opening email client...');
-        const emailSubject = `Check out ${title} - Making a Real Impact`;
+        const emailSubject = `Join me in supporting ${title}`;
         const emailBody = `Hi there!
 
-I found this amazing social impact project on Dopaya that I thought you'd be interested in:
-
-${title}
+I am supporting ${title} to make a difference! 🌟
 
 ${description}
 
-You can support this project and earn impact points for exclusive rewards. Check it out here:
+Join me in making an impact - every contribution counts:
 ${url}
 
-Best regards!`;
+Together we can create positive change!`;
         shareUrl = `mailto:?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
         console.log('Email URL:', shareUrl);
         window.location.href = shareUrl;
@@ -121,24 +120,22 @@ Best regards!`;
         
       case 'facebook':
         console.log('Opening Facebook sharer...');
-        // Facebook's sharer API - the quote parameter doesn't work reliably anymore
-        // We'll use the basic URL sharing and let Facebook pull the Open Graph data
-        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+        // Facebook sharer with custom text in the URL (will use OG tags from page)
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(shareMessage)}`;
         console.log('Facebook URL:', shareUrl);
         break;
         
       case 'instagram':
         console.log('Handling Instagram sharing...');
-        // Instagram doesn't support direct URL sharing, so we'll copy to clipboard and show instructions
-        const instagramText = `🌟 Check out ${title} on Dopaya! 
+        // Instagram doesn't support direct URL sharing, so we'll copy to clipboard
+        const instagramText = `${shareMessage}
 
 ${description}
 
-Support this amazing social impact project and earn rewards! 
-
+Learn more and join the movement:
 ${url}
 
-#SocialImpact #Dopaya #MakeADifference`;
+#SocialImpact #Dopaya #MakeADifference #${title.replace(/\s+/g, '')}`;
         console.log('Instagram text:', instagramText);
         
         // Try to copy to clipboard
@@ -148,7 +145,7 @@ ${url}
             console.log('Text copied successfully!');
             toast({
               title: "📋 Ready to Share!",
-              description: "Text copied! Open Instagram and paste in your story or post.",
+              description: "Caption copied! Open Instagram and paste it with the project image.",
             });
             // Try to open Instagram app or web version
             setTimeout(() => {
@@ -168,12 +165,12 @@ ${url}
         return;
         
       case 'twitter':
-        const twitterText = `Check out ${title} on Dopaya! ${description.substring(0, 100)}... Support this project: ${url}`;
+        const twitterText = `${shareMessage} ${url}`;
         shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(twitterText)}`;
         break;
         
       case 'linkedin':
-        shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}&summary=${encodeURIComponent(description)}`;
+        shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}&title=${encodeURIComponent(shareMessage)}&summary=${encodeURIComponent(description)}`;
         break;
         
       default:
@@ -708,27 +705,27 @@ ${url}
       {showStickyBar && (
         <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-100 p-4 flex justify-between items-center z-50 safe-area-pb">
           <div className="flex items-center space-x-2">
-            <span className="text-sm font-medium text-gray-600 hidden sm:block">Share this project</span>
+            <span className="text-sm font-medium text-gray-900 hidden sm:block">Share this project</span>
             <button
               onClick={() => handleShare('email')}
-              className="p-2 text-gray-600 hover:text-primary transition-colors"
+              className="p-2 text-gray-900 hover:text-primary transition-colors"
               title="Share via Email"
             >
-              <FaEnvelope className="h-4 w-4" />
+              <FaEnvelope className="h-5 w-5" />
             </button>
             <button
               onClick={() => handleShare('facebook')}
-              className="p-2 text-gray-600 hover:text-blue-600 transition-colors"
+              className="p-2 text-gray-900 hover:text-blue-600 transition-colors"
               title="Share on Facebook"
             >
-              <FaFacebook className="h-4 w-4" />
+              <FaFacebook className="h-5 w-5" />
             </button>
             <button
               onClick={() => handleShare('instagram')}
-              className="p-2 text-gray-600 hover:text-pink-500 transition-colors"
+              className="p-2 text-gray-900 hover:text-pink-500 transition-colors"
               title="Share on Instagram"
             >
-              <FaInstagram className="h-4 w-4" />
+              <FaInstagram className="h-5 w-5" />
             </button>
           </div>
           
