@@ -20,6 +20,7 @@ import { ContactSection } from "@/components/ui/contact-section";
 import { SelectionCriteriaEnhanced } from "@/components/ui/selection-criteria-enhanced";
 import { Carousel, TestimonialCard } from "@/components/ui/retro-testimonial";
 import type { iTestimonial } from "@/components/ui/retro-testimonial";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 import { TYPOGRAPHY } from "@/constants/typography";
 import { BRAND_COLORS } from "@/constants/colors";
 import { MOBILE } from "@/constants/mobile";
@@ -568,10 +569,15 @@ export default function SocialEnterprisesPage() {
             <div className="bg-gray-50 rounded-xl p-6 shadow-lg flex flex-col justify-center">
               <div className="text-center">
                 <div className="w-40 h-40 rounded-lg overflow-hidden mb-4 mx-auto">
-                  <img 
-                    src={patrickImg} 
+                  <OptimizedImage
+                    src={patrickImg}
                     alt="Patrick"
+                    width={160}
+                    height={160}
+                    quality={85}
                     className="w-full h-full object-cover"
+                    fallbackSrc="/placeholder-avatar.png"
+                    onError={() => console.warn('Failed to load Patrick image')}
                   />
                 </div>
                 
