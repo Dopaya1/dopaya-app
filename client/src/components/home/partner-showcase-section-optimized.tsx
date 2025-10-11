@@ -69,7 +69,6 @@ const impactBrands = [
 ];
 
 export function PartnerShowcaseSection() {
-  const [hoveredBrand, setHoveredBrand] = useState<number | null>(null);
   const [selectedBrand, setSelectedBrand] = useState<number | null>(null);
 
   // Fetch real rewards from Supabase database
@@ -113,8 +112,6 @@ export function PartnerShowcaseSection() {
               <div
                 key={brand.id}
                 className="relative group cursor-pointer"
-                onMouseEnter={() => setHoveredBrand(brand.id)}
-                onMouseLeave={() => setHoveredBrand(null)}
               >
                 {/* Brand Logo */}
                 <div 
@@ -131,52 +128,9 @@ export function PartnerShowcaseSection() {
                   </div>
                 </div>
 
-                {/* Clay.com Style Hover Card - with gap bridge for easier mouse movement */}
-                {hoveredBrand === brand.id && (
-                  <>
-                    {/* Invisible bridge to make moving mouse to card easier */}
-                    <div 
-                      className="absolute top-full left-0 right-0 h-4 z-10"
-                      onMouseEnter={() => setHoveredBrand(brand.id)}
-                    />
-                    <div 
-                      className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 w-72 p-4 rounded-lg shadow-xl z-20 animate-in fade-in-0 zoom-in-95"
-                      style={{ backgroundColor: BRAND_COLORS.bgWhite, border: `1px solid ${BRAND_COLORS.borderSubtle}` }}
-                      onMouseEnter={() => setHoveredBrand(brand.id)}
-                      onMouseLeave={() => setHoveredBrand(null)}
-                    >
-                      <div className="flex items-start gap-3 mb-3">
-                        <img src={brand.logo} alt={brand.name} className="w-8 h-8 object-contain" />
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-sm" style={{ color: BRAND_COLORS.textPrimary }}>
-                            {brand.fullName}
-                          </h4>
-                          <span className="text-xs" style={{ color: BRAND_COLORS.textMuted }}>
-                            {brand.category}
-                          </span>
-                        </div>
-                        <ArrowUpRight className="h-4 w-4" style={{ color: BRAND_COLORS.textMuted }} />
-                      </div>
-                      <p className="text-sm leading-relaxed mb-3" style={{ color: BRAND_COLORS.textSecondary }}>
-                        {brand.hoverDescription}
-                      </p>
-                      <a 
-                        href={brand.website} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs font-medium hover:underline"
-                        style={{ color: BRAND_COLORS.primaryOrange }}
-                      >
-                        Visit Website
-                        <ArrowUpRight className="h-3 w-3" />
-                      </a>
-                    </div>
-                  </>
-                )}
-
-                {/* Mobile popover */}
+                {/* Universal popover - works on both desktop and mobile */}
                 {selectedBrand === brand.id && (
-                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 md:hidden">
+                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
                     <div 
                       className="w-full max-w-sm bg-white rounded-lg p-6 shadow-xl"
                       onClick={(e) => e.stopPropagation()}
