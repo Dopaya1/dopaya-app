@@ -126,11 +126,11 @@ app.use((req, res, next) => {
     console.warn('Database will need to be set up manually via /api/system/setup-db');
   }
   
-  const server = await registerRoutes(app);
-
-  // Add social media bot handler BEFORE Vite (so bots get proper OG tags)
+  // Add social media bot handler EARLY (before routes and Vite)
   const { socialMetaMiddleware } = await import('./social-meta-middleware');
   app.use(socialMetaMiddleware);
+
+  const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
