@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabase";
 import type { Project } from "@shared/schema";
 import { SDGNotificationBell } from "@/components/ui/sdg-notification-bell";
 import { TYPOGRAPHY } from "@/constants/typography";
+import sdgWheelImg from "@assets/sdg wheel.png";
 import { BRAND_COLORS } from "@/constants/colors";
 
 export function CaseStudyModernSection() {
@@ -172,7 +173,7 @@ export function CaseStudyModernSection() {
                   <div className="text-center">
                     <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:shadow-md transition-shadow">
                       <img 
-                        src="/src/assets/sdg-wheel.svg" 
+                        src={sdgWheelImg} 
                         alt="SDG Wheel" 
                         className="w-12 h-12 object-contain"
                       />

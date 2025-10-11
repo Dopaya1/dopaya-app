@@ -8,6 +8,9 @@ import { TYPOGRAPHY } from "@/constants/typography";
 import { BRAND_COLORS } from "@/constants/colors";
 import { MOBILE } from "@/constants/mobile";
 import { MobileSlider } from "@/components/ui/mobile-slider";
+import bonjiLogo from '@assets/Bonji - beyond just natural.png';
+import aaparLogo from '@assets/Aapar logo_1750646598028.png';
+import syangsLogo from '@assets/Syangs logo_1750646598029.png';
 
 // Real brand data with available logos
 const impactBrands = [
@@ -15,7 +18,7 @@ const impactBrands = [
     id: 1,
     name: "Bonji",
     fullName: "Bonji - Beyond Just Natural",
-    logo: "/src/assets/Bonji - beyond just natural.png",
+    logo: bonjiLogo,
     hoverDescription: "Anti-pollution skin & hair care products made with natural ingredients. Beyond just trends, basics, and looks - real science-backed solutions for city life damage.",
     category: "Beauty & Wellness",
     website: "https://bonji.in",
@@ -25,7 +28,7 @@ const impactBrands = [
     id: 2,
     name: "Sankalp Village",
     fullName: "Sankalp Art Village",
-    logo: "/src/assets/sankapa-art-village.png",
+    logo: bonjiLogo, // Placeholder - actual logo not available
     hoverDescription: "Sustainable living through natural dyed clothing, conscious baby clothing, handmade cutlery, wooden toys, and organics. Creating local livelihood with craft and reviving indigenous traditions.",
     category: "Sustainable Lifestyle",
     website: "https://www.sankalpaartvillage.com",
@@ -35,7 +38,7 @@ const impactBrands = [
     id: 3,
     name: "Milletarian",
     fullName: "Milletarian - Magic Malt",
-    logo: "/src/assets/milletarian.png",
+    logo: bonjiLogo, // Placeholder - actual logo not available
     hoverDescription: "100% natural, no preservatives Ragi Malt that's nutrition simplified. Just add hot water for instant goodness of Finger Millet with added fiber - perfect for health enthusiasts and busy professionals.",
     category: "Health & Nutrition",
     website: "https://milletarian.netlify.app",
@@ -45,7 +48,7 @@ const impactBrands = [
     id: 4,
     name: "Aapar",
     fullName: "Aapar",
-    logo: "/src/assets/Aapar logo_1750646598028.png",
+    logo: aaparLogo,
     hoverDescription: "Sustainable lifestyle brand focused on traditional crafts and eco-friendly products supporting rural artisans and promoting conscious consumption.",
     category: "Lifestyle",
     website: "https://www.aapar.in",
@@ -55,7 +58,7 @@ const impactBrands = [
     id: 5,
     name: "Syangs",
     fullName: "Syangs",
-    logo: "/src/assets/Syangs logo_1750646598029.png",
+    logo: syangsLogo,
     hoverDescription: "Organic food products and sustainable agriculture solutions supporting farmers and promoting healthy living through natural, chemical-free products.",
     category: "Food & Agriculture",
     website: "https://www.syangs.com",

@@ -2,6 +2,8 @@ import React from "react";
 import { Timeline } from "@/components/ui/timeline";
 import { CheckCircle, Clock, Target, Users, Heart, TrendingUp, ArrowRight, Wind } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import abdulMujeebImg from "@assets/Abdul Mujeeb_1749476510704.png";
+import shaliniSinghImg from "@assets/Shalini Singh_1749476510708.png";
 
 export function DopayaTimelineSimplified() {
   const [featuredProjects, setFeaturedProjects] = React.useState<any[]>([]);
@@ -32,15 +34,15 @@ export function DopayaTimelineSimplified() {
   const getImageForProject = (projectName: string) => {
     switch (projectName) {
       case 'Ignis Careers':
-        return '/src/assets/Abdul Mujeeb_1749476510704.png';
+        return abdulMujeebImg;
       case 'Allika':
-        return '/src/assets/allika.png';
+        return abdulMujeebImg; // Placeholder
       case 'Panjurli Labs':
-        return '/src/assets/Shalini Singh_1749476510708.png';
+        return shaliniSinghImg;
       case 'Sanitrust Pads':
-        return '/src/assets/Abdul Mujeeb_1749476510704.png';
+        return abdulMujeebImg;
       default:
-        return '/src/assets/Abdul Mujeeb_1749476510704.png';
+        return abdulMujeebImg;
     }
   };
 

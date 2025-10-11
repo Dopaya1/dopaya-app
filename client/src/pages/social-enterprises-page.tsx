@@ -23,6 +23,7 @@ import type { iTestimonial } from "@/components/ui/retro-testimonial";
 import { TYPOGRAPHY } from "@/constants/typography";
 import { BRAND_COLORS } from "@/constants/colors";
 import { MOBILE } from "@/constants/mobile";
+import patrickImg from "@assets/Patrick Widmann_1749545204060.png";
 
 export default function SocialEnterprisesPage() {
   // Cache bust: 2025-01-27 11:22
@@ -566,7 +567,7 @@ export default function SocialEnterprisesPage() {
               <div className="text-center">
                 <div className="w-40 h-40 rounded-lg overflow-hidden mb-4 mx-auto">
                   <img 
-                    src="/src/assets/Patrick Widmann_1749545204060.png" 
+                    src={patrickImg} 
                     alt="Patrick"
                     className="w-full h-full object-cover"
                   />
