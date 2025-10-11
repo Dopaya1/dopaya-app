@@ -20,12 +20,12 @@ import {
   FaEnvelope, 
   FaYoutube, 
   FaTiktok, 
-  FaGlobe,
   FaCheckCircle,
   FaMapMarkerAlt,
   FaUser,
   FaInfoCircle,
-  FaLeaf
+  FaLeaf,
+  FaShareAlt
 } from "react-icons/fa";
 import { getCategoryColors } from "@/lib/category-colors";
 import { MobileSlider } from "@/components/ui/mobile-slider";
@@ -134,7 +134,12 @@ ${url}
 Together we can create positive change!`;
         shareUrl = `mailto:?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
         console.log('Email URL:', shareUrl);
-        window.location.href = shareUrl;
+        // Open in new window for better compatibility
+        window.open(shareUrl, '_self');
+        toast({
+          title: "📧 Opening Email Client",
+          description: "Your email app should open in a moment!",
+        });
         return;
         
       case 'facebook':
@@ -166,23 +171,29 @@ ${url}
         console.log('Instagram text:', instagramText);
         
         // Try to copy to clipboard
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          console.log('Using modern clipboard API...');
-          navigator.clipboard.writeText(instagramText).then(() => {
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            console.log('Using modern clipboard API...');
+            await navigator.clipboard.writeText(instagramText);
             console.log('Text copied successfully!');
-            toast({
-              title: "📋 Instagram Caption Ready!",
-              description: "Caption copied! Now:\n1. Save the project image to your phone\n2. Open Instagram\n3. Create a post with the image\n4. Paste the caption",
-              duration: 8000,
-            });
-            // Don't auto-open Instagram - let user save image first
-          }).catch((error) => {
-            console.error('Clipboard API failed:', error);
+          } else {
+            console.log('Using fallback clipboard method...');
             copyToClipboardFallback(instagramText);
+          }
+          
+          toast({
+            title: "📸 Instagram Caption Ready!",
+            description: "Caption copied to clipboard! Now:\n1. Save the project image\n2. Open Instagram\n3. Create a post with the image\n4. Paste the caption",
+            duration: 8000,
           });
-        } else {
-          console.log('Using fallback clipboard method...');
+        } catch (error) {
+          console.error('Clipboard failed:', error);
           copyToClipboardFallback(instagramText);
+          toast({
+            title: "📸 Instagram Caption Ready!",
+            description: "Caption copied! Open Instagram and paste it with the project image.",
+            duration: 6000,
+          });
         }
         return;
         
@@ -729,17 +740,19 @@ ${url}
           <div className="flex items-center space-x-2">
             <span className="text-sm font-medium text-gray-900 hidden sm:block">Share this project</span>
             
-            {/* Native share button (mobile) */}
+            {/* Native share button (mobile only) - Best for mobile! */}
             {navigator.share && (
               <button
                 onClick={() => handleShare('native')}
-                className="p-2 text-gray-900 hover:text-primary transition-colors md:hidden"
+                className="flex items-center gap-1.5 px-3 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors md:hidden"
                 title="Share"
               >
-                <FaGlobe className="h-5 w-5" />
+                <FaShareAlt className="h-4 w-4" />
+                <span className="text-sm font-medium">Share</span>
               </button>
             )}
             
+            {/* Individual platform buttons (always visible) */}
             <button
               onClick={() => handleShare('email')}
               className="p-2 text-gray-900 hover:text-primary transition-colors"
