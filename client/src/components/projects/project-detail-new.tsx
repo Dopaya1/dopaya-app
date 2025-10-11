@@ -20,6 +20,7 @@ import {
   FaEnvelope, 
   FaYoutube, 
   FaTiktok, 
+  FaGlobe,
   FaCheckCircle,
   FaMapMarkerAlt,
   FaUser,
