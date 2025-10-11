@@ -2,6 +2,9 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { Link } from "wouter";
 import { Instagram, Mail, Facebook } from 'lucide-react';
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
+import type { Project } from "@shared/schema";
 
 import { BRAND_COLORS } from "@/constants/colors";
 
@@ -14,6 +17,25 @@ export function FooterTapedDesign() {
   const currentYear = new Date().getFullYear();
   const [email, setEmail] = useState("");
   const [isSubscribed, setIsSubscribed] = useState(false);
+
+  // Fetch featured projects for footer links
+  const { data: featuredProjects = [] } = useQuery<Project[]>({
+    queryKey: ["featured-projects-footer"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('id, title, slug')
+        .eq('featured', true)
+        .eq('status', 'active')
+        .order('createdAt', { ascending: false })
+        .limit(4);
+      
+      if (error) throw error;
+      return data || [];
+    },
+    retry: false,
+    staleTime: Infinity,
+  });
 
   const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -161,46 +183,6 @@ export function FooterTapedDesign() {
             </div>
           </div>
 
-          {/* Impact Section */}
-          <div className='flex flex-col gap-4'>
-            <h4 
-              className='uppercase font-semibold text-sm' 
-              style={{ color: BRAND_COLORS.textMuted }}
-            >
-              Create Impact
-            </h4>
-            <div className="flex flex-col gap-3 text-sm">
-              <Link 
-                className='font-medium hover:underline transition-all' 
-                style={{ color: BRAND_COLORS.textSecondary }}
-                href="/projects"
-              >
-                Social Enterprises
-              </Link>
-              <Link 
-                className='font-medium hover:underline transition-all' 
-                style={{ color: BRAND_COLORS.textSecondary }}
-                href="/rewards"
-              >
-                Unlock Rewards
-              </Link>
-              <Link 
-                className='font-medium hover:underline transition-all' 
-                style={{ color: BRAND_COLORS.textSecondary }}
-                href="/dashboard"
-              >
-                Track Impact
-              </Link>
-              <Link 
-                className='font-medium hover:underline transition-all' 
-                style={{ color: BRAND_COLORS.textSecondary }}
-                href="/about"
-              >
-                How It Works
-              </Link>
-            </div>
-          </div>
-
           {/* Community Section */}
           <div className='flex flex-col gap-4'>
             <h4 
@@ -210,6 +192,13 @@ export function FooterTapedDesign() {
               Community
             </h4>
             <div className="flex flex-col gap-3 text-sm">
+              <Link 
+                className='font-medium hover:underline transition-all' 
+                style={{ color: BRAND_COLORS.textSecondary }}
+                href="/about"
+              >
+                About Us
+              </Link>
               <Link 
                 className='font-medium hover:underline transition-all' 
                 style={{ color: BRAND_COLORS.textSecondary }}
@@ -238,6 +227,35 @@ export function FooterTapedDesign() {
               >
                 FAQ
               </Link>
+            </div>
+          </div>
+
+          {/* Impact Section */}
+          <div className='flex flex-col gap-4'>
+            <h4 
+              className='uppercase font-semibold text-sm' 
+              style={{ color: BRAND_COLORS.textMuted }}
+            >
+              Create Impact
+            </h4>
+            <div className="flex flex-col gap-3 text-sm">
+              <Link 
+                className='font-medium hover:underline transition-all' 
+                style={{ color: BRAND_COLORS.textSecondary }}
+                href="/projects"
+              >
+                Social Enterprises
+              </Link>
+              {featuredProjects.map((project) => (
+                <Link 
+                  key={project.id}
+                  className='font-medium hover:underline transition-all' 
+                  style={{ color: BRAND_COLORS.textSecondary }}
+                  href={`/projects/${project.slug}`}
+                >
+                  {project.title}
+                </Link>
+              ))}
             </div>
           </div>
 
