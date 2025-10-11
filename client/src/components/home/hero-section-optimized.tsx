@@ -178,7 +178,7 @@ export function HeroSection() {
             <div className="mb-8">
               <div 
                 ref={projectsRef}
-                className="flex space-x-3 overflow-x-hidden scrollbar-hide"
+                className="flex space-x-3 overflow-x-auto scrollbar-hide"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               >
                 {/* Static projects display */}
@@ -220,7 +220,7 @@ export function HeroSection() {
             <div>
               <div 
                 ref={rewardsRef}
-                className="flex space-x-3 overflow-x-hidden scrollbar-hide"
+                className="flex space-x-3 overflow-x-auto scrollbar-hide"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               >
                 {/* Static rewards display */}

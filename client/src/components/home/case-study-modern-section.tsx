@@ -245,19 +245,19 @@ export function CaseStudyModernSection() {
                      border: `1px solid ${BRAND_COLORS.borderSubtle}`
                    }}
               >
-                <div className="aspect-square relative bg-gray-100 flex items-center justify-center">
+                <div className="aspect-square relative bg-gray-100 flex items-center justify-center p-6">
                   <div className="text-center">
-                    <div className="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-blue-100 to-green-100 rounded-full flex items-center justify-center">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:shadow-md transition-shadow">
                       <img 
-                        src="/src/assets/SDG_Wheel.png" 
+                        src="/src/assets/sdg-wheel.svg" 
                         alt="SDG Wheel" 
-                        className="w-8 h-8 object-contain"
+                        className="w-10 h-10 object-contain"
                       />
                     </div>
-                    <h3 className="font-semibold text-lg mb-3 px-2" style={{ color: BRAND_COLORS.textPrimary }}>
+                    <h3 className="font-semibold text-sm mb-2 px-2" style={{ color: BRAND_COLORS.textPrimary }}>
                       View All Projects
                     </h3>
-                    <p className="text-sm px-4 leading-relaxed" style={{ color: BRAND_COLORS.textSecondary }}>
+                    <p className="text-xs px-2 leading-relaxed" style={{ color: BRAND_COLORS.textSecondary }}>
                       Explore all our social enterprises
                     </p>
                   </div>
