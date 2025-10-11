@@ -23,9 +23,11 @@ export default defineConfig({
       output: {
         manualChunks: undefined,
       },
+      external: [],
     },
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'use-sync-external-store'],
+    include: ['react', 'react-dom'],
+    exclude: ['use-sync-external-store'],
   },
 });
