@@ -45,20 +45,25 @@ export async function socialMetaMiddleware(req: Request, res: Response, next: Ne
 
   console.log(`🤖 Social bot detected: ${userAgent.substring(0, 50)}...`);
   
-  // Only process HTML requests
+  // Only process HTML requests (accept text/html or */*)
   const accepts = req.headers.accept || '';
-  if (!accepts.includes('text/html')) {
+  if (!accepts.includes('text/html') && !accepts.includes('*/*')) {
+    console.log(`⚠️  Non-HTML request (Accept: ${accepts}), passing to next middleware`);
     return next();
   }
 
   // Extract project slug from URL
   const slug = extractProjectSlug(req.path);
+  console.log(`📍 Extracted slug: ${slug} from path: ${req.path}`);
+  
   if (!slug) {
+    console.log('⚠️  No slug found, passing to next middleware');
     return next(); // Not a project page
   }
 
   try {
     // Fetch project data
+    console.log(`🔍 Fetching project by slug: ${slug}`);
     const project = await storage.getProjectBySlug(slug);
     
     if (!project) {
@@ -112,7 +117,8 @@ export async function socialMetaMiddleware(req: Request, res: Response, next: Ne
 }
 
 // Helper to escape HTML special characters
-function escapeHtml(text: string): string {
+function escapeHtml(text: string | null | undefined): string {
+  if (!text) return '';
   const map: Record<string, string> = {
     '&': '&amp;',
     '<': '&lt;',
