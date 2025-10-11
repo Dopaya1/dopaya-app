@@ -15,19 +15,5 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist"),
     emptyOutDir: true,
-    commonjsOptions: {
-      include: [/node_modules/],
-      transformMixedEsModules: true,
-    },
-    rollupOptions: {
-      output: {
-        manualChunks: undefined,
-      },
-      external: [],
-    },
-  },
-  optimizeDeps: {
-    include: ['react', 'react-dom'],
-    exclude: ['use-sync-external-store'],
   },
 });
