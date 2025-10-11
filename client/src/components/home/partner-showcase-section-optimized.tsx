@@ -28,8 +28,8 @@ const impactBrands = [
   },
   {
     id: 2,
-    name: "Sankalp Village",
-    fullName: "Sankalp Art Village",
+    name: "Sankalpa Art Village",
+    fullName: "Sankalpa Art Village",
     logo: sankalpaArtVillageLogo,
     hoverDescription: "Sustainable living through natural dyed clothing, conscious baby clothing, handmade cutlery, wooden toys, and organics. Creating local livelihood with craft and reviving indigenous traditions.",
     category: "Sustainable Lifestyle",
