@@ -737,52 +737,65 @@ ${url}
 
       {/* Sticky bottom bar for mobile support */}
       {showStickyBar && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-100 p-4 flex justify-between items-center z-50 safe-area-pb">
-          <div className="flex items-center space-x-2">
-            <span className="text-sm font-medium text-gray-900 hidden sm:block">Share this project</span>
-            
-            {/* Native share button (mobile only) - Best for mobile! */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-100 p-3 z-50 safe-area-pb">
+          {/* Mobile: Two equal-width buttons */}
+          <div className="flex gap-2 md:hidden">
+            {/* Share button - light gray bg, orange text */}
             {navigator.share && (
               <button
                 onClick={() => handleShare('native')}
-                className="flex items-center gap-1.5 px-3 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors md:hidden"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 text-primary rounded-lg hover:bg-gray-200 transition-colors"
                 title="Share"
               >
                 <FaShareAlt className="h-4 w-4" />
-                <span className="text-sm font-medium">Share</span>
+                <span className="font-semibold">Share</span>
               </button>
             )}
             
-            {/* Individual platform buttons (always visible) */}
-            <button
-              onClick={() => handleShare('email')}
-              className="p-2 text-gray-900 hover:text-primary transition-colors"
-              title="Share via Email"
+            {/* Support button - orange bg, white text */}
+            <DonationButton 
+              project={project}
+              className="flex-1 bg-primary hover:bg-primary/90 text-white font-semibold py-3"
             >
-              <FaEnvelope className="h-5 w-5" />
-            </button>
-            <button
-              onClick={() => handleShare('facebook')}
-              className="p-2 text-gray-900 hover:text-blue-600 transition-colors"
-              title="Share on Facebook"
-            >
-              <FaFacebook className="h-5 w-5" />
-            </button>
-            <button
-              onClick={() => handleShare('instagram')}
-              className="p-2 text-gray-900 hover:text-pink-500 transition-colors"
-              title="Share on Instagram"
-            >
-              <FaInstagram className="h-5 w-5" />
-            </button>
+              Support This Project
+            </DonationButton>
           </div>
-          
-          <DonationButton 
-            project={project}
-            className="bg-primary hover:bg-primary/90 text-white font-bold px-4 sm:px-6 py-2 text-sm sm:text-base"
-          >
-            Support This Project
-          </DonationButton>
+
+          {/* Desktop: Share icons + Support button */}
+          <div className="hidden md:flex justify-between items-center">
+            <div className="flex items-center space-x-2">
+              <span className="text-sm font-medium text-gray-900">Share this project</span>
+              
+              <button
+                onClick={() => handleShare('email')}
+                className="p-2 text-gray-900 hover:text-primary transition-colors"
+                title="Share via Email"
+              >
+                <FaEnvelope className="h-5 w-5" />
+              </button>
+              <button
+                onClick={() => handleShare('facebook')}
+                className="p-2 text-gray-900 hover:text-blue-600 transition-colors"
+                title="Share on Facebook"
+              >
+                <FaFacebook className="h-5 w-5" />
+              </button>
+              <button
+                onClick={() => handleShare('instagram')}
+                className="p-2 text-gray-900 hover:text-pink-500 transition-colors"
+                title="Share on Instagram"
+              >
+                <FaInstagram className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <DonationButton 
+              project={project}
+              className="bg-primary hover:bg-primary/90 text-white font-bold px-6 py-2"
+            >
+              Support This Project
+            </DonationButton>
+          </div>
         </div>
       )}
 
