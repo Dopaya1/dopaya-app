@@ -6,13 +6,13 @@ import { Link } from "wouter";
 import { SEOHead } from "@/components/seo/seo-head";
 
 // Import brand logos
-import milletarianLogo from "../assets/milletarian.png";
-import adithiMilletsLogo from "../assets/adithi-millets.png";
-import allikaLogo from "../assets/allika.png";
-import khadyamLogo from "../assets/khadyam.png";
-import sankapaArtVillageLogo from "../assets/sankapa-art-village.png";
-import amazonLogo from "../assets/amazon.png";
-import flipkartLogo from "../assets/flipkart.png";
+import milletarianLogo from "@assets/milletarian.png";
+import adithiMilletsLogo from "@assets/adithi-millets.png";
+import allikaLogo from "@assets/allika.png";
+import khadyamLogo from "@assets/khadyam.png";
+import sankalpaArtVillageLogo from "@assets/sankalpa-art-village.png";
+import amazonLogo from "@assets/amazon.png";
+import flipkartLogo from "@assets/flipkart.png";
 import bonjiLogo from "@assets/Bonji - beyond just natural.png";
 
 export default function BrandsPage() {
@@ -51,7 +51,7 @@ export default function BrandsPage() {
     { src: adithiMilletsLogo, alt: "Adithi Millets" },
     { src: allikaLogo, alt: "Allika" },
     { src: khadyamLogo, alt: "Khadyam" },
-    { src: sankapaArtVillageLogo, alt: "Sankapa Art Village" },
+    { src: sankalpaArtVillageLogo, alt: "Sankalpa Art Village" },
     { src: amazonLogo, alt: "Amazon" },
     { src: flipkartLogo, alt: "Flipkart" },
     { src: bonjiLogo, alt: "Bonji" },

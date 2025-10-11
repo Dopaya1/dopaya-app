@@ -7,14 +7,14 @@ import { SEOHead } from "@/components/seo/seo-head";
 import { supabase } from "@/lib/supabase";
 
 // Import partner logo images
-import iimbNsrcelLogo from "../assets/iimb-nsrcel.png";
-import hdfcParivartan from "../assets/hdfc-parivartan.png";
-import aicIiith from "../assets/aic-iiith.png";
-import forbes30 from "../assets/forbes-30.png";
-import startupIndia from "../assets/startup-india.png";
-import unido from "../assets/unido.png";
-import iitKharagpur from "../assets/iit-kharagpur.png";
-import iVentureIsb from "../assets/i-venture-isb.png";
+import iimbNsrcelLogo from "@assets/iimb-nsrcel.png";
+import hdfcParivartan from "@assets/hdfc-parivartan.png";
+import aicIiith from "@assets/aic-iiith.png";
+import forbes30 from "@assets/forbes-30.png";
+import startupIndia from "@assets/startup-india.png";
+import unido from "@assets/unido.png";
+import iitKharagpur from "@assets/iit-kharagpur.png";
+import iVentureIsb from "@assets/i-venture-isb.png";
 
 export default function ProjectsPage() {
   const [filters, setFilters] = useState<FilterValues>({
