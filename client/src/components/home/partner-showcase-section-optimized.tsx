@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Shield, CheckCircle, Leaf, Heart, ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
+import { ExternalLink, Shield, CheckCircle, Leaf, Heart, ArrowLeft, ArrowRight, ArrowUpRight, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { Reward } from "@shared/schema";
@@ -11,6 +11,8 @@ import { MobileSlider } from "@/components/ui/mobile-slider";
 import bonjiLogo from '@assets/Bonji - beyond just natural.png';
 import aaparLogo from '@assets/Aapar logo_1750646598028.png';
 import syangsLogo from '@assets/Syangs logo_1750646598029.png';
+import sankalpaArtVillageLogo from '@assets/sankalpa-art-village.png';
+import milletarianLogo from '@assets/milletarian.png';
 
 // Real brand data with available logos
 const impactBrands = [
@@ -28,7 +30,7 @@ const impactBrands = [
     id: 2,
     name: "Sankalp Village",
     fullName: "Sankalp Art Village",
-    logo: bonjiLogo, // Placeholder - actual logo not available
+    logo: sankalpaArtVillageLogo,
     hoverDescription: "Sustainable living through natural dyed clothing, conscious baby clothing, handmade cutlery, wooden toys, and organics. Creating local livelihood with craft and reviving indigenous traditions.",
     category: "Sustainable Lifestyle",
     website: "https://www.sankalpaartvillage.com",
@@ -38,7 +40,7 @@ const impactBrands = [
     id: 3,
     name: "Milletarian",
     fullName: "Milletarian - Magic Malt",
-    logo: bonjiLogo, // Placeholder - actual logo not available
+    logo: milletarianLogo,
     hoverDescription: "100% natural, no preservatives Ragi Malt that's nutrition simplified. Just add hot water for instant goodness of Finger Millet with added fiber - perfect for health enthusiasts and busy professionals.",
     category: "Health & Nutrition",
     website: "https://milletarian.netlify.app",
@@ -68,6 +70,7 @@ const impactBrands = [
 
 export function PartnerShowcaseSection() {
   const [hoveredBrand, setHoveredBrand] = useState<number | null>(null);
+  const [selectedBrand, setSelectedBrand] = useState<number | null>(null);
 
   // Fetch real rewards from Supabase database
   const { data: rewards = [], isLoading } = useQuery<Reward[]>({
@@ -106,7 +109,7 @@ export function PartnerShowcaseSection() {
         {/* Interactive Brand Showcase - Clay.com Style */}
         <div className="mb-16">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 mb-8">
-            {impactBrands.map((brand) => (
+            {impactBrands.filter(brand => brand.featured).map((brand) => (
               <div
                 key={brand.id}
                 className="relative group cursor-pointer"
@@ -114,11 +117,9 @@ export function PartnerShowcaseSection() {
                 onMouseLeave={() => setHoveredBrand(null)}
               >
                 {/* Brand Logo */}
-                <a 
-                  href={brand.website} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="block"
+                <div 
+                  className="block cursor-pointer"
+                  onClick={() => setSelectedBrand(selectedBrand === brand.id ? null : brand.id)}
                 >
                   <div className="flex items-center justify-center p-6 h-24 rounded-lg transition-all duration-300 hover:scale-105" 
                        style={{ backgroundColor: BRAND_COLORS.bgWhite }}>
@@ -128,7 +129,7 @@ export function PartnerShowcaseSection() {
                       className="max-h-12 max-w-full object-contain filter grayscale hover:grayscale-0 transition-all duration-300"
                     />
                   </div>
-                </a>
+                </div>
 
                 {/* Clay.com Style Hover Card - with gap bridge for easier mouse movement */}
                 {hoveredBrand === brand.id && (
@@ -171,6 +172,46 @@ export function PartnerShowcaseSection() {
                       </a>
                     </div>
                   </>
+                )}
+
+                {/* Mobile popover */}
+                {selectedBrand === brand.id && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 md:hidden">
+                    <div 
+                      className="w-full max-w-sm bg-white rounded-lg p-6 shadow-xl"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="flex items-start gap-3 mb-4">
+                        <img src={brand.logo} alt={brand.name} className="w-8 h-8 object-contain" />
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-sm text-gray-900">
+                            {brand.fullName}
+                          </h4>
+                          <span className="text-xs text-gray-500">
+                            {brand.category}
+                          </span>
+                        </div>
+                        <button 
+                          onClick={() => setSelectedBrand(null)}
+                          className="text-gray-400 hover:text-gray-600"
+                        >
+                          <X className="h-5 w-5" />
+                        </button>
+                      </div>
+                      <p className="text-sm leading-relaxed mb-4 text-gray-700">
+                        {brand.hoverDescription}
+                      </p>
+                      <a 
+                        href={brand.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-sm font-medium text-orange-600 hover:text-orange-700"
+                      >
+                        Visit {brand.name}
+                        <ArrowUpRight className="h-4 w-4" />
+                      </a>
+                    </div>
+                  </div>
                 )}
               </div>
             ))}
