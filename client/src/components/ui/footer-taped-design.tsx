@@ -251,7 +251,7 @@ export function FooterTapedDesign() {
                   key={project.id}
                   className='font-medium hover:underline transition-all' 
                   style={{ color: BRAND_COLORS.textSecondary }}
-                  href={`/projects/${project.slug}`}
+                  href={`/project/${project.slug}`}
                 >
                   {project.title}
                 </Link>
