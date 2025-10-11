@@ -19,92 +19,41 @@ export function LazyImage({
   src,
   alt,
   fallbackSrc = '/placeholder-image.png',
-  placeholder = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5YTNhZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkxvYWRpbmcuLi48L3RleHQ+PC9zdmc+',
+  placeholder,
   className,
   onLoad,
   onError,
-  threshold = 0.1,
-  rootMargin = '50px',
+  threshold,
+  rootMargin,
   loading = 'lazy',
   ...props
 }: LazyImageProps) {
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isInView, setIsInView] = useState(false);
   const [hasError, setHasError] = useState(false);
-  const [currentSrc, setCurrentSrc] = useState<string>(placeholder);
-  const imgRef = useRef<HTMLImageElement>(null);
-  const observerRef = useRef<IntersectionObserver | null>(null);
-
-  // Check if Intersection Observer is supported
-  const isIntersectionObserverSupported = typeof IntersectionObserver !== 'undefined';
+  const [currentSrc, setCurrentSrc] = useState<string>(src);
 
   useEffect(() => {
-    // If Intersection Observer is not supported, load image immediately
-    if (!isIntersectionObserverSupported) {
-      setIsInView(true);
-      return;
-    }
-
-    // If loading is set to eager, load immediately
-    if (loading === 'eager') {
-      setIsInView(true);
-      return;
-    }
-
-    const imgElement = imgRef.current;
-    if (!imgElement) return;
-
-    // Create intersection observer
-    observerRef.current = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsInView(true);
-          observerRef.current?.disconnect();
-        }
-      },
-      {
-        threshold,
-        rootMargin,
-      }
-    );
-
-    observerRef.current.observe(imgElement);
-
-    return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-      }
-    };
-  }, [threshold, rootMargin, loading, isIntersectionObserverSupported]);
-
-  useEffect(() => {
-    if (isInView && !isLoaded && !hasError) {
-      // performanceMonitor.startImageLoad();
-      setCurrentSrc(src);
-    }
-  }, [isInView, isLoaded, hasError, src]);
+    // Always load the real image source immediately
+    setCurrentSrc(src);
+  }, [src]);
 
   const handleLoad = () => {
-    // performanceMonitor.endImageLoad(true);
     setIsLoaded(true);
     setHasError(false);
     onLoad?.();
   };
 
   const handleError = () => {
-    // performanceMonitor.endImageLoad(false);
     setHasError(true);
     if (fallbackSrc && currentSrc !== fallbackSrc) {
       setCurrentSrc(fallbackSrc);
-    } else {
-      // If fallback also fails, keep the placeholder
-      setCurrentSrc(placeholder);
+      setIsLoaded(false); // Reset loaded state to try fallback
     }
     onError?.();
   };
 
   return (
-    <div ref={imgRef} className={cn('relative overflow-hidden', className)}>
+    <div className={cn('relative overflow-hidden', className)}>
       <img
         {...props}
         src={currentSrc}
@@ -112,25 +61,26 @@ export function LazyImage({
         onLoad={handleLoad}
         onError={handleError}
         className={cn(
-          'w-full h-full object-cover transition-opacity duration-300',
-          isLoaded ? 'opacity-100' : 'opacity-50',
+          'w-full h-full object-cover transition-opacity duration-200',
+          isLoaded ? 'opacity-100' : 'opacity-70',
+          hasError && 'opacity-30',
           className
         )}
         loading={loading}
         decoding="async"
       />
       
-      {/* Loading indicator */}
-      {!isLoaded && !hasError && currentSrc !== placeholder && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 bg-opacity-50">
-          <div className="animate-pulse text-gray-600 text-sm font-medium">Loading...</div>
+      {/* Loading indicator - only show if not loaded and no error */}
+      {!isLoaded && !hasError && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-50 bg-opacity-80 pointer-events-none">
+          <div className="text-gray-500 text-xs">Loading...</div>
         </div>
       )}
       
       {/* Error indicator */}
-      {hasError && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-          <div className="text-gray-400 text-sm">Image unavailable</div>
+      {hasError && currentSrc === fallbackSrc && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 pointer-events-none">
+          <div className="text-gray-400 text-xs text-center px-2">Image unavailable</div>
         </div>
       )}
     </div>
