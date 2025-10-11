@@ -31,6 +31,11 @@ import {
 import { getCategoryColors } from "@/lib/category-colors";
 import { MobileSlider } from "@/components/ui/mobile-slider";
 import { SEOHead } from "@/components/seo/seo-head";
+import acumenLogo from "@assets/SE_Backers/Acumen.png";
+import dasraLogo from "@assets/SE_Backers/dasra.png";
+import graymattersLogo from "@assets/SE_Backers/Graymatters Capital.png";
+import millerCenterLogo from "@assets/SE_Backers/Miller Center.png";
+import yunusLogo from "@assets/SE_Backers/Yunus Social business.png";
 
 interface ProjectDetailProps {
   project: Project;
@@ -381,27 +386,27 @@ ${url}
                 {[
                   {
                     name: 'Acumen',
-                    logo: '/src/assets/SE_Backers/Acumen.png',
+                    logo: acumenLogo,
                     description: 'Global leader in social impact education and measurement frameworks'
                   },
                   {
                     name: 'Dasra',
-                    logo: '/src/assets/SE_Backers/dasra.png',
+                    logo: dasraLogo,
                     description: 'Strategic philanthropy foundation accelerating social change in India'
                   },
                   {
                     name: 'GrayMatters Capital',
-                    logo: '/src/assets/SE_Backers/Graymatters Capital.png',
+                    logo: graymattersLogo,
                     description: 'Impact investment firm focused on early-stage social enterprises'
                   },
                   {
                     name: 'Miller Center',
-                    logo: '/src/assets/SE_Backers/Miller Center.png',
+                    logo: millerCenterLogo,
                     description: 'Global accelerator for social entrepreneurs'
                   },
                   {
                     name: 'Yunus Social Business',
-                    logo: '/src/assets/SE_Backers/Yunus Social Business.png',
+                    logo: yunusLogo,
                     description: 'Pioneering social business model and impact investment'
                   }
                 ].map((institution, index) => (

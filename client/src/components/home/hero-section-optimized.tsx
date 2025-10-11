@@ -198,7 +198,7 @@ export function HeroSection() {
                           />
                           <div className="absolute inset-0 bg-black/40 group-hover:bg-black/0 transition-all duration-300"></div>
                         </>
-                        <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm text-gray-800 text-xs font-medium px-2 py-1 rounded-md shadow-sm">
+                        <div className="absolute bottom-2 left-2 bg-white/95 backdrop-blur-sm text-gray-800 text-xs font-medium px-2 py-1 rounded-md shadow-sm">
                           {project.category || 'Education'}
                         </div>
                       </>
@@ -243,7 +243,7 @@ export function HeroSection() {
                           />
                           <div className="absolute inset-0 bg-black/40 group-hover:bg-black/0 transition-all duration-300"></div>
                         </>
-                        <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm text-gray-800 text-xs font-medium px-2 py-1 rounded-md shadow-sm">
+                        <div className="absolute bottom-2 left-2 bg-white/95 backdrop-blur-sm text-gray-800 text-xs font-medium px-2 py-1 rounded-md shadow-sm">
                           {reward.category || 'Reward'}
                         </div>
                       </>

@@ -5,6 +5,11 @@ import { useProjectBySlug } from "@/hooks/use-project-by-slug";
 import { TYPOGRAPHY } from "@/constants/typography";
 import { BRAND_COLORS } from "@/constants/colors";
 import { MOBILE } from "@/constants/mobile";
+import acumenLogo from "@assets/SE_Backers/Acumen.png";
+import dasraLogo from "@assets/SE_Backers/dasra.png";
+import graymattersLogo from "@assets/SE_Backers/Graymatters Capital.png";
+import millerCenterLogo from "@assets/SE_Backers/Miller Center.png";
+import yunusLogo from "@assets/SE_Backers/Yunus Social business.png";
 
 export function InstitutionalProofSimple() {
   const [selectedInstitution, setSelectedInstitution] = useState<string | null>(null);
@@ -14,35 +19,35 @@ export function InstitutionalProofSimple() {
     {
       id: 'acumen',
       name: 'Acumen',
-      logo: '/src/assets/SE_Backers/Acumen.png',
+      logo: acumenLogo,
       description: 'Global leader in social impact education and measurement frameworks. As a social impact investor firm, they provide rigorous training programs for social entrepreneurs, develop comprehensive impact assessment methodologies, and invest in early-stage social enterprises worldwide.',
       website: 'https://acumenacademy.org'
     },
     {
       id: 'dasra',
       name: 'Dasra',
-      logo: '/src/assets/SE_Backers/dasra.png',
+      logo: dasraLogo,
       description: 'Strategic philanthropy foundation that works with philanthropists and social entrepreneurs to accelerate social change. Dasra has been instrumental in building the social enterprise ecosystem in India.',
       website: 'https://dasra.org'
     },
     {
       id: 'graymatters',
       name: 'GrayMatters Capital',
-      logo: '/src/assets/SE_Backers/Graymatters Capital.png',
+      logo: graymattersLogo,
       description: 'Impact investment firm focused on early-stage social enterprises. They provide capital and strategic support to entrepreneurs building scalable solutions for underserved communities.',
       website: 'https://graymatterscap.com'
     },
     {
       id: 'miller-center',
       name: 'Miller Center',
-      logo: '/src/assets/SE_Backers/Miller Center.png',
+      logo: millerCenterLogo,
       description: 'Global accelerator for social entrepreneurs. Miller Center provides mentorship, training, and access to capital for social enterprises working to solve the world\'s most pressing challenges.',
       website: 'https://www.millersocent.org'
     },
     {
       id: 'yunus',
       name: 'Yunus Social Business',
-      logo: '/src/assets/SE_Backers/Yunus Social business.png',
+      logo: yunusLogo,
       description: 'Founded by Nobel Peace Prize winner Muhammad Yunus, this organization creates and funds social businesses to solve social problems. They focus on sustainable business models that create positive social impact.',
       website: 'https://yunussb.com'
     }

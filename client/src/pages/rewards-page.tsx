@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { SEOHead } from "@/components/seo/seo-head";
 import { useQuery } from "@tanstack/react-query";
 import { Reward } from "@shared/schema";
@@ -6,10 +6,11 @@ import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Search, X } from "lucide-react";
+import { Loader2, Search, X, ExternalLink, ArrowUpRight } from "lucide-react";
 import { RewardCard } from "@/components/rewards/reward-card";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
+import { BRAND_COLORS } from "@/constants/colors";
 
 // Import logo images - using relative paths
 import milletarianLogo from "@assets/milletarian.png";
@@ -26,7 +27,26 @@ import syangsLogo from "@assets/Syangs logo_1750646598029.png";
 export default function RewardsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedBrand, setSelectedBrand] = useState<number | null>(null);
   const { user } = useAuth();
+  const popoverRef = useRef<HTMLDivElement>(null);
+
+  // Handle click outside to close popover
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
+        setSelectedBrand(null);
+      }
+    };
+
+    if (selectedBrand !== null) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [selectedBrand]);
 
   const { data: rewards, isLoading } = useQuery<Reward[]>({
     queryKey: ["rewards"],
@@ -105,18 +125,53 @@ export default function RewardsPage() {
     return matchesSearch && matchesCategory;
   });
 
-  // Define brand logos with their alt text
-  const brandLogos = [
-    { src: milletarianLogo, alt: "Milletarian" },
-    { src: adithiMilletsLogo, alt: "Adithi Millets" },
-    { src: allikaLogo, alt: "Allika" },
-    { src: khadyamLogo, alt: "Khadyam" },
-    { src: sankalpaArtVillageLogo, alt: "Sankalpa Art Village" },
-    { src: amazonLogo, alt: "Amazon" },
-    { src: flipkartLogo, alt: "Flipkart" },
-    { src: bonjiLogo, alt: "Bonji" },
-    { src: aaparLogo, alt: "Aapar" },
-    { src: syangsLogo, alt: "Syang's" },
+  // Define brand data with popover content - only 5 brands as specified
+  const brandData = [
+    {
+      id: 1,
+      name: "Bonji",
+      fullName: "Bonji - Beyond Just Natural",
+      logo: bonjiLogo,
+      description: "Anti-pollution skin & hair care products made with natural ingredients. Beyond just trends, basics, and looks - real science-backed solutions for city life damage.",
+      category: "Beauty & Wellness",
+      website: "https://bonji.in"
+    },
+    {
+      id: 2,
+      name: "Syangs",
+      fullName: "Syangs",
+      logo: syangsLogo,
+      description: "Organic food products and sustainable agriculture solutions supporting farmers and promoting healthy living through natural, chemical-free products.",
+      category: "Food & Agriculture",
+      website: "https://www.syangs.com"
+    },
+    {
+      id: 3,
+      name: "Sankalpa Art Village",
+      fullName: "Sankalpa Art Village",
+      logo: sankalpaArtVillageLogo,
+      description: "Sustainable living through natural dyed clothing, conscious baby clothing, handmade cutlery, wooden toys, and organics. Creating local livelihood with craft and reviving indigenous traditions.",
+      category: "Sustainable Lifestyle",
+      website: "https://www.sankalpaartvillage.com"
+    },
+    {
+      id: 4,
+      name: "Milletarian",
+      fullName: "Milletarian - Magic Malt",
+      logo: milletarianLogo,
+      description: "100% natural, no preservatives Ragi Malt that's nutrition simplified. Just add hot water for instant goodness of Finger Millet with added fiber - perfect for health enthusiasts and busy professionals.",
+      category: "Health & Nutrition",
+      website: "https://milletarian.netlify.app"
+    },
+    {
+      id: 5,
+      name: "Aapar",
+      fullName: "Aapar",
+      logo: aaparLogo,
+      description: "Sustainable lifestyle brand focused on traditional crafts and eco-friendly products supporting rural artisans and promoting conscious consumption.",
+      category: "Lifestyle",
+      website: "https://www.aapar.in"
+    }
   ];
 
   return (
@@ -210,17 +265,95 @@ export default function RewardsPage() {
             <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
               Redeem your Impact Points for exclusive rewards from these brands that you'll love
             </p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-              {brandLogos.map((logo, index) => (
-                <div 
-                  key={index} 
-                  className="bg-[#F9F9F9] rounded-md p-6 flex items-center justify-center h-32 transition-all duration-300"
-                >
-                  <img 
-                    src={logo.src} 
-                    alt={logo.alt}
-                    className="h-20 w-auto object-contain grayscale hover:grayscale-0 transition-all duration-300"
-                  />
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
+              {brandData.map((brand) => (
+                <div key={brand.id} className="relative">
+                  <div 
+                    className="bg-[#F9F9F9] rounded-md p-6 flex items-center justify-center h-32 transition-all duration-300 cursor-pointer hover:bg-gray-100"
+                    onClick={() => setSelectedBrand(selectedBrand === brand.id ? null : brand.id)}
+                  >
+                    <img 
+                      src={brand.logo} 
+                      alt={brand.name}
+                      className="h-20 w-auto object-contain grayscale hover:grayscale-0 transition-all duration-300"
+                    />
+                  </div>
+                  
+                  {/* Mobile-friendly full-width popover */}
+                  {selectedBrand === brand.id && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 md:hidden">
+                      <div 
+                        ref={popoverRef}
+                        className="w-full max-w-sm bg-white rounded-lg p-6 shadow-xl"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="flex items-start gap-3 mb-4">
+                          <img src={brand.logo} alt={brand.name} className="w-8 h-8 object-contain" />
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-sm text-gray-900">
+                              {brand.fullName}
+                            </h4>
+                            <span className="text-xs text-gray-500">
+                              {brand.category}
+                            </span>
+                          </div>
+                          <button 
+                            onClick={() => setSelectedBrand(null)}
+                            className="text-gray-400 hover:text-gray-600"
+                          >
+                            <X className="h-5 w-5" />
+                          </button>
+                        </div>
+                        <p className="text-sm leading-relaxed mb-4 text-gray-700">
+                          {brand.description}
+                        </p>
+                        <a 
+                          href={brand.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 text-sm font-medium text-orange-600 hover:text-orange-700"
+                        >
+                          Visit {brand.name}
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Desktop hover popover */}
+                  <div className="hidden md:block">
+                    {selectedBrand === brand.id && (
+                      <div 
+                        ref={popoverRef}
+                        className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 w-72 p-4 rounded-lg shadow-xl z-20 animate-in fade-in-0 zoom-in-95 bg-white border border-gray-200"
+                      >
+                        <div className="flex items-start gap-3 mb-3">
+                          <img src={brand.logo} alt={brand.name} className="w-8 h-8 object-contain" />
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-sm text-gray-900">
+                              {brand.fullName}
+                            </h4>
+                            <span className="text-xs text-gray-500">
+                              {brand.category}
+                            </span>
+                          </div>
+                          <ArrowUpRight className="h-4 w-4 text-gray-400" />
+                        </div>
+                        <p className="text-sm leading-relaxed mb-3 text-gray-700">
+                          {brand.description}
+                        </p>
+                        <a 
+                          href={brand.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 text-sm font-medium text-orange-600 hover:text-orange-700"
+                        >
+                          Visit {brand.name}
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      </div>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
