@@ -190,12 +190,15 @@ export function HeroSection() {
                   >
                     {project.imageUrl ? (
                       <>
-                        <img
-                          src={project.imageUrl}
-                          alt={project.title}
-                          className="w-full h-full object-cover opacity-40 group-hover:opacity-100 transition-all duration-300"
-                        />
-                        <div className="absolute bottom-2 left-2 bg-white text-gray-800 text-xs font-medium px-2 py-1 rounded-md shadow-sm">
+                        <>
+                          <img
+                            src={project.imageUrl}
+                            alt={project.title}
+                            className="w-full h-full object-cover group-hover:brightness-100 transition-all duration-300"
+                          />
+                          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/0 transition-all duration-300"></div>
+                        </>
+                        <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm text-gray-800 text-xs font-medium px-2 py-1 rounded-md shadow-sm">
                           {project.category || 'Education'}
                         </div>
                       </>
@@ -232,12 +235,15 @@ export function HeroSection() {
                   >
                     {reward.imageUrl ? (
                       <>
-                        <img
-                          src={reward.imageUrl}
-                          alt={reward.title}
-                          className="w-full h-full object-cover opacity-40 group-hover:opacity-100 transition-all duration-300"
-                        />
-                        <div className="absolute bottom-2 left-2 bg-white text-gray-800 text-xs font-medium px-2 py-1 rounded-md shadow-sm">
+                        <>
+                          <img
+                            src={reward.imageUrl}
+                            alt={reward.title}
+                            className="w-full h-full object-cover group-hover:brightness-100 transition-all duration-300"
+                          />
+                          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/0 transition-all duration-300"></div>
+                        </>
+                        <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm text-gray-800 text-xs font-medium px-2 py-1 rounded-md shadow-sm">
                           {reward.category || 'Reward'}
                         </div>
                       </>

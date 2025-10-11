@@ -744,7 +744,7 @@ ${url}
             {navigator.share && (
               <button
                 onClick={() => handleShare('native')}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 text-primary rounded-lg hover:bg-gray-200 transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 px-4 h-12 bg-gray-100 text-primary rounded-lg hover:bg-gray-200 transition-colors"
                 title="Share"
               >
                 <FaShareAlt className="h-4 w-4" />
@@ -755,7 +755,7 @@ ${url}
             {/* Support button - orange bg, white text */}
             <DonationButton 
               project={project}
-              className="flex-1 bg-primary hover:bg-primary/90 text-white font-semibold py-3"
+              className="flex-1 bg-primary hover:bg-primary/90 text-white font-semibold h-12"
             >
               Support This Project
             </DonationButton>

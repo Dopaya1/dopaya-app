@@ -140,7 +140,7 @@ export default function SocialEnterprisesPage() {
       date: "Recent feedback from bank",
       iconClassName: "text-red-500",
       titleClassName: "text-red-600",
-      className: "[grid-area:stack] translate-x-8 translate-y-4 hover:-translate-y-2 hover:scale-105 transition-all duration-500",
+      className: "[grid-area:stack] translate-x-4 translate-y-4 hover:-translate-y-2 hover:scale-105 transition-all duration-500",
     },
     {
       icon: <FileText className="size-4 text-purple-500" />,
@@ -149,7 +149,7 @@ export default function SocialEnterprisesPage() {
       date: "Recent feedback from grant maker",
       iconClassName: "text-purple-500",
       titleClassName: "text-purple-600",
-      className: "[grid-area:stack] translate-x-16 translate-y-8 hover:translate-y-4 hover:scale-105 transition-all duration-500",
+      className: "[grid-area:stack] translate-x-8 translate-y-8 hover:translate-y-4 hover:scale-105 transition-all duration-500",
     },
   ];
 
@@ -241,7 +241,7 @@ export default function SocialEnterprisesPage() {
         }}
       />
       
-      <div className={`transition-opacity duration-700 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+      <div className={`transition-opacity duration-700 overflow-x-hidden ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
       {/* Hero Section */}
       <section className="py-24" style={{ backgroundColor: BRAND_COLORS.bgBeige }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -384,15 +384,17 @@ export default function SocialEnterprisesPage() {
             </div>
 
             {/* Right Column - Founder Problem Cards */}
-            <div className="lg:w-1/2">
+            <div className="lg:w-1/2 w-full">
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
                 viewport={{ once: true }}
-                className="flex justify-center"
+                className="flex justify-center overflow-hidden"
               >
-                <DisplayCards cards={founderProblemCards} />
+                <div className="relative w-full max-w-xs md:max-w-sm">
+                  <DisplayCards cards={founderProblemCards} />
+                </div>
               </motion.div>
             </div>
           </div>
@@ -617,34 +619,52 @@ export default function SocialEnterprisesPage() {
                 </div>
                 
                 {/* Third row - 2 new benefits with checkmarks */}
-                <div className="flex items-start gap-3 group cursor-pointer" onClick={() => setShowFreeTooltip(!showFreeTooltip)}>
+                <div className="flex items-start gap-3">
                   <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center mt-0.5 flex-shrink-0">
                     <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                   </div>
-                  <div>
-                    <span className="text-gray-700 text-base font-medium">Free forever</span>
-                    <p className="text-gray-600 text-sm mt-2 leading-relaxed">No platform fees ever - you keep 100% of supporter funds</p>
-                    <div className={`${showFreeTooltip ? 'opacity-100' : 'opacity-0'} group-hover:opacity-100 transition-opacity duration-300 mt-2 p-3 bg-orange-50 rounded-lg border border-orange-200`}>
-                      <p className="text-orange-800 text-xs font-medium mb-1">Pilot partner benefits:</p>
-                      <p className="text-orange-700 text-xs">• 0% fees for life<br/>• Priority support<br/>• Early access to new features<br/>• Grandfathered pricing</p>
+                  <div className="relative flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-700 text-base font-medium">Free forever</span>
+                      <div className="relative group cursor-pointer">
+                        <div className="w-4 h-4 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors">
+                          <span className="text-xs font-semibold text-gray-600">?</span>
+                        </div>
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-300 z-10">
+                          <div className="p-3 bg-orange-50 rounded-lg border border-orange-200 shadow-lg whitespace-nowrap">
+                            <p className="text-orange-800 text-xs font-medium mb-1">Pilot partner benefits:</p>
+                            <p className="text-orange-700 text-xs">• 0% fees for life<br/>• Priority support<br/>• Early access to new features<br/>• Grandfathered pricing</p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
+                    <p className="text-gray-600 text-sm mt-2 leading-relaxed">No platform fees ever - you keep 100% of supporter funds</p>
                   </div>
                 </div>
-                <div className="flex items-start gap-3 group cursor-pointer" onClick={() => setShowTimeTooltip(!showTimeTooltip)}>
+                <div className="flex items-start gap-3">
                   <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center mt-0.5 flex-shrink-0">
                     <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                   </div>
-                  <div>
-                    <span className="text-gray-700 text-base font-medium">Minimal time commitment</span>
-                    <p className="text-gray-600 text-sm mt-2 leading-relaxed">Only 2-3 hours per month total</p>
-                    <div className={`${showTimeTooltip ? 'opacity-100' : 'opacity-0'} group-hover:opacity-100 transition-opacity duration-300 mt-2 p-3 bg-orange-50 rounded-lg border border-orange-200`}>
-                      <p className="text-orange-800 text-xs font-medium mb-1">What you provide:</p>
-                      <p className="text-orange-700 text-xs">• Monthly impact update (5 min)<br/>• Quarterly check-in (15 min)<br/>• Annual report (we help create)<br/>• Onboarding call to understand your business</p>
+                  <div className="relative flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-700 text-base font-medium">Minimal time commitment</span>
+                      <div className="relative group cursor-pointer">
+                        <div className="w-4 h-4 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors">
+                          <span className="text-xs font-semibold text-gray-600">?</span>
+                        </div>
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-300 z-10">
+                          <div className="p-3 bg-orange-50 rounded-lg border border-orange-200 shadow-lg whitespace-nowrap">
+                            <p className="text-orange-800 text-xs font-medium mb-1">What you provide:</p>
+                            <p className="text-orange-700 text-xs">• Monthly impact update (5 min)<br/>• Quarterly check-in (15 min)<br/>• Annual report (we help create)<br/>• Onboarding call to understand your business</p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
+                    <p className="text-gray-600 text-sm mt-2 leading-relaxed">Only 2-3 hours per month total</p>
                   </div>
                 </div>
               </div>
@@ -833,7 +853,7 @@ export default function SocialEnterprisesPage() {
         <div className="flex justify-between items-center">
           <p className="font-medium text-gray-800">Ready to grow your impact?</p>
           <a href="https://tally.so/r/3EM0vA" target="_blank" rel="noopener noreferrer">
-            <Button size="sm" className="text-white" style={{ backgroundColor: BRAND_COLORS.primaryOrange }}>
+            <Button size="sm" className="text-white px-4 py-2" style={{ backgroundColor: BRAND_COLORS.primaryOrange }}>
               Apply Now
             </Button>
           </a>

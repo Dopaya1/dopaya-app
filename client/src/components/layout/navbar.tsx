@@ -136,7 +136,7 @@ export function Navbar() {
           </div>
           
           {/* Mobile menu button */}
-          <div className="md:hidden items-center">
+          <div className="md:hidden flex items-center">
             <Button variant="ghost" onClick={toggleMenu} aria-expanded={isMenuOpen} aria-controls="mobile-menu">
               <span className="sr-only">Open main menu</span>
               {isMenuOpen ? (

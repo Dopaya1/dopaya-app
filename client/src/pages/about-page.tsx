@@ -150,9 +150,9 @@ export default function AboutPageV2() {
 
 
         {/* SECTION 5 - Team */}
-        <section className="py-24">
+        <section className="py-16 md:py-20">
           <div className="container mx-auto px-4">
-            <div className="text-center mb-12">
+            <div className="text-center mb-8 md:mb-10">
               <h2 className={`${TYPOGRAPHY.section} mb-4`}>The community behind Dopaya</h2>
               <p className={`${TYPOGRAPHY.body} text-gray-600`}>No fancy titles. Just dedication.</p>
             </div>
@@ -220,7 +220,7 @@ export default function AboutPageV2() {
         </section>
 
         {/* SECTION 6 - Final CTA Block */}
-        <section className="py-24">
+        <section className="py-12 md:py-16">
           <div className="container mx-auto px-4">
             <div className="text-center bg-[#f2662d] py-12 px-6 rounded-lg text-white">
               <h2 className="text-2xl md:text-3xl font-bold mb-6">Ready to join our founding member community?</h2>

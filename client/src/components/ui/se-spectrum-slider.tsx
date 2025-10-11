@@ -152,18 +152,18 @@ const SESpectrumSlider = React.forwardRef<HTMLDivElement, SESpectrumSliderProps>
     return (
       <motion.div
         ref={ref}
-        className={`relative flex w-full items-center justify-center overflow-hidden py-12 md:py-16 lg:py-20 ${className}`}
+        className={`relative flex w-full items-center justify-center overflow-hidden py-8 md:py-12 lg:py-14 ${className}`}
         animate={{ backgroundColor: currentAnim.bgColor }}
         transition={transition}
         {...props}
       >
         <div className="container mx-auto px-4">
           {/* Header */}
-          <div className="text-center mb-12 md:mb-16 lg:mb-20">
-            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-4 md:mb-6 text-black">
+          <div className="text-center mb-8 md:mb-10 lg:mb-12">
+            <h2 className="text-xl md:text-2xl lg:text-3xl font-bold mb-3 md:mb-4 text-black">
               Self-sustainable businesses driving long-term change
             </h2>
-            <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
+            <p className="text-base md:text-lg text-gray-600 max-w-3xl mx-auto px-4">
               To make impact investments more effective, we support social enterprises that combine nonprofit missions with business sustainability.
             </p>
           </div>
@@ -174,7 +174,7 @@ const SESpectrumSlider = React.forwardRef<HTMLDivElement, SESpectrumSliderProps>
               <div className="flex items-end justify-between w-full px-4 md:px-8">
                 <div className="flex-1 text-left">
                   <motion.span 
-                    className={`text-lg md:text-xl lg:text-2xl ${selectedIndex === 0 ? 'font-bold' : 'font-medium'}`}
+                    className={`text-base md:text-lg lg:text-xl ${selectedIndex === 0 ? 'font-bold' : 'font-medium'}`}
                     animate={{ 
                       color: selectedIndex === 0 ? "#2563eb" : "#9ca3af",
                       opacity: selectedIndex === 0 ? 1 : 0.6
@@ -186,9 +186,9 @@ const SESpectrumSlider = React.forwardRef<HTMLDivElement, SESpectrumSliderProps>
                 </div>
                 
                 <div className="flex-1 text-center">
-                  <div className="flex flex-col items-center gap-3">
+                  <div className="flex flex-col items-center gap-2">
                     <motion.div
-                      className="w-24 h-24 bg-white rounded-lg shadow-sm p-5 flex items-center justify-center"
+                      className="w-16 h-16 md:w-20 md:h-20 bg-white rounded-lg shadow-sm p-3 md:p-4 flex items-center justify-center"
                       animate={{ 
                         opacity: selectedIndex === 1 ? 1 : 0.6,
                         scale: selectedIndex === 1 ? 1 : 0.9
@@ -202,7 +202,7 @@ const SESpectrumSlider = React.forwardRef<HTMLDivElement, SESpectrumSliderProps>
                       />
                     </motion.div>
                     <motion.span 
-                      className={`text-lg md:text-xl lg:text-2xl ${selectedIndex === 1 ? 'font-bold' : 'font-medium'}`}
+                      className={`text-base md:text-lg lg:text-xl ${selectedIndex === 1 ? 'font-bold' : 'font-medium'}`}
                       animate={{ 
                         color: selectedIndex === 1 ? currentAnim.titleColor : "#9ca3af",
                         opacity: selectedIndex === 1 ? 1 : 0.6
@@ -216,7 +216,7 @@ const SESpectrumSlider = React.forwardRef<HTMLDivElement, SESpectrumSliderProps>
                 
                 <div className="flex-1 text-right">
                   <motion.span 
-                    className={`text-lg md:text-xl lg:text-2xl ${selectedIndex === 2 ? 'font-bold' : 'font-medium'}`}
+                    className={`text-base md:text-lg lg:text-xl ${selectedIndex === 2 ? 'font-bold' : 'font-medium'}`}
                     animate={{ 
                       color: selectedIndex === 2 ? "#16a34a" : "#9ca3af",
                       opacity: selectedIndex === 2 ? 1 : 0.6
@@ -242,7 +242,7 @@ const SESpectrumSlider = React.forwardRef<HTMLDivElement, SESpectrumSliderProps>
                 {spectrumStates.map((_, i) => (
                   <button
                     key={i}
-                    className="z-[2] h-8 w-8 rounded-full absolute top-1/2 -translate-y-1/2 border-4 border-white shadow-lg hover:scale-110 transition-transform"
+                    className="z-[2] h-6 w-6 md:h-7 md:w-7 rounded-full absolute top-1/2 -translate-y-1/2 border-3 border-white shadow-md hover:scale-110 transition-transform"
                     onClick={() => setSelectedIndex(i)}
                     style={{ 
                       left: `${i * 50}%`,
