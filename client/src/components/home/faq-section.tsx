@@ -10,27 +10,27 @@ import { BRAND_COLORS } from "@/constants/colors";
 export function FAQSection() {
   const faqs = [
     {
-      question: "Why should I donate to social enterprises instead of NGOs?",
-      answer: "Social enterprises use sustainable business models to create long-term impact. Unlike NGOs that often rely on recurring donations, social enterprises reinvest earnings into their mission — making your donation go further. Some even deliver a measurable social return on investment (SROI) of 2×, 3× or more."
+      question: "Why should I support social enterprises instead of NGOs?",
+      answer: "Social enterprises use sustainable business models to create long-term impact. Unlike NGOs that often rely on recurring donations, social enterprises reinvest earnings into their mission — making your contribution go further. Some even deliver a measurable social return on investment (SROI) of 2×, 3× or more."
     },
     {
       question: "How does Dopaya make money?",
       answer: "Currently, 100% of your investment goes directly to social enterprises. We're supported by small community contributions and brand partnership fees. Our goal is to keep platform costs minimal while maximizing impact."
     },
     {
-      question: "How does Dopaya ensure donations are used correctly?",
-      answer: "Every social enterprise on Dopaya goes through a careful vetting process. We assess their impact model, financials, and governance to ensure credibility. We also track how funds are used and offer donors clear visibility through updates and dashboards."
+      question: "How does Dopaya ensure contributions are used correctly?",
+      answer: "Every social enterprise on Dopaya goes through a careful vetting process. We assess their impact model, financials, and governance to ensure credibility. We also track how funds are used and offer supporters clear visibility through updates and dashboards."
     },
     {
-      question: "Can I choose where my donation goes?",
+      question: "Can I choose where my contribution goes?",
       answer: "Yes. You can explore our list of vetted social enterprises and choose who to support — or let Dopaya recommend an initiative based on your interests. Either way, your impact is real, transparent, and trackable."
     },
     {
-      question: "What kind of rewards do donors receive?",
-      answer: "Every donation earns you Impact Points — which unlock badges, perks, and access to curated brand experiences. The more you give or refer, the more rewarding your journey becomes."
+      question: "What kind of rewards do supporters receive?",
+      answer: "Every contribution earns you Impact Points — which unlock badges, perks, and access to curated brand experiences. The more you give or refer, the more rewarding your journey becomes."
     },
     {
-      question: "Are donations tax-deductible?",
+      question: "Are contributions tax-deductible?",
       answer: "In many cases, yes. We're working to expand this and provide tax-friendly options for more users globally."
     }
   ];

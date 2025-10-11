@@ -14,8 +14,8 @@ export default function FAQPage() {
     <>
       <SEOHead
         title="FAQ | Frequently Asked Questions About Dopaya | Social Impact Platform"
-        description="Get answers to common questions about Dopaya, social enterprise donations, platform fees, impact points, and how to join our community of changemakers."
-        keywords="FAQ, frequently asked questions, social enterprise donations, platform fees, NGO vs social enterprise, donor questions, impact points, social impact platform, how does dopaya work"
+        description="Get answers to common questions about Dopaya, social enterprise contributions, platform fees, impact points, and how to join our community of changemakers."
+        keywords="FAQ, frequently asked questions, social enterprise contributions, platform fees, NGO vs social enterprise, supporter questions, impact points, social impact platform, how does dopaya work"
         canonicalUrl="https://dopaya.org/faq"
         ogType="website"
         ogImage="https://dopaya.org/og-faq.jpg"
@@ -36,7 +36,7 @@ export default function FAQPage() {
               "name": "What are the platform fees?",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "Dopaya charges 0% platform fees. 100% of your donation goes directly to the social enterprise you choose to support."
+                "text": "Dopaya charges 0% platform fees. 100% of your contribution goes directly to the social enterprise you choose to support."
               }
             },
             {
@@ -58,16 +58,16 @@ export default function FAQPage() {
 function FAQContent() {
   const faqs = [
     {
-      question: "Why should I donate to social enterprises instead of NGOs?",
-      answer: "Social enterprises use sustainable business models to create long-term impact. Unlike NGOs that often rely on recurring donations, social enterprises reinvest earnings into their mission — making your donation go further. Some even deliver a measurable social return on investment (SROI) of 2×, 3× or more."
+      question: "Why should I support social enterprises instead of NGOs?",
+      answer: "Social enterprises use sustainable business models to create long-term impact. Unlike NGOs that often rely on recurring donations, social enterprises reinvest earnings into their mission — making your contribution go further. Some even deliver a measurable social return on investment (SROI) of 2×, 3× or more."
     },
     {
-      question: "How much does Dopaya take from donations?",
-      answer: "Currently, 100% of your donation goes directly to social enterprises. We're supported by small community contributions and brand partnership fees. Our goal is to keep platform costs minimal while maximizing impact."
+      question: "How much does Dopaya take from contributions?",
+      answer: "Currently, 100% of your contribution goes directly to social enterprises. We're supported by small community contributions and brand partnership fees. Our goal is to keep platform costs minimal while maximizing impact."
     },
     {
-      question: "How does Dopaya ensure donations are used correctly?",
-      answer: "Every social enterprise on Dopaya goes through a careful vetting process. We assess their impact model, financials, and governance to ensure credibility. We also track how funds are used and offer donors clear visibility through updates and dashboards."
+      question: "How does Dopaya ensure contributions are used correctly?",
+      answer: "Every social enterprise on Dopaya goes through a careful vetting process. We assess their impact model, financials, and governance to ensure credibility. We also track how funds are used and offer supporters clear visibility through updates and dashboards."
     },
     {
       question: "How can my social enterprise join Dopaya?",
@@ -89,7 +89,7 @@ function FAQContent() {
       question: "How do brands collaborate with Dopaya?",
       answer: (
         <span>
-          Brands can offer rewards, product experiences, or exclusive perks for our donor community. They simply submit a form, and we'll get in touch to co-create impact campaigns. It's a unique way to connect with socially conscious, Gen Z and Millennial audiences.{" "}
+          Brands can offer rewards, product experiences, or exclusive perks for our supporter community. They simply submit a form, and we'll get in touch to co-create impact campaigns. It's a unique way to connect with socially conscious, Gen Z and Millennial audiences.{" "}
           <a 
             href="https://tally.so/r/3lvVg5" 
             target="_blank" 
@@ -107,18 +107,18 @@ function FAQContent() {
     },
     {
       question: "Is there any cost for social enterprises?",
-      answer: "Never. We exist to support social enterprises and help them access funding streams without lifting a finger. There are no platform fees — just more reach, more donors, and more time to focus on your mission."
+      answer: "Never. We exist to support social enterprises and help them access funding streams without lifting a finger. There are no platform fees — just more reach, more supporters, and more time to focus on your mission."
     },
     {
-      question: "Can I choose where my donation goes?",
+      question: "Can I choose where my contribution goes?",
       answer: "Yes. You can explore our list of vetted social enterprises and choose who to support — or let Dopaya recommend an initiative based on your interests. Either way, your impact is real, transparent, and trackable."
     },
     {
-      question: "What kind of rewards do donors receive?",
-      answer: "Every donation earns you Impact Points — which unlock badges, perks, and access to curated brand experiences. The more you give or refer, the more rewarding your journey becomes."
+      question: "What kind of rewards do supporters receive?",
+      answer: "Every contribution earns you Impact Points — which unlock badges, perks, and access to curated brand experiences. The more you give or refer, the more rewarding your journey becomes."
     },
     {
-      question: "Are donations tax-deductible?",
+      question: "Are contributions tax-deductible?",
       answer: "In many cases, yes. We're working to expand this and provide tax-friendly options for more users globally."
     }
   ];
