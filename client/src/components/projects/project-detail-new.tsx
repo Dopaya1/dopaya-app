@@ -89,13 +89,32 @@ export function ProjectDetailNew({ project }: ProjectDetailProps) {
   };
 
   // Function to handle social media sharing with proper text, link, and image
-  const handleShare = (platform: string) => {
+  const handleShare = async (platform: string) => {
     console.log(`Sharing to ${platform}...`);
     const url = window.location.href;
     const title = project.title;
     const shareMessage = `I am supporting ${title} to make a difference! 🌟`;
     const description = project.description?.substring(0, 150) || 'Check out this amazing social impact project';
     const imageUrl = project.imageUrl || project.coverImage || '/src/assets/Dopaya Logo.png';
+    
+    // Try native Web Share API first (works great on mobile!)
+    if (platform === 'native' && navigator.share) {
+      try {
+        await navigator.share({
+          title: shareMessage,
+          text: `${shareMessage}\n\n${description}`,
+          url: url
+        });
+        toast({
+          title: "✅ Shared Successfully!",
+          description: "Thanks for spreading the word!",
+        });
+        return;
+      } catch (error) {
+        console.log('Web Share API failed or cancelled:', error);
+        // User cancelled or API not supported, continue to platform-specific
+      }
+    }
     
     let shareUrl = '';
     
@@ -120,9 +139,17 @@ Together we can create positive change!`;
         
       case 'facebook':
         console.log('Opening Facebook sharer...');
-        // Facebook sharer with custom text in the URL (will use OG tags from page)
-        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(shareMessage)}`;
+        // Use Facebook's Dialog API which reads Open Graph tags from the page
+        // This will show the image, title, and description automatically
+        shareUrl = `https://www.facebook.com/dialog/share?app_id=YOUR_APP_ID&display=popup&href=${encodeURIComponent(url)}&redirect_uri=${encodeURIComponent(url)}`;
+        // Fallback to basic sharer if Dialog API doesn't work
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
         console.log('Facebook URL:', shareUrl);
+        
+        toast({
+          title: "📘 Sharing to Facebook",
+          description: "Facebook will pull the image and description from the page!",
+        });
         break;
         
       case 'instagram':
@@ -144,22 +171,17 @@ ${url}
           navigator.clipboard.writeText(instagramText).then(() => {
             console.log('Text copied successfully!');
             toast({
-              title: "📋 Ready to Share!",
-              description: "Caption copied! Open Instagram and paste it with the project image.",
+              title: "📋 Instagram Caption Ready!",
+              description: "Caption copied! Now:\n1. Save the project image to your phone\n2. Open Instagram\n3. Create a post with the image\n4. Paste the caption",
+              duration: 8000,
             });
-            // Try to open Instagram app or web version
-            setTimeout(() => {
-              console.log('Opening Instagram...');
-              window.open('https://www.instagram.com/', '_blank');
-            }, 1500);
+            // Don't auto-open Instagram - let user save image first
           }).catch((error) => {
             console.error('Clipboard API failed:', error);
-            // Fallback for clipboard API failure
             copyToClipboardFallback(instagramText);
           });
         } else {
           console.log('Using fallback clipboard method...');
-          // Fallback for older browsers
           copyToClipboardFallback(instagramText);
         }
         return;
@@ -170,7 +192,7 @@ ${url}
         break;
         
       case 'linkedin':
-        shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}&title=${encodeURIComponent(shareMessage)}&summary=${encodeURIComponent(description)}`;
+        shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
         break;
         
       default:
@@ -706,6 +728,18 @@ ${url}
         <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-100 p-4 flex justify-between items-center z-50 safe-area-pb">
           <div className="flex items-center space-x-2">
             <span className="text-sm font-medium text-gray-900 hidden sm:block">Share this project</span>
+            
+            {/* Native share button (mobile) */}
+            {navigator.share && (
+              <button
+                onClick={() => handleShare('native')}
+                className="p-2 text-gray-900 hover:text-primary transition-colors md:hidden"
+                title="Share"
+              >
+                <FaGlobe className="h-5 w-5" />
+              </button>
+            )}
+            
             <button
               onClick={() => handleShare('email')}
               className="p-2 text-gray-900 hover:text-primary transition-colors"
