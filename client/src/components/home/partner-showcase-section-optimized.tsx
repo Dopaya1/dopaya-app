@@ -54,7 +54,7 @@ const impactBrands = [
     hoverDescription: "Sustainable lifestyle brand focused on traditional crafts and eco-friendly products supporting rural artisans and promoting conscious consumption.",
     category: "Lifestyle",
     website: "https://www.aapar.in",
-    featured: false
+    featured: true
   },
   {
     id: 5,
@@ -64,7 +64,7 @@ const impactBrands = [
     hoverDescription: "Organic food products and sustainable agriculture solutions supporting farmers and promoting healthy living through natural, chemical-free products.",
     category: "Food & Agriculture",
     website: "https://www.syangs.com",
-    featured: false
+    featured: true
   }
 ];
 
