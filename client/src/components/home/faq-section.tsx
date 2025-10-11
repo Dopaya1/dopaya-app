@@ -23,7 +23,7 @@ export function FAQSection() {
     },
     {
       question: "Can I choose where my donation goes?",
-      answer: "Yes. You can explore our list of vetted social enterprises and choose who to support — or let Dopaya recommend projects based on your interests. Either way, your impact is real, transparent, and trackable."
+      answer: "Yes. You can explore our list of vetted social enterprises and choose who to support — or let Dopaya recommend an initiative based on your interests. Either way, your impact is real, transparent, and trackable."
     },
     {
       question: "What kind of rewards do donors receive?",

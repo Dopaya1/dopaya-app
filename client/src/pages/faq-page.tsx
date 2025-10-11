@@ -28,7 +28,7 @@ export default function FAQPage() {
               "name": "How does Dopaya work?",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "Dopaya connects supporters with verified social enterprises. When you support a project, you earn impact points that can be redeemed for exclusive rewards from sustainable brands."
+                "text": "Dopaya connects supporters with verified social enterprises. When you support a social enterprise, you earn impact points that can be redeemed for exclusive rewards from sustainable brands."
               }
             },
             {
@@ -111,7 +111,7 @@ function FAQContent() {
     },
     {
       question: "Can I choose where my donation goes?",
-      answer: "Yes. You can explore our list of vetted social enterprises and choose who to support — or let Dopaya recommend projects based on your interests. Either way, your impact is real, transparent, and trackable."
+      answer: "Yes. You can explore our list of vetted social enterprises and choose who to support — or let Dopaya recommend an initiative based on your interests. Either way, your impact is real, transparent, and trackable."
     },
     {
       question: "What kind of rewards do donors receive?",
