@@ -419,7 +419,7 @@ export function ImpactDashboardSection() {
 
       {/* VARIANT 1: Feature Steps (Current) */}
       {activeVariant === 'feature-steps' && (
-    <section id="impact-dashboard" className="py-24" style={{ backgroundColor: BRAND_COLORS.bgBeige }}>
+    <section id="impact-dashboard" className="py-24 relative" style={{ backgroundColor: BRAND_COLORS.bgBeige }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}
@@ -598,11 +598,11 @@ export function ImpactDashboardSection() {
                         rotate: Math.floor(Math.random() * 21) - 10,
                       }}
                       animate={{
-                        opacity: index === currentFeature ? 1 : 0.7,
+                        opacity: index === currentFeature ? 1 : 0,
                         scale: index === currentFeature ? 1 : 0.95,
                         z: index === currentFeature ? 0 : -100,
                         rotate: index === currentFeature ? 0 : Math.floor(Math.random() * 21) - 10,
-                        zIndex: index === currentFeature ? 999 : features.length + 2 - index,
+                        zIndex: index === currentFeature ? 1 : features.length + 2 - index,
                         y: index === currentFeature ? [0, -40, 0] : 0,
                       }}
                       exit={{
@@ -692,7 +692,7 @@ export function ImpactDashboardSection() {
               </div>
 
               {/* Benefits Grid */}
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+              <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
                 <div className="text-center p-4 rounded-xl" style={{ backgroundColor: BRAND_COLORS.bgWhite, border: `1px solid ${BRAND_COLORS.borderSubtle}` }}>
                   <div className="w-10 h-10 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FFF4ED' }}>
                     <span className="text-lg" style={{ color: BRAND_COLORS.primaryOrange }}>🧡</span>

@@ -26,7 +26,8 @@ export function ContactSection() {
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
-            className="bg-white rounded-xl shadow-lg overflow-hidden"
+            className="bg-white rounded-xl shadow-lg overflow-hidden flex items-center justify-center"
+            style={{ minHeight: '300px' }}
           >
             <OptimizedImage
               src={patrickImg}
@@ -37,6 +38,7 @@ export function ContactSection() {
               className="w-full h-full object-cover"
               fallbackSrc="/placeholder-avatar.png"
               onError={() => console.warn('Failed to load Patrick image')}
+              priority={true}
             />
           </motion.div>
 

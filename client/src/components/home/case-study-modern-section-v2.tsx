@@ -197,10 +197,10 @@ export function CaseStudyModernSectionV2() {
                       </div>
                     )}
                     
-                    {/* Mission Overlay */}
-                    <div className="absolute inset-0 bg-black/60 flex items-end p-3">
+                    {/* Mission Overlay - Dark background for text visibility */}
+                    <div className="absolute inset-0 flex items-end p-3">
                       <div className="text-white">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-2 mb-1 bg-black/60 px-2 py-1 rounded-md">
                           <IconComponent className="h-4 w-4" />
                           <h3 className="font-semibold text-sm">
                             {project.mission || project.category}
@@ -275,10 +275,10 @@ export function CaseStudyModernSectionV2() {
                       </div>
                     )}
                     
-                    {/* Mission Overlay */}
-                    <div className="absolute inset-0 bg-black/60 flex items-end p-3">
+                    {/* Mission Overlay - Dark background for text visibility */}
+                    <div className="absolute inset-0 flex items-end p-3">
                       <div className="text-white">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-2 mb-1 bg-black/60 px-2 py-1 rounded-md">
                           <IconComponent className="h-4 w-4" />
                           <h3 className="font-semibold text-sm">
                             {project.mission || project.category}
