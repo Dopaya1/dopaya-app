@@ -14,16 +14,16 @@ export default function HomePage() {
         title="Dopaya - Social Impact Platform | Support Social Enterprises & Earn Rewards"
         description="Join Dopaya to support high-impact social enterprises, earn impact points, and drive meaningful change. 100% of donations go to verified social causes. Get exclusive rewards for your impact."
         keywords="social impact platform, impact investing, social enterprise funding, donate social causes, impact rewards, social impact points, sustainable development, social enterprise support"
-        canonicalUrl="https://dopaya.org/"
+        canonicalUrl="https://dopaya.com/"
         ogType="website"
-        ogImage="https://dopaya.org/og-homepage.jpg"
+        ogImage="https://dopaya.com/og-homepage.jpg"
         structuredData={{
           "@context": "https://schema.org",
           "@type": "Organization",
           "name": "Dopaya",
           "description": "Social impact platform connecting supporters with verified social enterprises",
-          "url": "https://dopaya.org",
-          "logo": "https://dopaya.org/logo.png",
+          "url": "https://dopaya.com",
+          "logo": "https://dopaya.com/logo.png",
           "foundingDate": "2024",
           "industry": "Social Impact Technology",
           "sameAs": [
@@ -60,10 +60,10 @@ export default function HomePage() {
           "@type": "WebSite",
           "name": "Dopaya",
           "description": "Social impact platform connecting supporters with verified social enterprises",
-          "url": "https://dopaya.org",
+          "url": "https://dopaya.com",
           "potentialAction": {
             "@type": "SearchAction",
-            "target": "https://dopaya.org/projects?search={search_term_string}",
+            "target": "https://dopaya.com/projects?search={search_term_string}",
             "query-input": "required name=search_term_string"
           }
         })}

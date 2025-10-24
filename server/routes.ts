@@ -666,7 +666,7 @@ Disallow: /admin
 Disallow: /api/
 
 # Dynamic sitemap location (includes all project pages)
-Sitemap: https://dopaya.org/sitemap.xml
+Sitemap: https://dopaya.com/sitemap.xml
 
 # Crawl-delay (optional, set if needed)
 # Crawl-delay: 1`;

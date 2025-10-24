@@ -8,7 +8,7 @@ export interface SitemapUrl {
 }
 
 export async function generateSitemap(): Promise<{ staticPages: SitemapUrl[], projectPages: SitemapUrl[] }> {
-  const baseUrl = 'https://dopaya.org';
+  const baseUrl = 'https://dopaya.com';
   
   // Static pages with their priorities and change frequencies
   const staticPages: SitemapUrl[] = [
@@ -134,7 +134,7 @@ export function generateSitemapXML(staticPages: SitemapUrl[], projectPages: Site
     // Add image sitemap for project pages
     const imageTags = page.url.includes('/project/') ? 
       `\n    <image:image>
-      <image:loc>https://dopaya.org/og-project.jpg</image:loc>
+      <image:loc>https://dopaya.com/og-project.jpg</image:loc>
       <image:title>Social Impact Project</image:title>
       <image:caption>Support this social enterprise and make a real impact</image:caption>
     </image:image>` : '';

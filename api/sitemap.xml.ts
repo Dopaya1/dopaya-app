@@ -2,7 +2,7 @@ import { supabase } from '../server/supabase';
 
 export default async function handler(req: any, res: any) {
   try {
-    const baseUrl = 'https://dopaya.org';
+    const baseUrl = 'https://dopaya.com';
     
     // Static pages
     const staticPages = [
@@ -111,7 +111,7 @@ export default async function handler(req: any, res: any) {
       
       const imageTags = page.url.includes('/project/') ? 
         `\n    <image:image>
-      <image:loc>https://dopaya.org/og-project.jpg</image:loc>
+      <image:loc>https://dopaya.com/og-project.jpg</image:loc>
       <image:title>Social Impact Project</image:title>
       <image:caption>Support this social enterprise and make a real impact</image:caption>
     </image:image>` : '';
