@@ -692,8 +692,8 @@ export function ImpactDashboardSection() {
               </div>
 
               {/* Benefits Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-                <div className="text-center p-4 rounded-xl" style={{ backgroundColor: BRAND_COLORS.bgWhite, border: `1px solid ${BRAND_COLORS.borderSubtle}` }}>
+              <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-12">
+                <div className="text-center p-6 md:p-4 rounded-xl" style={{ backgroundColor: BRAND_COLORS.bgWhite, border: `1px solid ${BRAND_COLORS.borderSubtle}` }}>
                   <div className="w-10 h-10 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FFF4ED' }}>
                     <span className="text-lg" style={{ color: BRAND_COLORS.primaryOrange }}>🧡</span>
                   </div>
@@ -701,7 +701,7 @@ export function ImpactDashboardSection() {
                   <p className="text-xs" style={{ color: BRAND_COLORS.textSecondary }}>Get instant access to $5 in rewards upon signup</p>
                 </div>
 
-                <div className="text-center p-4 rounded-xl" style={{ backgroundColor: BRAND_COLORS.bgWhite, border: `1px solid ${BRAND_COLORS.borderSubtle}` }}>
+                <div className="text-center p-6 md:p-4 rounded-xl" style={{ backgroundColor: BRAND_COLORS.bgWhite, border: `1px solid ${BRAND_COLORS.borderSubtle}` }}>
                   <div className="w-10 h-10 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FFF4ED' }}>
                     <span className="text-lg" style={{ color: BRAND_COLORS.primaryOrange }}>🧡</span>
                   </div>
@@ -709,7 +709,7 @@ export function ImpactDashboardSection() {
                   <p className="text-xs" style={{ color: BRAND_COLORS.textSecondary }}>Permanent "Founder" status with exclusive benefits forever</p>
                 </div>
 
-                <div className="text-center p-4 rounded-xl" style={{ backgroundColor: BRAND_COLORS.bgWhite, border: `1px solid ${BRAND_COLORS.borderSubtle}` }}>
+                <div className="text-center p-6 md:p-4 rounded-xl" style={{ backgroundColor: BRAND_COLORS.bgWhite, border: `1px solid ${BRAND_COLORS.borderSubtle}` }}>
                   <div className="w-10 h-10 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FFF4ED' }}>
                     <span className="text-lg" style={{ color: BRAND_COLORS.primaryOrange }}>🧡</span>
                   </div>
@@ -717,7 +717,7 @@ export function ImpactDashboardSection() {
                   <p className="text-xs" style={{ color: BRAND_COLORS.textSecondary }}>Access to exclusive rewards from sustainable brands</p>
                 </div>
 
-                <div className="text-center p-4 rounded-xl" style={{ backgroundColor: BRAND_COLORS.bgWhite, border: `1px solid ${BRAND_COLORS.borderSubtle}` }}>
+                <div className="text-center p-6 md:p-4 rounded-xl" style={{ backgroundColor: BRAND_COLORS.bgWhite, border: `1px solid ${BRAND_COLORS.borderSubtle}` }}>
                   <div className="w-10 h-10 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FFF4ED' }}>
                     <span className="text-lg" style={{ color: BRAND_COLORS.primaryOrange }}>🧡</span>
                   </div>
