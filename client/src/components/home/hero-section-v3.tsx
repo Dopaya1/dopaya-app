@@ -381,14 +381,14 @@ export function HeroSectionV3() {
             {/* Top: Projects Slider - 4 cards with half-visible sides */}
             <div className="mb-6">
               <div 
-                className="flex space-x-3 overflow-hidden"
+                className="flex space-x-2 sm:space-x-3 overflow-hidden"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               >
-                {/* Static projects display - show 4 with last one cut off */}
-                {projects.slice(0, 4).map((project, index) => (
+                {/* Static projects display - show 3 on mobile, 4 on desktop */}
+                {projects.slice(0, 3).map((project, index) => (
                   <div
                     key={`${project.id}-${index}`}
-                    className={`flex-shrink-0 w-36 h-36 rounded-xl overflow-hidden relative group cursor-pointer transition-all duration-300 ${
+                    className={`flex-shrink-0 w-32 h-32 sm:w-36 sm:h-36 rounded-xl overflow-hidden relative group cursor-pointer transition-all duration-300 ${
                       index === 0 ? 'ml-2' : ''
                     }`}
                     style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
@@ -431,14 +431,14 @@ export function HeroSectionV3() {
             {/* Bottom: Rewards Slider - 4 cards with half-visible right side */}
             <div>
               <div 
-                className="flex space-x-3 overflow-hidden"
+                className="flex space-x-2 sm:space-x-3 overflow-hidden"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               >
-                {/* Static rewards display - show 4 with last one cut off */}
-                {rewards.slice(0, 4).map((reward, index) => (
+                {/* Static rewards display - show 3 on mobile, 4 on desktop */}
+                {rewards.slice(0, 3).map((reward, index) => (
                   <div
                     key={`${reward.id}-${index}`}
-                    className="flex-shrink-0 w-36 h-36 rounded-xl overflow-hidden relative group cursor-pointer transition-all duration-300"
+                    className="flex-shrink-0 w-32 h-32 sm:w-36 sm:h-36 rounded-xl overflow-hidden relative group cursor-pointer transition-all duration-300"
                     style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
                   >
                     {reward.imageUrl ? (
