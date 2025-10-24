@@ -345,7 +345,7 @@ export function HeroSectionV3() {
                 asChild
               >
                 <a href="https://tally.so/r/m6MqAe" target="_blank" rel="noopener noreferrer">
-                  Become a Founding Member
+                  Join Waitlist
                 </a>
               </Button>
               

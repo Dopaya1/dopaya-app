@@ -244,45 +244,6 @@ export default function SocialEnterprisesPage() {
       
       <div className={`transition-opacity duration-700 overflow-x-hidden ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
       
-      {/* Pilot Program Section - Moved to Top */}
-      <section className="py-16" style={{ backgroundColor: BRAND_COLORS.primaryOrange }}>
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center"
-          >
-            <div className="rounded-xl p-8 shadow-lg bg-white/10 backdrop-blur-sm">
-              <h3 className="text-3xl font-bold text-white mb-4">
-                Join Our Pilot Program
-              </h3>
-              <p className="text-orange-100 mb-8 text-xl max-w-2xl mx-auto">
-                We are launching with just a few selected social enterprises. Be part of the first cohort and help us prove this model works.
-              </p>
-              <div className="flex flex-col items-center gap-6">
-                <a href="https://tally.so/r/3EM0vA" target="_blank" rel="noopener noreferrer">
-                  <Button 
-                    className="px-8 py-4 text-xl rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 bg-white hover:bg-gray-50"
-                    style={{ color: BRAND_COLORS.primaryOrange }}
-                  >
-                    Apply for Pilot Program
-                  </Button>
-                </a>
-                <a
-                  href="/eligibility" 
-                  className="text-orange-100 hover:text-white transition-colors text-lg underline"
-                >
-                  Check if you are eligible
-                </a>
-                <div className="mt-4 text-orange-100 text-base">
-                  <p>Free forever • No long-term commitment • Cancel anytime</p>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
 
       {/* Hero Section */}
       <section className="py-24" style={{ backgroundColor: BRAND_COLORS.bgBeige }}>
@@ -578,6 +539,45 @@ export default function SocialEnterprisesPage() {
         </div>
       </section>
 
+      {/* Pilot Program Section - Moved from top */}
+      <section className="py-16" style={{ backgroundColor: BRAND_COLORS.primaryOrange }}>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center"
+          >
+            <div className="rounded-xl p-8 shadow-lg bg-white/10 backdrop-blur-sm">
+              <h3 className="text-3xl font-bold text-white mb-4">
+                Join Our Pilot Program
+              </h3>
+              <p className="text-orange-100 mb-8 text-xl max-w-2xl mx-auto">
+                We are launching with just a few selected social enterprises. Be part of the first cohort and help us prove this model works.
+              </p>
+              <div className="flex flex-col items-center gap-6">
+                <a href="https://tally.so/r/3EM0vA" target="_blank" rel="noopener noreferrer">
+                  <Button 
+                    className="px-8 py-4 text-xl rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 bg-white hover:bg-gray-50"
+                    style={{ color: BRAND_COLORS.primaryOrange }}
+                  >
+                    Apply for Pilot Program
+                  </Button>
+                </a>
+                <a
+                  href="/eligibility" 
+                  className="text-orange-100 hover:text-white transition-colors text-lg underline"
+                >
+                  Check if you are eligible
+                </a>
+                <div className="mt-4 text-orange-100 text-base">
+                  <p>Free forever • No long-term commitment • Cancel anytime</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
 
       {/* Early Adopter Invitation Section */}
       <section className="py-24 bg-white">
