@@ -377,18 +377,18 @@ export function HeroSectionV3() {
           </div>
 
           {/* Right Column - Unified Impact Box (EXACT COPY from original) */}
-          <div className="bg-white rounded-2xl p-8 w-full max-w-lg" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+          <div className="bg-white rounded-2xl p-10 w-full max-w-xl" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
             {/* Top: Projects Slider - 4 cards with half-visible sides */}
-            <div className="mb-4">
+            <div className="mb-6">
               <div 
-                className="flex space-x-2 overflow-hidden"
+                className="flex space-x-3 overflow-hidden"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               >
                 {/* Static projects display - show 4 with last one cut off */}
                 {projects.slice(0, 4).map((project, index) => (
                   <div
                     key={`${project.id}-${index}`}
-                    className={`flex-shrink-0 w-32 h-32 rounded-xl overflow-hidden relative group cursor-pointer transition-all duration-300 ${
+                    className={`flex-shrink-0 w-36 h-36 rounded-xl overflow-hidden relative group cursor-pointer transition-all duration-300 ${
                       index === 0 ? 'ml-2' : ''
                     }`}
                     style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
@@ -420,7 +420,7 @@ export function HeroSectionV3() {
             </div>
 
             {/* Middle: Flow connector with text */}
-            <div className="mb-4">
+            <div className="mb-6">
               <div className="bg-gray-50 rounded-lg p-3 text-center relative">
                 <p className="text-sm text-gray-700 font-medium">
                   Supporting changemakers & sustainable brands
@@ -431,14 +431,14 @@ export function HeroSectionV3() {
             {/* Bottom: Rewards Slider - 4 cards with half-visible right side */}
             <div>
               <div 
-                className="flex space-x-2 overflow-hidden"
+                className="flex space-x-3 overflow-hidden"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               >
                 {/* Static rewards display - show 4 with last one cut off */}
                 {rewards.slice(0, 4).map((reward, index) => (
                   <div
                     key={`${reward.id}-${index}`}
-                    className="flex-shrink-0 w-32 h-32 rounded-xl overflow-hidden relative group cursor-pointer transition-all duration-300"
+                    className="flex-shrink-0 w-36 h-36 rounded-xl overflow-hidden relative group cursor-pointer transition-all duration-300"
                     style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
                   >
                     {reward.imageUrl ? (
