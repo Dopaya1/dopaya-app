@@ -540,7 +540,7 @@ export default function SocialEnterprisesPage() {
       </section>
 
       {/* Pilot Program Section - Moved from top */}
-      <section className="py-16" style={{ backgroundColor: BRAND_COLORS.primaryOrange }}>
+      <section className="py-16 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -548,7 +548,7 @@ export default function SocialEnterprisesPage() {
             transition={{ duration: 0.6 }}
             className="text-center"
           >
-            <div className="rounded-xl p-8 shadow-lg bg-white/10 backdrop-blur-sm">
+            <div className="rounded-xl p-8 shadow-lg" style={{ backgroundColor: BRAND_COLORS.primaryOrange }}>
               <h3 className="text-3xl font-bold text-white mb-4">
                 Join Our Pilot Program
               </h3>
@@ -753,7 +753,7 @@ export default function SocialEnterprisesPage() {
                 </div>
               </div>
             </div>
-          </motion.div> */}
+          </motion.div>
         </div>
       </section> */}
 

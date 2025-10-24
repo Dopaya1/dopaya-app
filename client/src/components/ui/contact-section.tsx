@@ -2,6 +2,8 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Linkedin, Instagram, MessageCircle } from 'lucide-react';
 import { TextArcEffect } from './text-arc-effect';
+import { OptimizedImage } from './optimized-image';
+import patrickImg from '@assets/Patrick Widmann_1749545204060.png';
 
 export function ContactSection() {
   return (
@@ -26,10 +28,15 @@ export function ContactSection() {
             viewport={{ once: true }}
             className="bg-white rounded-xl shadow-lg overflow-hidden"
           >
-            <img 
-              src="/src/assets/Patrick Widmann_1749545204060.png" 
-              alt="Patrick - Building Dopaya" 
+            <OptimizedImage
+              src={patrickImg}
+              alt="Patrick - Building Dopaya"
+              width={400}
+              height={400}
+              quality={85}
               className="w-full h-full object-cover"
+              fallbackSrc="/placeholder-avatar.png"
+              onError={() => console.warn('Failed to load Patrick image')}
             />
           </motion.div>
 
