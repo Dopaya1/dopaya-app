@@ -126,15 +126,8 @@ export function HeroSection() {
                 </motion.h1>
               </LayoutGroup>
               
-              {/* Value Proposition - Right below H1 */}
-              <div className="mt-4 mb-4">
-                <p className="text-base font-medium text-center lg:text-left" style={{ color: BRAND_COLORS.textPrimary }}>
-                  Support SEs {'>'} Earn Points {'>'} Get Rewards
-                </p>
-              </div>
-              
-              <p className={`${TYPOGRAPHY.bodyLarge} mt-2`} style={{ color: BRAND_COLORS.textSecondary }}>
-                Where your investments create lasting change AND unlock exclusive access to sustainable brands you already love.
+              <p className="text-xl lg:text-2xl mt-2 max-w-lg" style={{ color: BRAND_COLORS.textPrimary }}>
+                Every dollar you invest supports entrepreneurs creating lasting change — education, water, and livelihoods — and rewards you back.
               </p>
             </div>
 
@@ -163,12 +156,19 @@ export function HeroSection() {
               </Button>
             </div>
 
-            {/* Trust Indicators */}
-            <div className="flex justify-center lg:justify-start">
-              <div className="text-sm text-secondary">
-                100% goes to impact • No platform fees • Cancel anytime
-              </div>
-            </div>
+                {/* Microcopy */}
+                <div className="flex items-center justify-center lg:justify-start mt-4">
+                  <div className="text-sm text-gray-500">
+                    100% goes to social enterprises • Visible impact • Real rewards
+                  </div>
+                </div>
+
+                {/* Trust Indicators */}
+                <div className="flex justify-center lg:justify-start">
+                  <div className="text-sm text-secondary">
+                    100% goes to impact • No platform fees • Cancel anytime
+                  </div>
+                </div>
 
           </div>
 

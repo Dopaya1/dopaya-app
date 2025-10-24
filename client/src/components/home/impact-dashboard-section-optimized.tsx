@@ -18,7 +18,7 @@ const DashboardMockup = ({ type }: { type: string }) => {
   const renderDashboard = () => {
     switch (type) {
       case 'dashboard-individual':
-  return (
+        return (
           <div className="w-full h-full bg-white rounded-lg p-6 shadow-lg">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold" style={{ color: BRAND_COLORS.textPrimary }}>Your Dashboard</h3>
@@ -26,7 +26,7 @@ const DashboardMockup = ({ type }: { type: string }) => {
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 <span className="text-sm" style={{ color: BRAND_COLORS.textSecondary }}>Live</span>
               </div>
-        </div>
+            </div>
 
             {/* Main Chart Area with Filled Graph */}
             <div className="h-40 bg-gray-50 rounded-lg mb-6 relative overflow-hidden">
@@ -73,7 +73,7 @@ const DashboardMockup = ({ type }: { type: string }) => {
               <div className="text-center p-3 bg-gray-50 rounded-lg">
                 <div className="text-xl font-bold mb-1" style={{ color: BRAND_COLORS.primaryOrange }}>8</div>
                 <div className="text-xs" style={{ color: BRAND_COLORS.textSecondary }}>Projects</div>
-                </div>
+              </div>
               <div className="text-center p-3 bg-gray-50 rounded-lg">
                 <div className="text-xl font-bold mb-1" style={{ color: BRAND_COLORS.primaryOrange }}>650</div>
                 <div className="text-xs" style={{ color: BRAND_COLORS.textSecondary }}>Points</div>
@@ -90,8 +90,8 @@ const DashboardMockup = ({ type }: { type: string }) => {
               <div className="px-3 py-1 rounded-full text-xs font-medium" 
                    style={{ backgroundColor: '#FFF4ED', color: BRAND_COLORS.primaryOrange }}>
                 Impact Hero
+              </div>
             </div>
-          </div>
 
             {/* Current Rank */}
             <div className="mb-6 p-4 rounded-lg" style={{ backgroundColor: BRAND_COLORS.bgCool }}>
@@ -103,7 +103,7 @@ const DashboardMockup = ({ type }: { type: string }) => {
                 <div className="bg-gradient-to-r from-orange-400 to-orange-500 h-2 rounded-full" style={{ width: '65%' }}></div>
               </div>
               <div className="text-center text-xs" style={{ color: BRAND_COLORS.textSecondary }}>650/1000 pts to next rank</div>
-          </div>
+            </div>
 
             {/* Next Stages */}
             <div className="space-y-3">
@@ -124,8 +124,8 @@ const DashboardMockup = ({ type }: { type: string }) => {
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
                     <span className="text-purple-600 text-sm font-bold">44</span>
-          </div>
-            <div>
+                  </div>
+                  <div>
                     <div className="font-medium text-sm" style={{ color: BRAND_COLORS.textPrimary }}>Impact Legend</div>
                     <div className="text-xs" style={{ color: BRAND_COLORS.textSecondary }}>2000 pts • Exclusive access</div>
                   </div>
@@ -200,7 +200,7 @@ const DashboardMockup = ({ type }: { type: string }) => {
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold" style={{ color: BRAND_COLORS.textPrimary }}>Impact Analytics</h3>
               <div className="text-sm" style={{ color: BRAND_COLORS.textSecondary }}>Last 6 months</div>
-        </div>
+            </div>
 
             {/* Chart Area */}
             <div className="h-32 bg-gray-50 rounded-lg mb-4 relative overflow-hidden">
@@ -232,7 +232,7 @@ const DashboardMockup = ({ type }: { type: string }) => {
                 <div className="text-lg font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>85%</div>
                 <div className="text-xs" style={{ color: BRAND_COLORS.textSecondary }}>Success</div>
               </div>
-          <div className="text-center">
+              <div className="text-center">
                 <div className="text-lg font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>#42</div>
                 <div className="text-xs" style={{ color: BRAND_COLORS.textSecondary }}>Rank</div>
               </div>
@@ -271,7 +271,7 @@ const DashboardMockup = ({ type }: { type: string }) => {
                   <div className="text-xs" style={{ color: BRAND_COLORS.textSecondary }}>500 pts • 20% off</div>
                 </div>
                 <div className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">Available</div>
-          </div>
+              </div>
 
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-lg flex items-center justify-center">
@@ -296,7 +296,7 @@ const DashboardMockup = ({ type }: { type: string }) => {
                    style={{ backgroundColor: BRAND_COLORS.primaryOrange }}>
                 VIP
               </div>
-          </div>
+            </div>
 
             <div className="mb-6 p-4 rounded-lg" style={{ backgroundColor: '#FFF4ED' }}>
               <div className="flex items-center gap-2 mb-2">
@@ -336,7 +336,7 @@ const DashboardMockup = ({ type }: { type: string }) => {
             </div>
 
             <div className="mt-6 p-3 rounded-lg border-2 border-dashed" style={{ borderColor: BRAND_COLORS.borderSubtle }}>
-          <div className="text-center">
+              <div className="text-center">
                 <div className="text-sm font-medium mb-1" style={{ color: BRAND_COLORS.textPrimary }}>Join 2,847 founding members</div>
                 <div className="text-xs" style={{ color: BRAND_COLORS.textSecondary }}>Limited time offer</div>
               </div>
@@ -358,32 +358,32 @@ export function ImpactDashboardSection() {
   const [progress, setProgress] = useState(0);
   const autoPlayInterval = 4000;
 
-    const features: DashboardFeature[] = [
-      {
-        step: "",
-        title: "Individual dashboard",
-        content: "Your personal command center to track every donation, see real impact, and monitor your growth journey with beautiful visualizations.",
-        image: "dashboard-individual"
-      },
-      {
-        step: "",
-        title: "Impact ranking with higher benefits",
-        content: "See where you stand now and unlock the next stages. Progress through ranks to access exclusive rewards and premium partner benefits.",
-        image: "dashboard-ranking"
-      },
-      {
-        step: "Our goal",
-        title: "Real time impact tracking",
-        content: "Transparent tracking of every dollar donated and its real-world impact. See verified outcomes from projects you support.",
-        image: "dashboard-impact-tracking"
-      },
-      {
-        step: "Founding member",
-        title: "Early advantage",
-        content: "Join as a founding member and get lifetime access to all premium features, priority support, and exclusive founding member perks.",
-        image: "dashboard-founding"
-      }
-    ];
+  const features: DashboardFeature[] = [
+    {
+      step: "",
+      title: "Individual dashboard",
+      content: "Your personal command center to track every donation, see real impact, and monitor your growth journey with beautiful visualizations.",
+      image: "dashboard-individual"
+    },
+    {
+      step: "",
+      title: "Impact ranking with higher benefits",
+      content: "See where you stand now and unlock the next stages. Progress through ranks to access exclusive rewards and premium partner benefits.",
+      image: "dashboard-ranking"
+    },
+    {
+      step: "Our goal",
+      title: "Real time impact tracking",
+      content: "Transparent tracking of every dollar donated and its real-world impact. See verified outcomes from projects you support.",
+      image: "dashboard-impact-tracking"
+    },
+    {
+      step: "Founding member",
+      title: "Early advantage",
+      content: "Join as a founding member and get lifetime access to all premium features, priority support, and exclusive founding member perks.",
+      image: "dashboard-founding"
+    }
+  ];
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -397,6 +397,22 @@ export function ImpactDashboardSection() {
 
     return () => clearInterval(timer);
   }, [progress, features.length]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft' && currentFeature > 0) {
+        setCurrentFeature(currentFeature - 1);
+        setProgress(0);
+      } else if (e.key === 'ArrowRight' && currentFeature < features.length - 1) {
+        setCurrentFeature(currentFeature + 1);
+        setProgress(0);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentFeature, features.length]);
 
   return (
     <>
@@ -574,7 +590,7 @@ export function ImpactDashboardSection() {
                 <AnimatePresence>
                   {features.map((feature, index) => (
                     <motion.div
-                      key={feature.step}
+                      key={`${feature.title}-${index}`}
                       initial={{
                         opacity: 0,
                         scale: 0.9,
@@ -660,6 +676,7 @@ export function ImpactDashboardSection() {
                     />
                   ))}
                 </div>
+                
               </div>
             </div>
 
@@ -755,13 +772,16 @@ export function ImpactDashboardSection() {
               {/* Left: Large Dashboard Preview (60%) */}
               <div className="lg:col-span-3">
                 <div className="sticky top-24">
-                  <div className="relative h-[500px] rounded-2xl overflow-hidden shadow-2xl" style={{ 
-                    backgroundColor: BRAND_COLORS.bgWhite,
-                    border: `1px solid ${BRAND_COLORS.borderSubtle}` 
-                  }}>
+                  <div 
+                    className="relative h-[500px] rounded-2xl overflow-hidden shadow-2xl transition-all duration-200"
+                    style={{ 
+                      backgroundColor: BRAND_COLORS.bgWhite,
+                      border: `1px solid ${BRAND_COLORS.borderSubtle}` 
+                    }}
+                  >
                     <AnimatePresence mode="wait">
                       <motion.div
-                        key={currentFeature}
+                        key={`${features[currentFeature].title}-${currentFeature}`}
                         className="w-full h-full"
                         initial={{ opacity: 0, scale: 1.1 }}
                         animate={{ opacity: 1, scale: 1 }}

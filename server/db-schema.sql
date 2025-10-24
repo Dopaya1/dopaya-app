@@ -60,6 +60,8 @@ CREATE TABLE IF NOT EXISTS "projects" (
   
   -- Impact tracking system
   "impact_unit" TEXT,
+  "impact_noun" TEXT,
+  "impact_verb" TEXT,
   "donation_1" INTEGER,
   "donation_2" INTEGER,
   "donation_3" INTEGER,

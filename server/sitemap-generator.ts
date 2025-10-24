@@ -84,16 +84,26 @@ export async function generateSitemap(): Promise<{ staticPages: SitemapUrl[], pr
   let projectPages: SitemapUrl[] = [];
   
   try {
-    const { data: projects, error } = await supabase
+    // First, let's try to get all projects to see what's available
+    const { data: allProjects, error: allError } = await supabase
       .from('projects')
-      .select('slug, updated_at, created_at')
-      .eq('is_active', true)
-      .order('updated_at', { ascending: false });
+      .select('slug, updated_at, created_at, status, title')
+      .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching projects for sitemap:', error);
-    } else if (projects) {
-      projectPages = projects.map(project => ({
+    console.log('All projects for sitemap:', allProjects?.length || 0);
+    console.log('Sample project:', allProjects?.[0]);
+
+    if (allError) {
+      console.error('Error fetching all projects for sitemap:', allError);
+    } else if (allProjects && allProjects.length > 0) {
+      // Filter for active projects or use all if no status field
+      const activeProjects = allProjects.filter(project => 
+        project.status === 'active' || !project.status
+      );
+      
+      console.log('Active projects for sitemap:', activeProjects.length);
+      
+      projectPages = activeProjects.map(project => ({
         url: `${baseUrl}/project/${project.slug}`,
         priority: '0.8',
         changefreq: 'weekly',
@@ -101,6 +111,8 @@ export async function generateSitemap(): Promise<{ staticPages: SitemapUrl[], pr
           new Date(project.updated_at).toISOString().split('T')[0] : 
           new Date(project.created_at).toISOString().split('T')[0]
       }));
+    } else {
+      console.log('No projects found in database for sitemap');
     }
   } catch (error) {
     console.error('Error generating project pages for sitemap:', error);

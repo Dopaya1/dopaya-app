@@ -79,3 +79,6 @@ export function getOptimalImageFormat(): 'webp' | 'jpeg' | 'png' {
   return 'jpeg';
 }
 
+
+
+

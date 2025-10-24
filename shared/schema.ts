@@ -75,6 +75,8 @@ export const projects = pgTable("projects", {
   
   // Impact tracking system
   impactUnit: text("impact_unit"),
+  impact_noun: text("impact_noun"),
+  impact_verb: text("impact_verb"),
   donation1: integer("donation_1"),
   donation2: integer("donation_2"),
   donation3: integer("donation_3"),

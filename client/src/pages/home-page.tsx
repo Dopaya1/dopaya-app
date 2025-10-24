@@ -1,5 +1,5 @@
-import { HeroSection } from "@/components/home/hero-section-optimized";
-import { CaseStudyModernSection } from "@/components/home/case-study-modern-section";
+import { HeroSectionV3 } from "@/components/home/hero-section-v3";
+import { CaseStudyModernSectionV2 } from "@/components/home/case-study-modern-section-v2";
 import { PartnerShowcaseSection } from "@/components/home/partner-showcase-section-optimized";
 import { ImpactDashboardSection } from "@/components/home/impact-dashboard-section-optimized";
 import { InstitutionalProofSimple } from "@/components/home/institutional-proof-simple";
@@ -24,6 +24,8 @@ export default function HomePage() {
           "description": "Social impact platform connecting supporters with verified social enterprises",
           "url": "https://dopaya.org",
           "logo": "https://dopaya.org/logo.png",
+          "foundingDate": "2024",
+          "industry": "Social Impact Technology",
           "sameAs": [
             "https://twitter.com/dopaya",
             "https://linkedin.com/company/dopaya"
@@ -38,7 +40,16 @@ export default function HomePage() {
             "description": "Support social enterprises and earn impact points",
             "price": "0",
             "priceCurrency": "USD"
-          }
+          },
+          "knowsAbout": [
+            "Social Impact",
+            "Social Enterprise Funding",
+            "Impact Investing",
+            "Sustainable Development",
+            "Community Development"
+          ],
+          "areaServed": "Global",
+          "serviceType": "Social Impact Platform"
         }}
       />
       
@@ -60,25 +71,25 @@ export default function HomePage() {
       
       <div className="min-h-screen bg-white">
         {/* 1. Hero Section */}
-        <HeroSection />
-      
-      {/* 2. Case Study Section - Modern Card Layout */}
-      <CaseStudyModernSection />
-      
-      {/* 3. Partner Showcase Section */}
-      <PartnerShowcaseSection />
-      
-      {/* 4. Impact Dashboard Section */}
-      <ImpactDashboardSection />
-      
-      {/* 5. Institutional Proof Section */}
-      <InstitutionalProofSimple />
-      
-      {/* 6. FAQ Section */}
-      <FAQSection />
-      
-      {/* 7. Founding Member CTA */}
-      <FoundingMemberCTA />
+        <HeroSectionV3 />
+        
+        {/* 2. Case Study Section */}
+        <CaseStudyModernSectionV2 />
+        
+        {/* 3. Partner Showcase Section */}
+        <PartnerShowcaseSection />
+        
+        {/* 4. Impact Dashboard Section */}
+        <ImpactDashboardSection />
+        
+        {/* 5. Institutional Proof Section */}
+        <InstitutionalProofSimple />
+        
+        {/* 6. FAQ Section */}
+        <FAQSection />
+        
+        {/* 7. Founding Member CTA */}
+        <FoundingMemberCTA />
       </div>
     </>
   );

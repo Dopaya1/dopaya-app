@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { X, Target, TrendingUp, Users, Heart, ArrowRight, Wind } from "lucide-react";
+import { X, Target, TrendingUp, Users, Heart, ArrowRight, Wind, ChevronDown, GraduationCap, BookOpen, Lightbulb } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { Project } from "@shared/schema";
@@ -11,14 +11,18 @@ import { TYPOGRAPHY } from "@/constants/typography";
 import sdgWheelImg from "@assets/sdg wheel.png";
 import { BRAND_COLORS } from "@/constants/colors";
 
-export function CaseStudyModernSection() {
+export function CaseStudyModernSectionV2() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [donationAmount, setDonationAmount] = useState(0);
+  const [showDonationDropdown, setShowDonationDropdown] = useState(false);
+  const [touchStart, setTouchStart] = useState(0);
+  const [touchEnd, setTouchEnd] = useState(0);
   const initializedRef = React.useRef<string | null>(null);
+  const touchRef = useRef<HTMLDivElement>(null);
 
   // Fetch featured projects in specific order
   const { data: projects = [] } = useQuery<Project[]>({
-    queryKey: ["projects-case-study-modern"],
+    queryKey: ["projects-case-study-modern-v2"],
     queryFn: async () => {
       // Define the specific order we want
       const projectOrder = ['ignis-careers', 'allika-eco-products', 'panjurli-labs', 'sanitrust-pads'];
@@ -46,6 +50,7 @@ export function CaseStudyModernSection() {
   const closeProjectDetail = () => {
     setSelectedProject(null);
     setDonationAmount(0);
+    setShowDonationDropdown(false);
     initializedRef.current = null;
   };
 
@@ -68,7 +73,7 @@ export function CaseStudyModernSection() {
         });
       }
     }
-    return tiers;
+    return tiers.sort((a, b) => a.donation - b.donation);
   };
 
   const availableTiers = getAvailableTiers(selectedProject);
@@ -81,10 +86,59 @@ export function CaseStudyModernSection() {
     }
   }, [selectedProject, availableTiers]);
   
-  const currentTier = availableTiers.find(t => t.donation === donationAmount) || availableTiers[0];
-  const impactAmount = currentTier?.impact || "0";
-  const impactUnit = currentTier?.unit || "impact created";
-  const impactPoints = currentTier?.points || 0;
+      const currentTier = availableTiers.find(t => t.donation === donationAmount) || availableTiers[0];
+      const impactAmount = currentTier?.impact || "0";
+      const impactUnit = currentTier?.unit || "impact created";
+      const impactPoints = currentTier?.points || 0;
+      
+      // Get impact verb and noun from project data
+      const impactVerb = selectedProject?.impact_verb || "help";
+      const impactNoun = selectedProject?.impact_noun || "people";
+
+  // Swipe gesture handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    if (isLeftSwipe || isRightSwipe) {
+      const currentIndex = availableTiers.findIndex(t => t.donation === donationAmount);
+      let newIndex = currentIndex;
+      
+      if (isLeftSwipe && currentIndex < availableTiers.length - 1) {
+        newIndex = currentIndex + 1;
+      } else if (isRightSwipe && currentIndex > 0) {
+        newIndex = currentIndex - 1;
+      }
+      
+      if (newIndex !== currentIndex && availableTiers[newIndex]) {
+        setDonationAmount(availableTiers[newIndex].donation);
+      }
+    }
+  };
+
+  // Get impact preview icon based on project
+  const getImpactIcon = () => {
+    if (selectedProject?.name?.toLowerCase().includes('ignis') || selectedProject?.title?.toLowerCase().includes('ignis')) {
+      return <GraduationCap className="h-6 w-6" style={{ color: BRAND_COLORS.primaryOrange }} />;
+    } else if (selectedProject?.name?.toLowerCase().includes('panjurli') || selectedProject?.title?.toLowerCase().includes('panjurli')) {
+      return <Wind className="h-6 w-6" style={{ color: BRAND_COLORS.primaryOrange }} />;
+    } else if (selectedProject?.name?.toLowerCase().includes('allika') || selectedProject?.title?.toLowerCase().includes('allika')) {
+      return <BookOpen className="h-6 w-6" style={{ color: BRAND_COLORS.primaryOrange }} />;
+    } else {
+      return <Users className="h-6 w-6" style={{ color: BRAND_COLORS.primaryOrange }} />;
+    }
+  };
 
   return (
     <section className="py-24" style={{ backgroundColor: BRAND_COLORS.bgWhite }}>
@@ -268,166 +322,130 @@ export function CaseStudyModernSection() {
           </div>
         </div>
 
-        {/* Modern Card Layout Case Study - Popup */}
+        {/* GoFundMe-Style Popup - For all projects */}
         {selectedProject && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="relative w-full max-w-6xl max-h-[90vh] overflow-y-auto bg-white rounded-3xl shadow-2xl">
-            <button
-              onClick={closeProjectDetail}
-              className="absolute top-6 right-6 z-10 p-2 rounded-full bg-white/90 hover:bg-white shadow-sm transition-colors"
-            >
-              <X className="h-5 w-5" style={{ color: BRAND_COLORS.textSecondary }} />
-            </button>
+              <div className="relative w-full max-w-5xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl">
+              <button
+                onClick={closeProjectDetail}
+                className="absolute top-6 right-6 z-10 p-2 rounded-full bg-white/90 hover:bg-white shadow-sm transition-colors"
+              >
+                <X className="h-5 w-5" style={{ color: BRAND_COLORS.textSecondary }} />
+              </button>
 
-            {/* Main Content Grid - 3 columns with individual borders */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-[400px]">
-              
-              {/* Left: Project Info Card */}
-              <div className="relative rounded-xl overflow-hidden" style={{ border: `1px solid ${BRAND_COLORS.borderSubtle}` }}>
-                <div className="p-6 bg-white w-full h-full transition-all duration-300 hover:scale-[1.02] origin-center text-left">
-                <Badge className="mb-3" style={{ backgroundColor: '#FFF4ED', color: BRAND_COLORS.primaryOrange }}>
-                  Real impact case
-                </Badge>
-                
-                <h3 className="text-xl font-bold mb-6" style={{ 
-                  color: BRAND_COLORS.textPrimary, 
-                  fontFamily: "'Satoshi', 'Inter', system-ui, sans-serif" 
-                }}>
-                  {selectedProject.title}
+              {/* Header */}
+              <div className="p-6 lg:p-8 border-b" style={{ borderColor: BRAND_COLORS.borderSubtle }}>
+                <h3 className="text-xl lg:text-2xl font-bold mb-1" style={{ color: BRAND_COLORS.textPrimary }}>
+                  See the impact you can create
                 </h3>
-
-                <p className="text-base mb-8 leading-relaxed" style={{ color: BRAND_COLORS.textSecondary }}>
-                  {selectedProject.missionStatement || selectedProject.description || "Supporting sustainable livelihoods and community development."}
+                <p className="text-base lg:text-lg" style={{ color: BRAND_COLORS.textSecondary }}>
+                  with {selectedProject.title}
                 </p>
-
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <Button 
-                    size="sm"
-                    className="text-white font-semibold px-4 py-2 text-sm shadow-lg w-auto"
-                    style={{ backgroundColor: BRAND_COLORS.primaryOrange }}
-                    asChild
-                  >
-                    <a href="https://tally.so/r/m6MqAe" target="_blank" rel="noopener noreferrer">
-                      Support This Project
-                      <ArrowRight className="h-4 w-4 ml-2" />
-                    </a>
-                  </Button>
-                  <Button 
-                    size="sm"
-                    variant="outline"
-                    className="font-semibold px-4 py-2 text-sm w-auto"
-                    style={{ 
-                      color: BRAND_COLORS.textPrimary,
-                      borderColor: BRAND_COLORS.borderSubtle
-                    }}
-                    asChild
-                  >
-                    <Link href={`/project/${selectedProject.slug || selectedProject.id}`}>
-                      Learn More
-                    </Link>
-                  </Button>
-                </div>
-                </div>
               </div>
 
-              {/* Center: Impact Controls Card */}
-              <div className="p-6 bg-gray-50 rounded-xl transition-all duration-300 hover:scale-[1.02] text-left" style={{ border: `1px solid ${BRAND_COLORS.borderSubtle}` }}>
-                <h4 className="text-lg font-semibold mb-4" style={{ color: BRAND_COLORS.textPrimary }}>
-                  Calculate the impact you can do
-                </h4>
+                  {/* Main Content - 2 Column Layout */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 p-6 lg:p-12">
                 
-                <div className="mb-4">
-                  <div className="text-3xl font-bold mb-3" style={{ color: BRAND_COLORS.primaryOrange }}>
-                    ${donationAmount}
+                {/* Left Column - Dynamic Text */}
+                <div className="space-y-8 order-2 lg:order-1">
+                  <div>
+
+                    {/* Large Dynamic Text with Integrated Dropdown */}
+                    <div 
+                      className="text-center lg:text-left"
+                      onTouchStart={handleTouchStart}
+                      onTouchMove={handleTouchMove}
+                      onTouchEnd={handleTouchEnd}
+                      ref={touchRef}
+                    >
+                      <p className="text-2xl lg:text-4xl font-semibold leading-[1.4]" style={{ color: BRAND_COLORS.textPrimary }}>
+                        Support <span className="font-bold" style={{ color: BRAND_COLORS.textPrimary }}>{selectedProject.title}</span> with{' '}
+                            <span className="relative inline-block">
+                              <button
+                                onClick={() => setShowDonationDropdown(!showDonationDropdown)}
+                                className="inline-flex items-center gap-1 border-b-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors min-h-[48px] px-2 font-bold"
+                                style={{ color: BRAND_COLORS.primaryOrange }}
+                              >
+                                ${donationAmount}
+                                <ChevronDown className="h-5 w-5" />
+                              </button>
+                              
+                              {showDonationDropdown && (
+                                <div className="absolute top-full left-0 mt-2 bg-white border rounded-lg shadow-lg z-10 min-w-[140px]"
+                                     style={{ borderColor: BRAND_COLORS.borderSubtle }}>
+                                  {availableTiers.map((tier) => (
+                                    <button
+                                      key={tier.donation}
+                                      onClick={() => {
+                                        setDonationAmount(tier.donation);
+                                        setShowDonationDropdown(false);
+                                      }}
+                                      className="w-full p-2 text-left hover:bg-gray-50 transition-colors min-h-[36px]"
+                                    >
+                                      <span className="text-lg font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>
+                                        ${tier.donation}
+                                      </span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </span> and help{' '}
+                            <span className="font-bold" style={{ color: BRAND_COLORS.textPrimary }}>{impactVerb}</span>{' '}
+                            <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>{impactAmount}</span>{' '}
+                            <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>{impactNoun}</span>{' '}
+                            <span style={{ color: BRAND_COLORS.textSecondary }}>— earn</span>{' '}
+                            <span className="font-bold" style={{ color: BRAND_COLORS.textPrimary }}>{impactPoints}</span>{' '}
+                            <span style={{ color: BRAND_COLORS.textSecondary }}>Impact Points</span>.
+                      </p>
+                    </div>
+                    
+                        {/* Support Button */}
+                        <div className="mt-8 lg:mt-10 text-center lg:text-left">
+                          <Button 
+                            size="lg"
+                            className="text-white font-semibold px-6 lg:px-8 py-3 lg:py-4 text-base lg:text-lg min-h-[44px] lg:min-h-[48px] w-full sm:w-auto"
+                            style={{ backgroundColor: BRAND_COLORS.primaryOrange }}
+                            asChild
+                          >
+                            <Link href={`/project/${selectedProject.slug || selectedProject.id}`}>
+                              Support This Project
+                            </Link>
+                          </Button>
+                        </div>
                   </div>
-                  
-                  {availableTiers.length > 1 && (
-                    <>
-                      <input
-                        type="range"
-                        min={0}
-                        max={availableTiers.length - 1}
-                        step="1"
-                        value={availableTiers.findIndex(t => t.donation === donationAmount) >= 0 ? availableTiers.findIndex(t => t.donation === donationAmount) : 0}
-                        onChange={(e) => {
-                          const index = Number(e.target.value);
-                          if (availableTiers[index]) {
-                            setDonationAmount(availableTiers[index].donation);
-                          }
-                        }}
-                        className="w-full h-2 rounded-full appearance-none cursor-pointer mb-3"
-                        style={{
-                          background: `linear-gradient(to right, ${BRAND_COLORS.primaryOrange} 0%, ${BRAND_COLORS.primaryOrange} ${((availableTiers.findIndex(t => t.donation === donationAmount) || 0) / (availableTiers.length - 1)) * 100}%, #e5e7eb ${((availableTiers.findIndex(t => t.donation === donationAmount) || 0) / (availableTiers.length - 1)) * 100}%, #e5e7eb 100%)`
-                        }}
-                      />
-                      <div className="flex justify-between text-xs" style={{ color: BRAND_COLORS.textSecondary }}>
-                        <span>${availableTiers[0].donation}</span>
-                        <span>${availableTiers[availableTiers.length - 1].donation}</span>
-                      </div>
-                    </>
-                  )}
                 </div>
 
-                {/* Impact Stats */}
-                <div className="space-y-3">
-                  <div className="p-4 rounded-xl" style={{ border: `1px solid ${BRAND_COLORS.borderSubtle}` }}>
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FFF4ED' }}>
-                        {selectedProject?.name?.toLowerCase().includes('panjurli') ? (
-                          <Wind className="h-5 w-5" style={{ color: BRAND_COLORS.primaryOrange }} />
-                        ) : (
-                          <Users className="h-5 w-5" style={{ color: BRAND_COLORS.primaryOrange }} />
-                        )}
-                      </div>
-                      <div>
-                        <div className="text-2xl font-bold" style={{ color: BRAND_COLORS.textPrimary }}>
-                          {impactAmount}
+                {/* Right Column - Project Info & Image */}
+                <div className="space-y-6 order-1 lg:order-2">
+                    <div className="rounded-lg overflow-hidden relative" style={{ border: `1px solid ${BRAND_COLORS.borderSubtle}` }}>
+                      {selectedProject.imageUrl ? (
+                        <img
+                          src={selectedProject.imageUrl}
+                          alt={selectedProject.title}
+                          className="w-full h-72 lg:h-80 object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-72 lg:h-80 flex items-center justify-center" style={{ backgroundColor: BRAND_COLORS.bgCool }}>
+                          <Target className="h-16 w-16" style={{ color: BRAND_COLORS.textMuted }} />
                         </div>
-                        <div className="text-sm" style={{ color: BRAND_COLORS.textSecondary }}>{impactUnit}</div>
+                      )}
+                      
+                      {/* Text overlay at bottom */}
+                      <div className="absolute bottom-0 left-0 right-0">
+                        <div className="bg-white/50 backdrop-blur-sm p-3">
+                          <p className="text-sm lg:text-base leading-relaxed font-medium" style={{ color: BRAND_COLORS.textPrimary }}>
+                            {selectedProject.missionStatement || selectedProject.description || "Supporting sustainable livelihoods and community development."}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
                   
-                  <div className="p-3 rounded-xl" style={{ border: `1px solid ${BRAND_COLORS.borderSubtle}` }}>
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FFF4ED' }}>
-                        <TrendingUp className="h-4 w-4" style={{ color: BRAND_COLORS.primaryOrange }} />
-                      </div>
-                      <div>
-                        <div className="text-xl font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>
-                          {impactPoints}
-                        </div>
-                        <div className="text-sm" style={{ color: BRAND_COLORS.textSecondary }}>Impact Points</div>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </div>
-
-              {/* Right: Image Card */}
-              <div className="relative overflow-hidden rounded-xl text-left" style={{ border: `1px solid ${BRAND_COLORS.borderSubtle}` }}>
-                <div className="w-full h-full transition-all duration-300 hover:scale-[1.02] origin-center">
-                  {selectedProject.imageUrl ? (
-                    <div className="relative h-full min-h-[500px]">
-                      <img
-                        src={selectedProject.imageUrl}
-                        alt={selectedProject.title}
-                        className="absolute inset-0 w-full h-full object-cover"
-                      />
-                      {/* Gradient overlay for better text readability */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-                    </div>
-                  ) : (
-                    <div className="w-full h-full min-h-[500px] flex items-center justify-center" style={{ backgroundColor: BRAND_COLORS.bgCool }}>
-                      <Target className="h-16 w-16" style={{ color: BRAND_COLORS.textMuted }} />
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
             </div>
           </div>
         )}
+
       </div>
     </section>
   );
