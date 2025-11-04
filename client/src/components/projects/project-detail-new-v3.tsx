@@ -62,6 +62,7 @@ export function ProjectDetailNewV3({ project }: ProjectDetailProps) {
   const [pressMentionCarouselIndex, setPressMentionCarouselIndex] = useState(0);
   const [isCarouselPaused, setIsCarouselPaused] = useState(false);
   const [showImpactPointsDialog, setShowImpactPointsDialog] = useState(false);
+  const [infoBarIndex, setInfoBarIndex] = useState(0);
   const heroSectionRef = useRef<HTMLDivElement>(null);
   
   // Refs and state for scroll-to-section functionality
@@ -293,8 +294,8 @@ export function ProjectDetailNewV3({ project }: ProjectDetailProps) {
   const { pressMentions, isLoading: isLoadingPressMentions } = useProjectPressMentions(project.id);
   
 
-  // Get visible backers for carousel (4 at a time)
-  // IMPORTANT: Each backer should only appear once, even if we have fewer than 4 backers
+  // Get visible backers for carousel (4 at a time on desktop, 2 on mobile)
+  // IMPORTANT: Each backer should only appear once, even if we have fewer than requested backers
   const getVisibleBackers = (count: number) => {
     if (backers.length === 0) return [];
     
@@ -319,14 +320,16 @@ export function ProjectDetailNewV3({ project }: ProjectDetailProps) {
     return visible;
   };
 
+  // Get visible backers for mobile (2 at a time)
+  const getVisibleBackersMobile = () => {
+    return getVisibleBackers(2);
+  };
+
   // Get visible press mentions for carousel (3 on desktop, 2 on mobile)
-  const getVisiblePressMentions = () => {
+  const getVisiblePressMentions = (count: number = 3) => {
     if (pressMentions.length === 0) return [];
     
-    // Always return 3 items for carousel logic (CSS grid handles display: 2 on mobile, 3 on desktop)
-    const count = 3;
-    
-    // If we have 3 or fewer press mentions, just return all of them
+    // If we have fewer press mentions than requested, just return all of them
     if (pressMentions.length <= count) {
       return pressMentions;
     }
@@ -345,6 +348,11 @@ export function ProjectDetailNewV3({ project }: ProjectDetailProps) {
     }
     
     return visible;
+  };
+
+  // Get visible press mentions for mobile (2 at a time)
+  const getVisiblePressMentionsMobile = () => {
+    return getVisiblePressMentions(2);
   };
 
   // Auto-rotate carousel every 3 seconds (paused on user interaction)
@@ -372,6 +380,14 @@ export function ProjectDetailNewV3({ project }: ProjectDetailProps) {
     
     return () => clearInterval(interval);
   }, [isCarouselPaused, pressMentions.length]);
+
+  // Auto-rotate info bar on mobile (every 3 seconds)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setInfoBarIndex((prev) => (prev + 1) % 3);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   const currentTier = availableTiers.find(t => t.donation === donationAmountInteractive) || availableTiers[0];
   const impactAmount = currentTier?.impact || '0';
@@ -952,9 +968,10 @@ ${url}
       </div>
 
       {/* Beige Info Bar - Full width with separators */}
-      <div className="py-6 w-full" style={{ backgroundColor: '#ebe8df' }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-0">
+      <div className="py-6 w-full flex items-center" style={{ backgroundColor: '#ebe8df' }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+          {/* Desktop: 3 columns */}
+          <div className="hidden md:grid md:grid-cols-3 gap-0 items-center">
             <div className="flex items-center gap-3 md:border-r md:border-white md:pr-8 py-2">
               <ShieldCheck className="h-6 w-6 flex-shrink-0 text-white" strokeWidth={2} />
               <span className="text-sm text-gray-700">Every social enterprise is carefully vetted for measurable, lasting change.</span>
@@ -966,6 +983,27 @@ ${url}
             <div className="flex items-center gap-3 md:pl-8 py-2">
               <Gift className="h-6 w-6 flex-shrink-0 text-white" strokeWidth={2} />
               <span className="text-sm text-gray-700">Earn points redeemable with sustainable brands — fueling a cycle of impact.</span>
+            </div>
+          </div>
+          
+          {/* Mobile: Auto-slider (1 item at a time) */}
+          <div className="md:hidden relative overflow-hidden min-h-[60px] flex items-center">
+            <div 
+              className="flex transition-transform duration-500 ease-in-out"
+              style={{ transform: `translateX(-${infoBarIndex * 100}%)` }}
+            >
+              <div className="w-full flex-shrink-0 flex items-center justify-center gap-3 px-4">
+                <ShieldCheck className="h-6 w-6 flex-shrink-0 text-white" strokeWidth={2} />
+                <span className="text-sm text-gray-700">Every social enterprise is carefully vetted for measurable, lasting change.</span>
+              </div>
+              <div className="w-full flex-shrink-0 flex items-center justify-center gap-3 px-4">
+                <ArrowRightLeft className="h-6 w-6 flex-shrink-0 text-white" strokeWidth={2} />
+                <span className="text-sm text-gray-700">100% of your support goes straight to the initiative — minus standard transaction fees.</span>
+              </div>
+              <div className="w-full flex-shrink-0 flex items-center justify-center gap-3 px-4">
+                <Gift className="h-6 w-6 flex-shrink-0 text-white" strokeWidth={2} />
+                <span className="text-sm text-gray-700">Earn points redeemable with sustainable brands — fueling a cycle of impact.</span>
+              </div>
             </div>
           </div>
         </div>
@@ -1141,9 +1179,10 @@ ${url}
                     This social enterprise is trusted and supported by the following leading institutions:
                   </p>
                   
-                  {/* Backer Logos Grid - 4 columns with infinite carousel */}
+                  {/* Backer Logos Grid - 2 on mobile, 3 on md, 4 on lg with infinite carousel */}
+                  {/* Desktop: Show 4 */}
                   <div 
-                    className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-8 md:mb-12"
+                    className="hidden lg:grid lg:grid-cols-4 gap-6 mb-8 md:mb-12"
                     onMouseEnter={() => setIsCarouselPaused(true)}
                     onMouseLeave={() => setIsCarouselPaused(false)}
                   >
@@ -1206,10 +1245,77 @@ ${url}
                       );
                     })}
                   </div>
+                  
+                  {/* Mobile/Tablet: Show 2 on mobile, 3 on md */}
+                  <div 
+                    className="grid grid-cols-2 md:grid-cols-3 lg:hidden gap-6 mb-8 md:mb-12"
+                    onMouseEnter={() => setIsCarouselPaused(true)}
+                    onMouseLeave={() => setIsCarouselPaused(false)}
+                  >
+                    {getVisibleBackersMobile().map((backer, idx) => {
+                      // Try multiple possible field names for logo path
+                      const logoPath = (backer as any).logoPath || (backer as any).logo_path || (backer as any).logoPath || '';
+                      const logoUrl = getLogoUrl(logoPath);
+                      
+                      
+                      return (
+                        <div
+                          key={`${backer.id}-${idx}-${backerCarouselIndex}`}
+                          onClick={() => {
+                            setSelectedInstitution(selectedInstitution === backer.id ? null : backer.id);
+                            setIsCarouselPaused(true);
+                          }}
+                          onTouchEnd={(e) => {
+                            e.preventDefault();
+                            setSelectedInstitution(selectedInstitution === backer.id ? null : backer.id);
+                            setIsCarouselPaused(true);
+                          }}
+                          className={`cursor-pointer p-4 md:p-6 rounded-xl transition-all duration-300 hover:scale-105 active:scale-95 min-h-[120px] md:min-h-[140px] ${
+                            selectedInstitution === backer.id 
+                              ? 'bg-gray-50 shadow-lg' 
+                              : 'bg-white hover:bg-gray-50'
+                          }`}
+                          style={{ 
+                            border: `1px solid ${BRAND_COLORS.borderSubtle}`,
+                            boxShadow: selectedInstitution === backer.id ? '0 4px 12px rgba(0,0,0,0.1)' : '0 2px 4px rgba(0,0,0,0.05)',
+                            WebkitTapHighlightColor: 'transparent'
+                          }}
+                        >
+                          <div className="text-center">
+                            <div className="flex items-center justify-center p-4 h-20 mb-2 rounded-lg transition-all duration-300 hover:scale-105" 
+                                 style={{ backgroundColor: BRAND_COLORS.bgWhite }}>
+                              {logoUrl ? (
+                                <img 
+                                  src={logoUrl}
+                                  alt={`${backer.name} logo`}
+                                  className="max-h-16 max-w-full object-contain transition-all duration-300"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                    const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                                    if (fallback) fallback.style.display = 'flex';
+                                  }}
+                                />
+                              ) : null}
+                              <div className="w-full h-full bg-gradient-to-br from-blue-100 to-green-100 flex items-center justify-center text-xs font-medium" style={{ display: logoUrl ? 'none' : 'flex' }}>
+                                {backer.name?.charAt(0) || '?'}
+                              </div>
+                            </div>
+                            <h3 className="text-sm font-semibold mt-1" style={{ color: BRAND_COLORS.textPrimary }}>
+                              {backer.name}
+                            </h3>
+                            <div className="text-xs mt-0.5 font-medium" style={{ color: BRAND_COLORS.textSecondary }}>
+                              Tap to learn more
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
 
-                  {/* Navigation for carousel (only if more than 4 backers) */}
+                  {/* Navigation for carousel - Desktop: show if more than 4, Mobile: show if more than 2 */}
+                  {/* Desktop Navigation */}
                   {backers.length > 4 && (
-                    <div className="flex justify-end items-center gap-1 -mt-4 mb-2">
+                    <div className="hidden lg:flex justify-end items-center gap-1 -mt-4 mb-2">
                       <button
                         onClick={() => {
                           setBackerCarouselIndex((prev) => {
@@ -1233,6 +1339,38 @@ ${url}
                           setIsCarouselPaused(true);
                         }}
                         onMouseEnter={() => setIsCarouselPaused(true)}
+                        className="p-1.5 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
+                        aria-label="Next backers"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
+                  
+                  {/* Mobile Navigation - show if more than 2 backers */}
+                  {backers.length > 2 && (
+                    <div className="lg:hidden flex justify-end items-center gap-1 -mt-4 mb-2">
+                      <button
+                        onClick={() => {
+                          setBackerCarouselIndex((prev) => {
+                            const newIndex = prev - 2;
+                            return newIndex < 0 ? backers.length - (backers.length % 2 || 2) : newIndex;
+                          });
+                          setIsCarouselPaused(true);
+                        }}
+                        className="p-1.5 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
+                        aria-label="Previous backers"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setBackerCarouselIndex((prev) => {
+                            const nextIndex = prev + 2;
+                            return nextIndex >= backers.length ? 0 : nextIndex;
+                          });
+                          setIsCarouselPaused(true);
+                        }}
                         className="p-1.5 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
                         aria-label="Next backers"
                       >
@@ -1324,20 +1462,34 @@ ${url}
                   
                   {/* Press Mentions Carousel */}
                   <div className="relative">
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-                      {getVisiblePressMentions().map((pressMention: any, idx: number) => {
+                    {/* Desktop: 3 columns */}
+                    <div className="hidden md:grid md:grid-cols-3 gap-4 md:gap-6">
+                      {getVisiblePressMentions(3).map((pressMention: any, idx: number) => {
                         return (
                           <PressMentionCard 
-                            key={`${pressMention.id}-${idx}-${pressMentionCarouselIndex}`} 
+                            key={`${pressMention.id}-desktop-${idx}-${pressMentionCarouselIndex}`} 
+                            pressMention={pressMention} 
+                          />
+                        );
+                      })}
+                    </div>
+                    
+                    {/* Mobile: 2 columns */}
+                    <div className="grid md:hidden grid-cols-2 gap-4 md:gap-6">
+                      {getVisiblePressMentionsMobile().map((pressMention: any, idx: number) => {
+                        return (
+                          <PressMentionCard 
+                            key={`${pressMention.id}-mobile-${idx}-${pressMentionCarouselIndex}`} 
                             pressMention={pressMention} 
                           />
                         );
                       })}
                     </div>
 
-                    {/* Navigation for carousel (only if more than 3 press mentions) */}
+                    {/* Navigation for carousel - Desktop: show if more than 3, Mobile: show if more than 2 */}
+                    {/* Desktop Navigation */}
                     {pressMentions.length > 3 && (
-                      <div className="flex justify-end items-center gap-1 -mt-4 mb-2">
+                      <div className="hidden md:flex justify-end items-center gap-1 -mt-4 mb-2">
                         <button
                           onClick={() => {
                             setPressMentionCarouselIndex((prev) => {
@@ -1361,6 +1513,38 @@ ${url}
                             setIsCarouselPaused(true);
                           }}
                           onMouseEnter={() => setIsCarouselPaused(true)}
+                          className="p-1.5 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
+                          aria-label="Next press mentions"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
+                    
+                    {/* Mobile Navigation - show if more than 2 press mentions */}
+                    {pressMentions.length > 2 && (
+                      <div className="md:hidden flex justify-end items-center gap-1 -mt-4 mb-2">
+                        <button
+                          onClick={() => {
+                            setPressMentionCarouselIndex((prev) => {
+                              const newIndex = prev - 2;
+                              return newIndex < 0 ? pressMentions.length - (pressMentions.length % 2 || 2) : newIndex;
+                            });
+                            setIsCarouselPaused(true);
+                          }}
+                          className="p-1.5 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
+                          aria-label="Previous press mentions"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setPressMentionCarouselIndex((prev) => {
+                              const nextIndex = prev + 2;
+                              return nextIndex >= pressMentions.length ? 0 : nextIndex;
+                            });
+                            setIsCarouselPaused(true);
+                          }}
                           className="p-1.5 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
                           aria-label="Next press mentions"
                         >
@@ -1487,9 +1671,9 @@ ${url}
 
         {/* Right Side (1/3 width) */}
         <div className="lg:col-span-4 lg:mt-6 space-y-6">
-          {/* About the Changemaker Box */}
+          {/* About the Changemaker Box - Hidden on mobile */}
           <div 
-            className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 sticky top-32 self-start cursor-pointer hover:shadow-md transition-shadow"
+            className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-100 p-6 sticky top-32 self-start cursor-pointer hover:shadow-md transition-shadow"
             onClick={() => scrollToSection('changemakers')}
           >
             <h3 className="font-bold text-dark mb-4">About the Changemaker</h3>

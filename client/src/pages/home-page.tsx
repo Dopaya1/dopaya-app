@@ -17,6 +17,14 @@ export default function HomePage() {
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const h1IntervalRef = useRef<NodeJS.Timeout | null>(null);
   const h1Words = ['rewarding', 'transparent', 'efficient', 'meaningful'];
+  
+  // Info bar slider state (mobile only)
+  const [infoBarIndex, setInfoBarIndex] = useState(0);
+  const infoBarItems = [
+    'Support selected social enterprises',
+    'Get tangible rewards',
+    '100% sustainable products & transparent impact'
+  ];
 
   useEffect(() => {
     h1IntervalRef.current = setInterval(() => {
@@ -26,6 +34,14 @@ export default function HomePage() {
       if (h1IntervalRef.current) clearInterval(h1IntervalRef.current);
     };
   }, []);
+
+  // Auto-rotate info bar items on mobile (every 3 seconds)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setInfoBarIndex((prev) => (prev + 1) % infoBarItems.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [infoBarItems.length]);
   const { data: bubbleProjects = [] } = useQuery({
     queryKey: ["home-bubble-projects-featured-only"],
     queryFn: async () => {
@@ -241,11 +257,39 @@ export default function HomePage() {
         </section>
 
         {/* Info bar under hero */}
-        <section className="py-6" style={{ backgroundColor: '#ebe8df' }}>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <p className="text-base md:text-lg lg:text-xl text-gray-700 text-center">
-              Support selected social enterprises ··· Get tangible rewards ··· 100% sustainable products & transparent impact
-            </p>
+        <section className="py-6 flex items-center" style={{ backgroundColor: '#ebe8df' }}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+            {/* Desktop: 3 columns */}
+            <div className="hidden md:grid md:grid-cols-3 gap-4 lg:gap-8 items-center">
+              <p className="text-base lg:text-xl text-gray-700 text-center">
+                Support selected social enterprises
+              </p>
+              <p className="text-base lg:text-xl text-gray-700 text-center">
+                Get tangible rewards
+              </p>
+              <p className="text-base lg:text-xl text-gray-700 text-center">
+                100% sustainable products & transparent impact
+              </p>
+            </div>
+            
+            {/* Mobile: Auto-slider (1 item at a time) */}
+            <div className="md:hidden relative overflow-hidden min-h-[60px] flex items-center">
+              <div 
+                className="flex transition-transform duration-500 ease-in-out"
+                style={{ transform: `translateX(-${infoBarIndex * 100}%)` }}
+              >
+                {infoBarItems.map((item, index) => (
+                  <div 
+                    key={index}
+                    className="w-full flex-shrink-0 text-center flex items-center justify-center"
+                  >
+                    <p className="text-base text-gray-700 px-4">
+                      {item}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
         

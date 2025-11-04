@@ -356,6 +356,8 @@ export function ImpactDashboardSection() {
   const [activeVariant, setActiveVariant] = useState<'feature-steps' | 'animated-cards' | 'split-view' | 'minimal-list'>('animated-cards');
   const [currentFeature, setCurrentFeature] = useState(0);
   const [progress, setProgress] = useState(0);
+  const [touchStart, setTouchStart] = useState(0);
+  const [touchEnd, setTouchEnd] = useState(0);
   const autoPlayInterval = 4000;
 
   const features: DashboardFeature[] = [
@@ -413,6 +415,31 @@ export function ImpactDashboardSection() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentFeature, features.length]);
+
+  // Touch swipe handlers for mobile
+  const minSwipeDistance = 50;
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(0);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    
+    if (isLeftSwipe && currentFeature < features.length - 1) {
+      setCurrentFeature(currentFeature + 1);
+      setProgress(0);
+    }
+    if (isRightSwipe && currentFeature > 0) {
+      setCurrentFeature(currentFeature - 1);
+      setProgress(0);
+    }
+  };
 
   return (
     <>
@@ -584,7 +611,12 @@ export function ImpactDashboardSection() {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div 
+              className="grid md:grid-cols-2 gap-12 items-center"
+              onTouchStart={onTouchStart}
+              onTouchMove={onTouchMove}
+              onTouchEnd={onTouchEnd}
+            >
               {/* Left: Stacked Images with Animation */}
               <div className="relative h-96">
                 <AnimatePresence>

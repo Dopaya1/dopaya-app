@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Shield, CheckCircle, Leaf, Heart, ArrowLeft, ArrowRight, ArrowUpRight, X } from "lucide-react";
+import { ExternalLink, Shield, CheckCircle, Leaf, Heart, ArrowLeft, ArrowRight, ArrowUpRight, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { Reward } from "@shared/schema";
@@ -183,34 +183,64 @@ export function PartnerShowcaseSection() {
               </div>
             ))}
           </div>
-          {/* SM: 2 at a time */}
-          <div className="grid md:hidden grid-cols-2 gap-6">
-            {getVisible(2).map((brand, idx) => (
-              <div key={`${brand.id}-sm-${idx}`}>
-                <div className="cursor-pointer" onClick={() => { setSelectedBrand(selectedBrand === brand.id ? null : brand.id); setIsPaused(true); }}>
-                  <div className="flex items-center justify-center p-6 h-24 rounded-lg" style={{ backgroundColor: BRAND_COLORS.bgWhite }}>
-                    <img src={brand.logo} alt={brand.name} className="max-h-12 max-w-full object-contain" />
-                  </div>
-                </div>
-                <div className="mt-3 w-full p-4 rounded-lg shadow-sm" style={{ backgroundColor: BRAND_COLORS.bgWhite, border: `1px solid ${BRAND_COLORS.borderSubtle}` }}>
-                  <div className="flex items-start gap-3 mb-2">
-                    <img src={brand.logo} alt={brand.name} className="w-6 h-6 object-contain" />
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-sm" style={{ color: BRAND_COLORS.textPrimary }}>{brand.fullName}</h4>
-                      <span className="text-xs" style={{ color: BRAND_COLORS.textMuted }}>{brand.category}</span>
+          {/* Mobile: 1 at a time with slider */}
+          <div className="md:hidden relative overflow-hidden">
+            <div 
+              className="flex transition-transform duration-500 ease-in-out"
+              style={{ transform: `translateX(-${page * 100}%)` }}
+            >
+              {brands.map((brand, idx) => (
+                <div key={`${brand.id}-mobile-${idx}`} className="w-full flex-shrink-0 px-3">
+                  <div className="cursor-pointer" onClick={() => { setSelectedBrand(selectedBrand === brand.id ? null : brand.id); setIsPaused(true); }}>
+                    <div className="flex items-center justify-center p-6 h-24 rounded-lg" style={{ backgroundColor: BRAND_COLORS.bgWhite }}>
+                      <img src={brand.logo} alt={brand.name} className="max-h-12 max-w-full object-contain" />
                     </div>
-                    <a href={brand.website} target="_blank" rel="noopener noreferrer" className="text-xs" style={{ color: BRAND_COLORS.textMuted }}>
-                      <ArrowUpRight className="h-4 w-4" />
-                    </a>
                   </div>
-                  <p className="text-xs leading-relaxed" style={{ color: BRAND_COLORS.textSecondary }}>
-                    {brand.hoverDescription}
-                  </p>
+                  <div className="mt-3 w-full p-4 rounded-lg shadow-sm" style={{ backgroundColor: BRAND_COLORS.bgWhite, border: `1px solid ${BRAND_COLORS.borderSubtle}` }}>
+                    <div className="flex items-start gap-3 mb-2">
+                      <img src={brand.logo} alt={brand.name} className="w-6 h-6 object-contain" />
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-sm" style={{ color: BRAND_COLORS.textPrimary }}>{brand.fullName}</h4>
+                        <span className="text-xs" style={{ color: BRAND_COLORS.textMuted }}>{brand.category}</span>
+                      </div>
+                      <a href={brand.website} target="_blank" rel="noopener noreferrer" className="text-xs" style={{ color: BRAND_COLORS.textMuted }}>
+                        <ArrowUpRight className="h-4 w-4" />
+                      </a>
+                    </div>
+                    <p className="text-xs leading-relaxed" style={{ color: BRAND_COLORS.textSecondary }}>
+                      {brand.hoverDescription}
+                    </p>
+                  </div>
                 </div>
+              ))}
+            </div>
+            
+            {/* Mobile Navigation - Subtle arrows below (only if more than 1 brand) */}
+            {brands.length > 1 && (
+              <div className="flex justify-center items-center gap-1 mt-4">
+                <button
+                  onClick={() => {
+                    setPage((p) => (p - 1 + brands.length) % brands.length);
+                    setIsPaused(true);
+                  }}
+                  className="p-1.5 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
+                  aria-label="Previous brand"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => {
+                    setPage((p) => (p + 1) % brands.length);
+                    setIsPaused(true);
+                  }}
+                  className="p-1.5 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
+                  aria-label="Next brand"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
               </div>
-            ))}
+            )}
           </div>
-          {/* Pagination controls removed for autoplay */}
         </div>
 
         {/* Rewards Section */}

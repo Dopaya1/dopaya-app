@@ -44,8 +44,8 @@ const ExpandableGallery: React.FC<ExpandableGalleryProps> = ({ images, taglines 
 
   return (
     <div className={className}>
-      {/* Horizontal Expandable Gallery */}
-      <div className="flex gap-2 h-96 w-full">
+      {/* Desktop: Horizontal Expandable Gallery */}
+      <div className="hidden md:flex gap-2 h-96 w-full">
         {images.map((image, index) => (
           <motion.div
             key={index}
@@ -95,6 +95,57 @@ const ExpandableGallery: React.FC<ExpandableGalleryProps> = ({ images, taglines 
                       <p className="text-xs font-normal leading-tight mt-1">{description}</p>
                     ) : null}
                   </motion.div>
+                </div>
+              );
+            })()}
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Mobile: 2x2 Grid Layout */}
+      <div className="md:hidden grid grid-cols-2 gap-3 w-full">
+        {images.map((image, index) => (
+          <motion.div
+            key={index}
+            className="relative cursor-pointer overflow-hidden rounded-md aspect-square"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3, delay: index * 0.1 }}
+            onClick={() => {
+              if (onImageClick) {
+                onImageClick(index);
+              } else {
+                openImage(index);
+              }
+            }}
+          >
+            <img
+              src={image}
+              alt={`Gallery image ${index + 1}`}
+              className="w-full h-full object-cover"
+            />
+            {/* Bottom gradient overlay for readability */}
+            <div className="absolute inset-0">
+              <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+            </div>
+            {/* Tagline */}
+            {taglines[index] && (() => {
+              const parts = taglines[index].split(':');
+              const title = parts[0] || '';
+              const description = parts.slice(1).join(':').trim();
+              return (
+                <div className="absolute bottom-3 left-3 right-3 z-10">
+                  <div className="text-white drop-shadow-lg">
+                    <div className="flex items-center gap-2">
+                      {icons[index] ? <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/20">{icons[index]}</span> : null}
+                      <p className="text-xs font-bold leading-tight">
+                        {title}
+                      </p>
+                    </div>
+                    {description && description.length > 0 ? (
+                      <p className="text-[10px] font-normal leading-tight mt-0.5 line-clamp-1">{description}</p>
+                    ) : null}
+                  </div>
                 </div>
               );
             })()}
