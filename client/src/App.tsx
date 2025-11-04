@@ -77,7 +77,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <div className="min-h-screen">
-          <Navbar onOpenAuthModal={openAuthModal} />
+          <Navbar />
           <Router onOpenAuthModal={openAuthModal} />
           <Footer />
           <AuthModal 
