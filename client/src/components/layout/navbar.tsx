@@ -109,13 +109,7 @@ export function Navbar() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-96 p-0">
-                    <div className="grid grid-cols-2 gap-0">
-                      <div className="p-4 hover:bg-[#f8f6f1] transition-colors">
-                        <Link href="/brands" className="block">
-                          <div className="font-semibold text-base text-gray-900 mb-2">As Brand</div>
-                          <div className="text-sm text-gray-600 leading-relaxed">Partner with us to reach conscious consumers and build brand loyalty through impact</div>
-                        </Link>
-                      </div>
+                    <div className="grid grid-cols-1 gap-0">
                       <div className="p-4 hover:bg-[#f8f6f1] transition-colors">
                         <Link href="/social-enterprises" className="block">
                           <div className="font-semibold text-base text-gray-900 mb-2">As Social Enterprise</div>
@@ -169,13 +163,6 @@ export function Navbar() {
           {/* Mobile Join us options */}
           <div className="px-3 py-2">
             <div className="text-sm font-medium text-gray-500 mb-2">Join us</div>
-            <Link
-              href="/brands"
-              className="block px-3 py-2 rounded-md text-base font-medium text-dark hover:text-primary"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              As Brand
-            </Link>
             <Link
               href="/social-enterprises"
               className="block px-3 py-2 rounded-md text-base font-medium text-dark hover:text-primary"

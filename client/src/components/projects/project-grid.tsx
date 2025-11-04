@@ -49,7 +49,7 @@ export function ProjectGrid({ projects, isLoading, error }: ProjectGridProps) {
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <a 
-            href="https://tally.so/r/3Nd6lp" 
+            href="https://tally.so/r/3EM0vA" 
             target="_blank" 
             rel="noopener noreferrer"
             className="inline-block"
