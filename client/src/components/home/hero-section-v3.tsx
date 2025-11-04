@@ -8,6 +8,7 @@ import type { Project } from "@shared/schema";
 import { TYPOGRAPHY } from "@/constants/typography";
 import { BRAND_COLORS } from "@/constants/colors";
 import { InteractiveValueCalculator } from "@/components/ui/interactive-value-calculator";
+import { getProjectImageUrl } from "@/lib/image-utils";
 
 export function HeroSectionV3() {
   // State for rotating startup examples with locking behavior (subheadline)
@@ -393,11 +394,11 @@ export function HeroSectionV3() {
                     }`}
                     style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
                   >
-                    {project.imageUrl ? (
+                    {getProjectImageUrl(project) ? (
                       <>
                         <>
                           <img
-                            src={project.imageUrl}
+                            src={getProjectImageUrl(project) || ''}
                             alt={project.title}
                             className="w-full h-full object-cover group-hover:brightness-100 transition-all duration-300"
                           />

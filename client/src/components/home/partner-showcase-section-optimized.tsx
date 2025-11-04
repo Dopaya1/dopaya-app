@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ExternalLink, Shield, CheckCircle, Leaf, Heart, ArrowLeft, ArrowRight, ArrowUpRight, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -8,11 +8,11 @@ import { TYPOGRAPHY } from "@/constants/typography";
 import { BRAND_COLORS } from "@/constants/colors";
 import { MOBILE } from "@/constants/mobile";
 import { MobileSlider } from "@/components/ui/mobile-slider";
-import bonjiLogo from '@assets/Bonji - beyond just natural.png';
-import aaparLogo from '@assets/Aapar logo_1750646598028.png';
+import bonjiLogo from '@assets/Brand_backers/Bonji sustainable brand - logo.png';
+import aaparLogo from '@assets/Brand_backers/Aapar sustainable brand - logo.png';
 import syangsLogo from '@assets/Syangs logo_1750646598029.png';
-import sankalpaArtVillageLogo from '@assets/sankalpa-art-village.png';
-import milletarianLogo from '@assets/milletarian.png';
+import sankalpaArtVillageLogo from '@assets/Brand_backers/sankalpa-art-village sustainable brand - logo.png';
+import milletarianLogo from '@assets/Brand_backers/milletarian sustainable brand - logo.png';
 
 // Real brand data with available logos
 const impactBrands = [
@@ -69,8 +69,28 @@ const impactBrands = [
 ];
 
 export function PartnerShowcaseSection() {
-  const [hoveredBrand, setHoveredBrand] = useState<number | null>(null);
   const [selectedBrand, setSelectedBrand] = useState<number | null>(null);
+  // Page-based slider (4 items per page on lg, 3 on md, 2 on sm)
+  const [page, setPage] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const brands = impactBrands.filter(b => b.featured);
+  const getVisible = (count: number) => {
+    const out: typeof brands = [] as any;
+    for (let i = 0; i < count; i++) {
+      const idx = (page * count + i) % brands.length;
+      out.push(brands[idx]);
+    }
+    return out;
+  };
+
+  // Auto-advance pages (infinite) and pause on hover or user interaction
+  useEffect(() => {
+    if (isPaused || brands.length === 0) return;
+    const id = setInterval(() => {
+      setPage((p) => (p + 1) % brands.length);
+    }, 3000);
+    return () => clearInterval(id);
+  }, [isPaused, brands.length]);
 
   // Fetch real rewards from Supabase database
   const { data: rewards = [], isLoading } = useQuery<Reward[]>({
@@ -106,134 +126,110 @@ export function PartnerShowcaseSection() {
           </p>
         </div>
 
-        {/* Interactive Brand Showcase - Clay.com Style */}
-        <div className="mb-16">
-          <div 
-            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 mb-8"
-            onMouseLeave={() => setHoveredBrand(null)}
-          >
-            {impactBrands.filter(brand => brand.featured).map((brand) => (
-              <div
-                key={brand.id}
-                className="relative group cursor-pointer"
-                onMouseEnter={() => setHoveredBrand(brand.id)}
-                onMouseLeave={() => setHoveredBrand(null)}
-              >
-                {/* Brand Logo */}
-                <div 
-                  className="block cursor-pointer"
-                  onClick={() => setSelectedBrand(selectedBrand === brand.id ? null : brand.id)}
-                >
-                  <div className="flex items-center justify-center p-6 h-24 rounded-lg transition-all duration-300 hover:scale-105" 
-                       style={{ backgroundColor: BRAND_COLORS.bgWhite }}>
-                    <img
-                      src={brand.logo}
-                      alt={brand.name}
-                      className="max-h-12 max-w-full object-contain filter grayscale hover:grayscale-0 transition-all duration-300"
-                    />
-                  </div>
-                </div>
-
-                {/* Desktop hover popover */}
-                {hoveredBrand === brand.id && (
-                  <div className="hidden md:block">
-                    <div 
-                      className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 w-72 p-4 rounded-lg shadow-xl z-20 animate-in fade-in-0 zoom-in-95"
-                      style={{ backgroundColor: BRAND_COLORS.bgWhite, border: `1px solid ${BRAND_COLORS.borderSubtle}` }}
-                      onMouseEnter={() => setHoveredBrand(brand.id)}
-                      onMouseLeave={() => setHoveredBrand(null)}
-                    >
-                      <div className="flex items-start gap-3 mb-3">
-                        <img src={brand.logo} alt={brand.name} className="w-8 h-8 object-contain" />
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-sm" style={{ color: BRAND_COLORS.textPrimary }}>
-                            {brand.fullName}
-                          </h4>
-                          <span className="text-xs" style={{ color: BRAND_COLORS.textMuted }}>
-                            {brand.category}
-                          </span>
-                        </div>
-                        <ArrowUpRight className="h-4 w-4" style={{ color: BRAND_COLORS.textMuted }} />
-                      </div>
-                      <p className="text-sm leading-relaxed mb-3" style={{ color: BRAND_COLORS.textSecondary }}>
-                        {brand.hoverDescription}
-                      </p>
-                      <a 
-                        href={brand.website} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs font-medium hover:underline"
-                        style={{ color: BRAND_COLORS.primaryOrange }}
-                      >
-                        Visit Website
-                        <ArrowUpRight className="h-3 w-3" />
-                      </a>
+        {/* Brand Showcase - Slider that preserves 4-grid layout */}
+        <div className="mb-16" onMouseEnter={() => setIsPaused(true)} onMouseLeave={() => setIsPaused(false)}>
+          {/* Desktop/LG: 4 at a time */}
+          <div className="hidden lg:grid lg:grid-cols-4 gap-8">
+            {getVisible(4).map((brand, idx) => (
+              <div key={`${brand.id}-lg-${idx}`} className="px-0">
+                <div className="cursor-pointer" onClick={() => { setSelectedBrand(selectedBrand === brand.id ? null : brand.id); setIsPaused(true); }}>
+                    <div className="flex items-center justify-center p-6 h-24 rounded-lg" style={{ backgroundColor: BRAND_COLORS.bgWhite }}>
+                      <img src={brand.logo} alt={brand.name} className="max-h-12 max-w-full object-contain" />
                     </div>
                   </div>
-                )}
-
-                {/* Mobile click popover */}
-                {selectedBrand === brand.id && (
-                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 md:hidden">
-                    <div 
-                      className="w-full max-w-sm bg-white rounded-lg p-6 shadow-xl"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="flex items-start gap-3 mb-4">
-                        <img src={brand.logo} alt={brand.name} className="w-8 h-8 object-contain" />
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-sm text-gray-900">
-                            {brand.fullName}
-                          </h4>
-                          <span className="text-xs text-gray-500">
-                            {brand.category}
-                          </span>
-                        </div>
-                        <button 
-                          onClick={() => setSelectedBrand(null)}
-                          className="text-gray-400 hover:text-gray-600"
-                        >
-                          <X className="h-5 w-5" />
-                        </button>
+                  {/* Always-visible info box */}
+                  <div className="mt-3 w-full p-4 rounded-lg shadow-sm" style={{ backgroundColor: BRAND_COLORS.bgWhite, border: `1px solid ${BRAND_COLORS.borderSubtle}` }}>
+                    <div className="flex items-start gap-3 mb-2">
+                      <img src={brand.logo} alt={brand.name} className="w-6 h-6 object-contain" />
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-sm" style={{ color: BRAND_COLORS.textPrimary }}>{brand.fullName}</h4>
+                        <span className="text-xs" style={{ color: BRAND_COLORS.textMuted }}>{brand.category}</span>
                       </div>
-                      <p className="text-sm leading-relaxed mb-4 text-gray-700">
-                        {brand.hoverDescription}
-                      </p>
-                      <a 
-                        href={brand.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 text-sm font-medium text-orange-600 hover:text-orange-700"
-                      >
-                        Visit {brand.name}
+                      <a href={brand.website} target="_blank" rel="noopener noreferrer" className="text-xs" style={{ color: BRAND_COLORS.textMuted }}>
                         <ArrowUpRight className="h-4 w-4" />
                       </a>
                     </div>
+                    <p className="text-sm leading-relaxed" style={{ color: BRAND_COLORS.textSecondary }}>
+                      {brand.hoverDescription}
+                    </p>
                   </div>
-                )}
+                </div>
+            ))}
+          </div>
+          {/* MD: 3 at a time */}
+          <div className="hidden md:grid lg:hidden md:grid-cols-3 gap-8">
+            {getVisible(3).map((brand, idx) => (
+              <div key={`${brand.id}-md-${idx}`}>{/* same card */}
+                <div className="cursor-pointer" onClick={() => { setSelectedBrand(selectedBrand === brand.id ? null : brand.id); setIsPaused(true); }}>
+                  <div className="flex items-center justify-center p-6 h-24 rounded-lg" style={{ backgroundColor: BRAND_COLORS.bgWhite }}>
+                    <img src={brand.logo} alt={brand.name} className="max-h-12 max-w-full object-contain" />
+                  </div>
+                </div>
+                <div className="mt-3 w-full p-4 rounded-lg shadow-sm" style={{ backgroundColor: BRAND_COLORS.bgWhite, border: `1px solid ${BRAND_COLORS.borderSubtle}` }}>
+                  <div className="flex items-start gap-3 mb-2">
+                    <img src={brand.logo} alt={brand.name} className="w-6 h-6 object-contain" />
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-sm" style={{ color: BRAND_COLORS.textPrimary }}>{brand.fullName}</h4>
+                      <span className="text-xs" style={{ color: BRAND_COLORS.textMuted }}>{brand.category}</span>
+                    </div>
+                    <a href={brand.website} target="_blank" rel="noopener noreferrer" className="text-xs" style={{ color: BRAND_COLORS.textMuted }}>
+                      <ArrowUpRight className="h-4 w-4" />
+                    </a>
+                  </div>
+                  <p className="text-xs leading-relaxed" style={{ color: BRAND_COLORS.textSecondary }}>
+                    {brand.hoverDescription}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
-          
+          {/* SM: 2 at a time */}
+          <div className="grid md:hidden grid-cols-2 gap-6">
+            {getVisible(2).map((brand, idx) => (
+              <div key={`${brand.id}-sm-${idx}`}>
+                <div className="cursor-pointer" onClick={() => { setSelectedBrand(selectedBrand === brand.id ? null : brand.id); setIsPaused(true); }}>
+                  <div className="flex items-center justify-center p-6 h-24 rounded-lg" style={{ backgroundColor: BRAND_COLORS.bgWhite }}>
+                    <img src={brand.logo} alt={brand.name} className="max-h-12 max-w-full object-contain" />
+                  </div>
+                </div>
+                <div className="mt-3 w-full p-4 rounded-lg shadow-sm" style={{ backgroundColor: BRAND_COLORS.bgWhite, border: `1px solid ${BRAND_COLORS.borderSubtle}` }}>
+                  <div className="flex items-start gap-3 mb-2">
+                    <img src={brand.logo} alt={brand.name} className="w-6 h-6 object-contain" />
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-sm" style={{ color: BRAND_COLORS.textPrimary }}>{brand.fullName}</h4>
+                      <span className="text-xs" style={{ color: BRAND_COLORS.textMuted }}>{brand.category}</span>
+                    </div>
+                    <a href={brand.website} target="_blank" rel="noopener noreferrer" className="text-xs" style={{ color: BRAND_COLORS.textMuted }}>
+                      <ArrowUpRight className="h-4 w-4" />
+                    </a>
+                  </div>
+                  <p className="text-xs leading-relaxed" style={{ color: BRAND_COLORS.textSecondary }}>
+                    {brand.hoverDescription}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* Pagination controls removed for autoplay */}
         </div>
 
         {/* Rewards Section */}
         <div>
           <div className="text-center mb-8">
-            <h3 className="text-2xl font-bold mb-2" style={{ 
+            <h3 className={`${TYPOGRAPHY.section} mb-4`} style={{ 
               color: BRAND_COLORS.textPrimary,
               fontFamily: "'Satoshi', 'Inter', system-ui, sans-serif"
             }}>
               Popular Rewards
             </h3>
-            <p className="text-base" style={{ color: BRAND_COLORS.textSecondary }}>
+            <p className="text-xl max-w-2xl mx-auto" style={{ color: BRAND_COLORS.textSecondary }}>
               Redeem your impact points for exclusive products and experiences
             </p>
           </div>
 
           {isLoading ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6">
-              {[1, 2, 3, 4, 5].map((i) => (
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[1, 2, 3, 4].map((i) => (
                 <div 
                   key={i}
                   className="rounded-xl overflow-hidden shadow-sm animate-pulse"
@@ -251,8 +247,8 @@ export function PartnerShowcaseSection() {
             </div>
           ) : (
             <>
-              {/* Desktop: 5-column grid */}
-              <div className="hidden lg:grid lg:grid-cols-5 gap-6">
+              {/* Desktop: 4-column grid */}
+              <div className="hidden lg:grid lg:grid-cols-4 gap-6">
                 {rewards.map((reward) => (
                   <div
                     key={reward.id}

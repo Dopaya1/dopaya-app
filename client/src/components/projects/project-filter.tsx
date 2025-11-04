@@ -73,7 +73,7 @@ export function ProjectFilter({ onFilterChange }: ProjectFilterProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mb-8 w-full bg-[#f8f8f5]">
+    <form onSubmit={handleSubmit} className="mb-8 w-full bg-white">
       <div className="p-4 flex flex-col md:flex-row md:items-center gap-4">
         <div className="relative md:flex-1 md:max-w-sm">
           <Input
@@ -91,8 +91,8 @@ export function ProjectFilter({ onFilterChange }: ProjectFilterProps) {
           onValueChange={setCategory}
         >
           <SelectTrigger className="w-full md:w-52 bg-white border-gray-200">
-            <SelectValue placeholder="All...">
-              {category === "all" ? "All..." : category}
+            <SelectValue>
+              {category === "all" ? "All Categories" : category}
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
@@ -118,8 +118,8 @@ export function ProjectFilter({ onFilterChange }: ProjectFilterProps) {
           onValueChange={setCountry}
         >
           <SelectTrigger className="w-full md:w-52 bg-white border-gray-200">
-            <SelectValue placeholder="All...">
-              {country === "all" ? "All..." : country}
+            <SelectValue>
+              {country === "all" ? "All Countries" : country}
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
@@ -132,9 +132,9 @@ export function ProjectFilter({ onFilterChange }: ProjectFilterProps) {
           </SelectContent>
         </Select>
 
-        <div className="flex gap-2 md:w-auto">
-          <Button type="submit" className="text-white" style={{ backgroundColor: '#f2662d' }}>Filter</Button>
-          <Button type="button" variant="outline" onClick={handleReset} className="bg-white">
+        <div className="flex gap-2 w-full md:w-auto md:flex-shrink-0">
+          <Button type="submit" className="text-white flex-1 md:flex-none md:px-6" style={{ backgroundColor: '#f2662d' }}>Filter</Button>
+          <Button type="button" variant="outline" onClick={handleReset} className="bg-white flex-1 md:flex-none md:px-6">
             Reset
           </Button>
         </div>

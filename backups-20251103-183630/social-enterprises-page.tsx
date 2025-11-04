@@ -20,11 +20,9 @@ import { ContactSection } from "@/components/ui/contact-section";
 import { SelectionCriteriaEnhanced } from "@/components/ui/selection-criteria-enhanced";
 import { Carousel, TestimonialCard } from "@/components/ui/retro-testimonial";
 import type { iTestimonial } from "@/components/ui/retro-testimonial";
-import { OptimizedImage } from "@/components/ui/optimized-image";
 import { TYPOGRAPHY } from "@/constants/typography";
 import { BRAND_COLORS } from "@/constants/colors";
 import { MOBILE } from "@/constants/mobile";
-import patrickImg from "@assets/Patrick Widmann_1749545204060.png";
 
 export default function SocialEnterprisesPage() {
   // Cache bust: 2025-01-27 11:22
@@ -540,7 +538,7 @@ export default function SocialEnterprisesPage() {
       </section>
 
       {/* Pilot Program Section - Moved from top */}
-      <section className="py-16" style={{ backgroundColor: BRAND_COLORS.primaryOrange }}>
+      <section className="py-16 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -548,7 +546,7 @@ export default function SocialEnterprisesPage() {
             transition={{ duration: 0.6 }}
             className="text-center"
           >
-            <div className="rounded-xl p-8 shadow-lg bg-white/10 backdrop-blur-sm">
+            <div className="rounded-xl p-8 shadow-lg" style={{ backgroundColor: BRAND_COLORS.primaryOrange }}>
               <h3 className="text-3xl font-bold text-white mb-4">
                 Join Our Pilot Program
               </h3>
@@ -579,196 +577,16 @@ export default function SocialEnterprisesPage() {
         </div>
       </section>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Headlines */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-            className="text-center mb-12"
-          >
-            <h2 className={`${TYPOGRAPHY.section} mb-4`} style={{ color: BRAND_COLORS.textPrimary }}>
-              Join the early community of social enterprises
-            </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Be part of building the future of impact funding. Help us shape a platform that rewards supporters for backing sustainable solutions.
-            </p>
-          </motion.div>
-
-          {/* Two Column Layout */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            viewport={{ once: true }}
-            className="grid lg:grid-cols-3 gap-8 mb-4 pt-8 items-start"
-          >
-            {/* Left: Personal Image (1/3 width) */}
-            <div className="bg-gray-50 rounded-xl p-6 shadow-lg flex flex-col justify-center">
-              <div className="text-center">
-                <div className="w-40 h-40 rounded-lg overflow-hidden mb-4 mx-auto">
-                  <OptimizedImage
-                    src={patrickImg}
-                    alt="Patrick"
-                    width={160}
-                    height={160}
-                    quality={85}
-                    className="w-full h-full object-cover"
-                    fallbackSrc="/placeholder-avatar.png"
-                    onError={() => console.warn('Failed to load Patrick image')}
-                  />
-                </div>
-                
-                <h3 className="text-lg font-bold text-gray-900 mb-1">Patrick</h3>
-                <p className="text-orange-600 font-medium mb-3 text-sm">Building Dopaya</p>
-                
-                <p className="text-gray-700 italic text-sm">
-                  "I've seen too many SEs chase funding instead of creating impact. Let's build something different together."
-                </p>
-              </div>
-            </div>
-
-            {/* Right: Benefits (2/3 width) */}
-            <div className="lg:col-span-2 bg-gray-50 rounded-xl p-6 shadow-lg">
-              <h3 className="text-xl font-bold text-gray-900 mb-8">What you get as a pilot partner:</h3>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div className="flex items-start gap-3">
-                  <Users className="w-5 h-5 text-black mt-0.5 flex-shrink-0" />
-                  <div>
-                    <span className="text-gray-700 text-base font-medium">Direct founder access</span>
-                    <p className="text-gray-600 text-sm mt-2 leading-relaxed">Personal communication with Patrick, not automated responses</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <MessageCircle className="w-5 h-5 text-black mt-0.5 flex-shrink-0" />
-                  <div>
-                    <span className="text-gray-700 text-base font-medium">Shape the platform</span>
-                    <p className="text-gray-600 text-sm mt-2 leading-relaxed">Your feedback directly influences what we build for future SEs</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <GitMerge className="w-5 h-5 text-black mt-0.5 flex-shrink-0" />
-                  <div>
-                    <span className="text-gray-700 text-base font-medium">Featured in case studies</span>
-                    <p className="text-gray-600 text-sm mt-2 leading-relaxed">Be part of our launch success stories and get additional visibility</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Globe className="w-5 h-5 text-black mt-0.5 flex-shrink-0" />
-                  <div>
-                    <span className="text-gray-700 text-base font-medium">Early ecosystem access</span>
-                    <p className="text-gray-600 text-sm mt-2 leading-relaxed">Be among the first to access future funding streams and partnerships</p>
-                  </div>
-                </div>
-                
-                {/* Third row - 2 new benefits with checkmarks */}
-                <div className="flex items-start gap-3">
-                  <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center mt-0.5 flex-shrink-0">
-                    <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="relative flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-700 text-base font-medium">Free forever</span>
-                      <div className="relative group cursor-pointer">
-                        <div className="w-4 h-4 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors">
-                          <span className="text-xs font-semibold text-gray-600">?</span>
-                        </div>
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-300 z-10">
-                          <div className="p-3 bg-orange-50 rounded-lg border border-orange-200 shadow-lg whitespace-nowrap">
-                            <p className="text-orange-800 text-xs font-medium mb-1">Pilot partner benefits:</p>
-                            <p className="text-orange-700 text-xs">• 0% fees for life<br/>• Priority support<br/>• Early access to new features<br/>• Grandfathered pricing</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <p className="text-gray-600 text-sm mt-2 leading-relaxed">No platform fees ever - you keep 100% of supporter funds</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center mt-0.5 flex-shrink-0">
-                    <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="relative flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-700 text-base font-medium">Minimal time commitment</span>
-                      <div className="relative group cursor-pointer">
-                        <div className="w-4 h-4 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors">
-                          <span className="text-xs font-semibold text-gray-600">?</span>
-                        </div>
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-300 z-10">
-                          <div className="p-3 bg-orange-50 rounded-lg border border-orange-200 shadow-lg whitespace-nowrap">
-                            <p className="text-orange-800 text-xs font-medium mb-1">What you provide:</p>
-                            <p className="text-orange-700 text-xs">• Monthly impact update (5 min)<br/>• Quarterly check-in (15 min)<br/>• Annual report (we help create)<br/>• Onboarding call to understand your business</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <p className="text-gray-600 text-sm mt-2 leading-relaxed">Only 2-3 hours per month total</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* CTA Box Below - HIDDEN (moved to top) */}
-          {/* <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            viewport={{ once: true }}
-            className="text-center"
-          >
-            <div className="rounded-xl p-6 shadow-lg" style={{ backgroundColor: BRAND_COLORS.primaryOrange }}>
-              <h3 className="text-2xl font-bold text-white mb-3">
-                Join Our Pilot Program
-              </h3>
-              <p className="text-orange-100 mb-6 text-lg">
-                We are launching with just a few selected social enterprises. Be part of the first cohort and help us prove this model works.
-              </p>
-              <div className="flex flex-col items-center gap-4">
-                <a href="https://tally.so/r/3EM0vA" target="_blank" rel="noopener noreferrer">
-                  <Button 
-                    className="px-6 py-3 text-lg rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 bg-white hover:bg-gray-50"
-                    style={{ color: BRAND_COLORS.primaryOrange }}
-                  >
-                    Apply for Pilot Program
-                  </Button>
-                </a>
-                <a
-                  href="/eligibility" 
-                  className="text-orange-100 hover:text-white transition-colors text-sm underline"
-                >
-                  Check if you are eligible
-                </a>
-                <div className="mt-4 text-orange-100 text-sm">
-                  <p>Free forever • No long-term commitment • Cancel anytime</p>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section> */}
-
-
       {/* Animated Timeline Section */}
       <section id="timeline" className="py-24" style={{ backgroundColor: BRAND_COLORS.bgBeige }}>
         <DopayaTimelineSimplified />
       </section>
-
 
       {/* Enhanced Eligibility Criteria Section */}
       {/* Cache bust: 2025-01-27 12:15 - Efficiency criterion included */}
       <div id="eligibility">
         <SelectionCriteriaEnhanced />
       </div>
-
-
 
       {/* FAQ Section */}
       <section className="py-24" style={{ backgroundColor: BRAND_COLORS.bgWhite }}>
@@ -891,7 +709,6 @@ export default function SocialEnterprisesPage() {
           </motion.div>
         </div>
       </section>
-
 
       {/* Sticky bottom CTA */}
       <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200 py-3 px-4 z-50 md:hidden">

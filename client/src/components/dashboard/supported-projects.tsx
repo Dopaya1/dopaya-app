@@ -56,7 +56,7 @@ export function SupportedProjects() {
               <img src={project.imageUrl} alt={project.title} className="w-full h-48 object-cover" />
               <CardContent className="p-4">
                 <h3 className="text-lg font-bold text-dark font-heading mb-2">{project.title}</h3>
-                <p className="text-sm text-neutral mb-4">{project.description}</p>
+                <p className="text-sm text-neutral mb-4 whitespace-pre-line">{project.description}</p>
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-xs text-neutral">${project.goalAmount?.toLocaleString() || '0'} goal</span>
                   <Link href={`/project/${project.slug || project.id}`} className="text-primary hover:underline text-sm font-medium flex items-center">

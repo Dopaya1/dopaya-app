@@ -13,15 +13,15 @@ import { supabase } from "@/lib/supabase";
 import { BRAND_COLORS } from "@/constants/colors";
 
 // Import logo images - using relative paths
-import milletarianLogo from "@assets/milletarian.png";
-import adithiMilletsLogo from "@assets/adithi-millets.png";
-import allikaLogo from "@assets/allika.png";
-import khadyamLogo from "@assets/khadyam.png";
-import sankalpaArtVillageLogo from "@assets/sankalpa-art-village.png";
-import amazonLogo from "@assets/amazon.png";
-import flipkartLogo from "@assets/flipkart.png";
-import bonjiLogo from "@assets/Bonji - beyond just natural.png";
-import aaparLogo from "@assets/Aapar logo_1750646598028.png";
+import milletarianLogo from "@assets/Brand_backers/milletarian sustainable brand - logo.png";
+import adithiMilletsLogo from "@assets/Brand_backers/adithi-millets sustainable brand - logo.png";
+import allikaLogo from "@assets/Brand_backers/allika sustainable brand - logo.png";
+import khadyamLogo from "@assets/Brand_backers/khadyam sustainable brand - logo.png";
+import sankalpaArtVillageLogo from "@assets/Brand_backers/sankalpa-art-village sustainable brand - logo.png";
+import amazonLogo from "@assets/Brand_backers/amazon.png";
+import flipkartLogo from "@assets/Brand_backers/flipkart.png";
+import bonjiLogo from "@assets/Brand_backers/Bonji sustainable brand - logo.png";
+import aaparLogo from "@assets/Brand_backers/Aapar sustainable brand - logo.png";
 import syangsLogo from "@assets/Syangs logo_1750646598029.png";
 
 export default function RewardsPage() {

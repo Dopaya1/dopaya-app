@@ -4,12 +4,13 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import HomePage from "@/pages/home-page";
 import ProjectsPage from "@/pages/projects-page";
 import ProjectDetailPage from "@/pages/project-detail-page";
+import ProjectDetailPageV3 from "@/pages/project-detail-page-v3";
 import DashboardPage from "@/pages/dashboard-page";
 import ContactPage from "@/pages/contact-page";
 import AboutPage from "@/pages/about-page";
 import RewardsPage from "@/pages/rewards-page";
 import ThankYouPage from "@/pages/thank-you-page";
-import BrandsPage from "@/pages/brands-page";
+import BrandsPageV2 from "@/pages/brands-page-v2";
 import SocialEnterprisesPage from "@/pages/social-enterprises-page";
 import FAQPage from "@/pages/faq-page";
 import PrivacyPolicy from "@/pages/privacy-policy";
@@ -34,13 +35,15 @@ function Router({ onOpenAuthModal }: { onOpenAuthModal: (tab: "login" | "registe
     <Switch>
       <Route path="/" component={HomePage} />
       <Route path="/projects" component={ProjectsPage} />
+      <Route path="/project-v3/:slug" component={ProjectDetailPageV3} />
       <Route path="/project/:slug" component={ProjectDetailPage} />
       <Route path="/dashboard" component={ProtectedRoute(DashboardPage)} />
       <Route path="/contact" component={ContactPage} />
       <Route path="/about" component={AboutPage} />
       <Route path="/rewards" component={RewardsPage} />
       <Route path="/thank-you" component={ThankYouPage} />
-      <Route path="/brands" component={BrandsPage} />
+      <Route path="/brands" component={BrandsPageV2} />
+      <Route path="/brands-v2" component={BrandsPageV2} />
       <Route path="/social-enterprises" component={SocialEnterprisesPage} />
       <Route path="/faq" component={FAQPage} />
       <Route path="/privacy" component={PrivacyPolicy} />

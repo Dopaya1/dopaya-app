@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { getCategoryColors } from "@/lib/category-colors";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { trackProjectClick } from "@/lib/simple-analytics";
+import { getProjectImageUrl } from "@/lib/image-utils";
 
 interface ProjectCardProps {
   project: Project;
@@ -13,6 +14,7 @@ interface ProjectCardProps {
 
 export function ProjectCard({ project }: ProjectCardProps) {
   const categoryColors = getCategoryColors(project.category || '');
+  const projectImageUrl = getProjectImageUrl(project);
 
   const handleProjectClick = () => {
     trackProjectClick(project.slug, project.title);
@@ -22,7 +24,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
     <Card className="impact-card overflow-hidden flex flex-col h-full">
       <div className="w-full h-48 overflow-hidden">
         <OptimizedImage
-          src={project.imageUrl || '/placeholder-project.png'}
+          src={projectImageUrl || '/placeholder-project.png'}
           alt={project.title}
           width={400}
           height={192}
@@ -43,12 +45,12 @@ export function ProjectCard({ project }: ProjectCardProps) {
         
         {/* Mission Statement */}
         {project.missionStatement && (
-          <p className="text-sm text-neutral mb-2 line-clamp-3 leading-relaxed">
+          <p className="text-sm text-neutral mb-2 line-clamp-3 leading-relaxed whitespace-pre-line">
             {project.missionStatement}
           </p>
         )}
         
-        <p className="text-sm text-neutral mb-4 line-clamp-3">{project.description}</p>
+        <p className="text-sm text-neutral mb-4 line-clamp-3 whitespace-pre-line">{project.description}</p>
       </CardContent>
       <CardFooter className="p-4 pt-0 mt-auto">
         <Link href={`/project/${project.slug}`}>

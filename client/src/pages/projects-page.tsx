@@ -67,7 +67,7 @@ export default function ProjectsPage() {
   });
 
   return (
-    <div className="py-24">
+    <div className="py-24 bg-white min-h-screen">
       <SEOHead
         title="Social Impact Projects | Support Verified Social Enterprises | Dopaya"
         description="Discover and support carefully vetted high-impact social enterprises making a difference worldwide. Track your donations, earn impact points, and see real-world change."

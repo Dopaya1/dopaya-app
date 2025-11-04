@@ -2,12 +2,17 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams } from "wouter";
 import { Project } from "@shared/schema";
 import { ProjectDetailNew } from "@/components/projects/project-detail-new";
+import { ProjectDetailNewV3 } from "@/components/projects/project-detail-new-v3";
 import { SEOHead } from "@/components/seo/seo-head";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 export default function ProjectDetailPage() {
   const { slug } = useParams<{ slug: string }>();
+  
+  // Projects that should use the v3 template
+  const v3Slugs = ['openversum', 'ignis-careers'];
+  const useV3Template = slug && v3Slugs.includes(slug);
   
   const { data: project, isLoading, error } = useQuery<Project | null>({
     queryKey: ["project-detail", slug],
@@ -62,7 +67,7 @@ export default function ProjectDetailPage() {
         title={project.title}
         description={project.description || project.summary || `Support ${project.title}, a social impact project making a difference in ${project.category}.`}
         keywords={`${project.title}, ${project.category}, social impact, donation, ${project.primarySdg ? `SDG ${project.primarySdg}, ` : ''}social enterprise, development project`}
-        canonicalUrl={`https://dopaya.org/projects/${project.slug}`}
+        canonicalUrl={useV3Template ? `https://dopaya.org/project-v3/${project.slug}` : `https://dopaya.org/projects/${project.slug}`}
         ogType="article"
         ogImage={project.imageUrl || undefined}
         structuredData={{
@@ -80,7 +85,7 @@ export default function ProjectDetailPage() {
             "name": "Dopaya",
             "logo": "https://dopaya.org/logo.png"
           },
-          "mainEntityOfPage": `https://dopaya.org/projects/${project.slug}`,
+          "mainEntityOfPage": useV3Template ? `https://dopaya.org/project-v3/${project.slug}` : `https://dopaya.org/projects/${project.slug}`,
           "about": {
             "@type": "Thing",
             "name": project.category
@@ -88,7 +93,11 @@ export default function ProjectDetailPage() {
         }}
       />
       
-      <ProjectDetailNew project={project} />
+      {useV3Template ? (
+        <ProjectDetailNewV3 project={project} />
+      ) : (
+        <ProjectDetailNew project={project} />
+      )}
     </>
   );
 }

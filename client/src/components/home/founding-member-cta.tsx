@@ -12,11 +12,11 @@ export function FoundingMemberCTA() {
             className={`${TYPOGRAPHY.section} mb-4 text-white`}
             style={{ fontFamily: "'Satoshi', 'Inter', system-ui, sans-serif" }}
           >
-            Join the Founding Community
+            Join our community as an early backer
           </h2>
           
           <p className="text-lg md:text-xl mb-8 text-white/90 max-w-2xl mx-auto">
-            Be among the first 1,000 supporters to shape the future of impact investing
+            Be among the first supporters to shape the future of impact investing
           </p>
           
           

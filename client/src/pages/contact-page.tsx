@@ -106,10 +106,10 @@ export default function ContactPage() {
                 <div>
                   <h3 className="font-semibold uppercase text-sm tracking-wider mb-2">Whatsapp</h3>
                   <a
-                    href="https://wa.me/919948703646"
+                    href="https://wa.me/4917621140723"
                     className="text-muted-foreground hover:text-primary transition-colors"
                   >
-                    +91 99487 03646
+                    +4917621140723
                   </a>
                 </div>
               </div>

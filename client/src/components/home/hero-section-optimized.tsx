@@ -12,6 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import type { Project, Reward } from "@shared/schema";
 import { supabase } from "@/lib/supabase";
+import { getProjectImageUrl } from "@/lib/image-utils";
 
 export function HeroSection() {
   const projectsRef = useRef<HTMLDivElement>(null);
@@ -188,11 +189,11 @@ export function HeroSection() {
                     className="flex-shrink-0 w-32 h-32 rounded-xl overflow-hidden relative group cursor-pointer transition-all duration-300"
                     style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
                   >
-                    {project.imageUrl ? (
+                    {getProjectImageUrl(project) ? (
                       <>
                         <>
                           <img
-                            src={project.imageUrl}
+                            src={getProjectImageUrl(project) || ''}
                             alt={project.title}
                             className="w-full h-full object-cover group-hover:brightness-100 transition-all duration-300"
                           />

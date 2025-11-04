@@ -303,7 +303,7 @@ export default function SocialEnterprisesPage() {
                     {(projects as Project[]).map((project: Project, index: number) => (
                       <div key={project.id} className="group hover:scale-105 transition-transform duration-200 relative flex-shrink-0 w-1/2 lg:w-1/4">
                         <img 
-                          src={project.imageUrl || 'https://images.unsplash.com/photo-1497486751825-1233686d5d80?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'} 
+                          src={getProjectImageUrl(project) || 'https://images.unsplash.com/photo-1497486751825-1233686d5d80?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'} 
                           alt={project.title} 
                           className="w-full h-32 object-cover rounded-lg"
                         />

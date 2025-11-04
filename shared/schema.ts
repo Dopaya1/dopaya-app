@@ -38,9 +38,11 @@ export const projects = pgTable("projects", {
   aboutUs: text("about_us"),
   impactAchievements: text("impact_achievements"),
   fundUsage: text("fund_usage"),
+  selectionReasoning: text("selection_reasoning"),
   
-  // Main image
+  // Main image/video
   imageUrl: text("image_url").notNull(),
+  coverImage: text("cover_image"), // Optional cover image for videos (thumbnail)
   
   // Additional media (up to 6 images/videos)
   image1: text("image1"),
@@ -60,6 +62,8 @@ export const projects = pgTable("projects", {
   category: text("category").notNull(),
   country: text("country").notNull(),
   founderName: text("founder_name"),
+  founderImage: text("founder_image"),
+  founderBio: text("founder_bio"),
   impactPointsMultiplier: integer("impact_points_multiplier").default(10),
   primarySdg: text("primary_sdg"),
   sdgGoals: text("sdg_goals").array(),
@@ -186,3 +190,58 @@ export const insertRedemptionSchema = createInsertSchema(redemptions).omit({
 
 export type InsertRedemption = z.infer<typeof insertRedemptionSchema>;
 export type Redemption = typeof redemptions.$inferSelect;
+
+// Backer schema
+export const backers = pgTable("backers", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  shortDescription: text("short_description"), // Handles both "Shortdescription" and "short_description"
+  websiteUrl: text("website_url"), // Handles both "website:url" and "website_url"
+  logoPath: text("logo_path"),
+  featured: boolean("featured").default(false), // Handles both "Featured" and "featured"
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const insertBackerSchema = createInsertSchema(backers).omit({
+  id: true,
+  createdAt: true
+});
+
+export type InsertBacker = z.infer<typeof insertBackerSchema>;
+export type Backer = typeof backers.$inferSelect;
+
+// Project Backers junction table (many-to-many relationship)
+export const projectBackers = pgTable("project_backers", {
+  id: serial("id").primaryKey(),
+  backerId: integer("backer_id").notNull().references(() => backers.id, { onDelete: "cascade" }),
+  projectId: integer("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const insertProjectBackerSchema = createInsertSchema(projectBackers).omit({
+  id: true,
+  createdAt: true
+});
+
+export type InsertProjectBacker = z.infer<typeof insertProjectBackerSchema>;
+export type ProjectBacker = typeof projectBackers.$inferSelect;
+
+// Project Press Mentions schema
+export const projectPressMentions = pgTable("project_press_mentions", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  institutionName: text("institution_name"),
+  institutionLogo: text("institution_logo"), // URL or Supabase Storage path
+  headline: text("headline"),
+  shortDescription: text("short_description"),
+  link: text("link").notNull(), // URL to the press article
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const insertProjectPressMentionSchema = createInsertSchema(projectPressMentions).omit({
+  id: true,
+  createdAt: true
+});
+
+export type InsertProjectPressMention = z.infer<typeof insertProjectPressMentionSchema>;
+export type ProjectPressMention = typeof projectPressMentions.$inferSelect;

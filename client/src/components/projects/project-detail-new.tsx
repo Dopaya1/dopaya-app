@@ -321,7 +321,7 @@ ${url}
               {project.category}
             </div>
             <h1 className="text-3xl font-bold text-dark font-heading">{project.title}</h1>
-            <p className="text-neutral mt-2">
+            <p className="text-neutral mt-2 whitespace-pre-line">
               {project.summary}
             </p>
           </div>
@@ -329,7 +329,7 @@ ${url}
           {/* Mission Statement */}
           {project.missionStatement && (
             <div className="mb-6">
-              <p className="text-neutral text-lg leading-relaxed max-w-none break-words">
+              <p className="text-neutral text-lg leading-relaxed max-w-none break-words whitespace-pre-line">
                 {project.missionStatement}
               </p>
             </div>

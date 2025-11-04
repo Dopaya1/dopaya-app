@@ -1,0 +1,118 @@
+import { ExternalLink } from "lucide-react";
+import { ProjectPressMention } from "@shared/schema";
+import { getLogoUrl } from "@/lib/image-utils";
+import { BRAND_COLORS } from "@/constants/colors";
+
+interface PressMentionCardProps {
+  pressMention: ProjectPressMention;
+}
+
+export function PressMentionCard({ pressMention }: PressMentionCardProps) {
+  // Try multiple possible field names
+  const institutionName = (pressMention as any).institutionName || (pressMention as any).institution_name || '';
+  const institutionLogo = (pressMention as any).institutionLogo || (pressMention as any).institution_logo || '';
+  const headline = (pressMention as any).headline || '';
+  const shortDescription = (pressMention as any).shortDescription || (pressMention as any).short_description || '';
+  
+  // Try multiple possible field names for link
+  const link = (pressMention as any).link 
+    || (pressMention as any).url 
+    || (pressMention as any).article_url 
+    || (pressMention as any).articleUrl
+    || (pressMention as any).article_link
+    || (pressMention as any).articleLink
+    || (pressMention as any).press_link
+    || (pressMention as any).pressLink
+    || '';
+
+  const logoUrl = getLogoUrl(institutionLogo);
+  const hasValidLink = link && link.trim() !== '' && link.trim().startsWith('http');
+
+  // Debug: Log link info
+  console.log('🔍 DEBUG PressMentionCard: Full pressMention object:', pressMention);
+  console.log('🔍 DEBUG PressMentionCard: Link info:', {
+    pressMentionId: pressMention.id,
+    headline: headline,
+    link: link,
+    hasValidLink: hasValidLink,
+    allKeys: Object.keys(pressMention),
+    rawLink: (pressMention as any).link,
+    rawUrl: (pressMention as any).url,
+    rawArticleUrl: (pressMention as any).article_url
+  });
+
+  const cardContent = (
+    <div className="flex flex-col h-full">
+      {/* Logo */}
+      {logoUrl && (
+        <div className="flex items-center justify-start mb-3 h-8">
+          <img 
+            src={logoUrl}
+            alt={institutionName || 'Institution logo'}
+            className="max-h-8 max-w-full object-contain"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+            }}
+          />
+        </div>
+      )}
+
+      {/* Institution Name (if no logo) */}
+      {!logoUrl && institutionName && (
+        <div className="text-xs font-medium mb-3" style={{ color: BRAND_COLORS.textSecondary }}>
+          {institutionName}
+        </div>
+      )}
+
+      {/* Headline */}
+      {headline && (
+        <h3 className="text-sm font-semibold mb-2 line-clamp-2" style={{ color: BRAND_COLORS.textPrimary }}>
+          {headline}
+        </h3>
+      )}
+
+      {/* Short Description */}
+      {shortDescription && (
+        <p className="text-xs text-gray-600 mb-3 line-clamp-3 flex-grow" style={{ color: BRAND_COLORS.textSecondary }}>
+          {shortDescription}
+        </p>
+      )}
+
+      {/* Link indicator */}
+      {hasValidLink && (
+        <div className="flex items-center gap-1 text-xs mt-auto" style={{ color: BRAND_COLORS.primaryOrange }}>
+          <span>Read article</span>
+          <ExternalLink className="h-3 w-3" />
+        </div>
+      )}
+    </div>
+  );
+
+  // Render as link if valid, otherwise as div
+  if (hasValidLink) {
+    return (
+      <a
+        href={link.trim()}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md cursor-pointer transition-all duration-300 p-4 h-full"
+        style={{ 
+          borderColor: BRAND_COLORS.borderSubtle,
+        }}
+      >
+        {cardContent}
+      </a>
+    );
+  }
+
+  return (
+    <div
+      className="block bg-white rounded-lg border border-gray-200 transition-all duration-300 p-4 h-full"
+      style={{ 
+        borderColor: BRAND_COLORS.borderSubtle,
+      }}
+    >
+      {cardContent}
+    </div>
+  );
+}
