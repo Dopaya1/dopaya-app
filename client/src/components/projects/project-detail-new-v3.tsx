@@ -632,7 +632,7 @@ ${url}
           {/* Mission Statement - Below headline, above image slider */}
           {project.missionStatement && (
             <div className="mb-8">
-              <p className="text-xl text-neutral max-w-4xl leading-relaxed whitespace-pre-line">
+              <p className="text-xl text-neutral leading-relaxed whitespace-pre-line">
                 {project.missionStatement}
               </p>
             </div>
@@ -1040,29 +1040,29 @@ ${url}
         <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 ${showStickyBar ? 'pb-24' : ''}`}>
           <div className="lg:grid lg:grid-cols-12 lg:gap-8">
           {/* Left Side (2/3 width) */}
-          <div className="lg:col-span-8">
+          <div className="lg:col-span-8 w-full">
 
             {/* Story Section */}
-            <div id="story" ref={storyRef} className="scroll-mt-36 mb-16">
+            <div id="story" ref={storyRef} className="scroll-mt-36 mb-16 w-full">
               <span className="inline-block text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full bg-orange-100 text-orange-800 mb-3">About</span>
-              <h2 className="text-xl font-bold text-dark font-heading mb-4">About this Social Enterprise</h2>
-              <p className="text-neutral mb-4 leading-relaxed whitespace-pre-line">
+              <h2 className="text-xl font-bold text-dark font-heading mb-4 w-full">About this Social Enterprise</h2>
+              <div className="text-neutral mb-4 leading-relaxed whitespace-pre-line w-full block text-left">
                 {project.description}
-              </p>
+              </div>
               {project.aboutUs && (
-                <p className="text-neutral mb-4 leading-relaxed whitespace-pre-line">{project.aboutUs}</p>
+                <div className="text-neutral mb-4 leading-relaxed whitespace-pre-line w-full block text-left">{project.aboutUs}</div>
               )}
             </div>
 
             {/* Changemakers Section */}
-            <div id="changemakers" ref={changemakersRef} className="scroll-mt-36 mb-16">
+            <div id="changemakers" ref={changemakersRef} className="scroll-mt-36 mb-16 w-full">
               <span className="inline-block text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full bg-orange-100 text-orange-800 mb-3">The Changemaker</span>
-              <div>
+              <div className="w-full">
                 {project.founderName ? (
-                  <div className="flex flex-col md:flex-row gap-6">
+                  <div className="flex flex-col md:flex-row gap-6 w-full">
                     {/* Left: Founder Image */}
                     <div className="flex-shrink-0">
-                      <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden mx-auto md:mx-0">
+                      <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden md:mx-0" style={{ marginLeft: 0 }}>
                         {project.founderImage ? (
                           <OptimizedImage
                             src={project.founderImage}
@@ -1079,47 +1079,47 @@ ${url}
                     </div>
                     
                     {/* Right: Founder Info */}
-                    <div className="flex-1">
-                      <h3 className="text-2xl font-bold text-dark mb-2">{project.founderName}</h3>
+                    <div className="flex-1 w-full">
+                      <h3 className="text-2xl font-bold text-dark mb-2 w-full">{project.founderName}</h3>
                       <div className="mb-4">
                         <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
                           Co-Founder
                         </span>
                       </div>
                       {project.founderBio && project.founderBio.trim() ? (
-                        <div className="text-neutral leading-relaxed whitespace-pre-line">
+                        <div className="text-neutral leading-relaxed whitespace-pre-line w-full block text-left">
                           {project.founderBio}
                         </div>
                       ) : (
-                        <p className="text-neutral leading-relaxed mb-4">
+                        <div className="text-neutral leading-relaxed mb-4 w-full block text-left">
                           {project.founderName} is a visionary leader and social entrepreneur recognized for the pioneering work in the {project.category?.toLowerCase()} sector with {project.title}. With years of experience creating sustainable social change, they have dedicated their career to building solutions that fundamentally improve the communities they serve.
-                        </p>
+                        </div>
                       )}
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-4 text-neutral leading-relaxed">
-                    <p>
+                  <div className="space-y-4 text-neutral leading-relaxed w-full">
+                    <div className="w-full block text-left">
                       The team behind {project.title} is driven by a shared vision of creating meaningful social impact. With years of experience in {project.category?.toLowerCase()}, our founders recognized a critical need in the community and set out to build a solution.
-                    </p>
-                    <p>
+                    </div>
+                    <div className="w-full block text-left">
                       What started as a small initiative has grown into a thriving social enterprise, thanks to the dedication and passion of everyone involved. Our team combines expertise in business, social impact, and community engagement to create programs that truly make a difference.
-                    </p>
-                    <p>
+                    </div>
+                    <div className="w-full block text-left">
                       We believe that sustainable change comes from listening to communities, understanding their needs, and co-creating solutions together. This collaborative approach has been at the heart of {project.title}'s success and continues to guide our work every day.
-                    </p>
+                    </div>
                   </div>
                 )}
               </div>
             </div>
 
             {/* Impact Section */}
-            <div id="impact" ref={impactRef} className="scroll-mt-36 mb-16">
+            <div id="impact" ref={impactRef} className="scroll-mt-36 mb-16 w-full">
           {project.impactAchievements && (
-            <div>
+            <div className="w-full">
               <span className="inline-block text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full bg-orange-100 text-orange-800 mb-3">Impact</span>
-              <h2 className="text-xl font-bold text-dark font-heading mb-4">Impact Created So Far</h2>
-              <div className="space-y-3">
+              <h2 className="text-xl font-bold text-dark font-heading mb-4 w-full">Impact Created So Far</h2>
+              <div className="space-y-3 w-full">
                 {project.impactAchievements
                   .split(/[.•\-\*]\s*/)
                   .filter(point => point.trim().length > 0)
@@ -1127,9 +1127,9 @@ ${url}
                     // Clean up any remaining bullet points or formatting
                     const cleanedPoint = point.trim().replace(/^[•\-\*]\s*/, '');
                     return (
-                      <div key={idx} className="flex items-start">
+                      <div key={idx} className="flex items-start w-full">
                         <FaCheckCircle className="h-5 w-5 text-green-500 mt-1 mr-3 flex-shrink-0" />
-                        <p className="text-neutral leading-relaxed">{cleanedPoint}</p>
+                        <div className="text-neutral leading-relaxed flex-1 w-full block text-left">{cleanedPoint}</div>
                       </div>
                     );
                   })}
@@ -1139,13 +1139,13 @@ ${url}
             </div>
 
             {/* Why We Back Them Section - Merged Backers and Why We Chose Them */}
-            <div id="ourview" ref={ourviewRef} className="scroll-mt-36 mb-16">
+            <div id="ourview" ref={ourviewRef} className="scroll-mt-36 mb-16 w-full">
               <span className="inline-block text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full bg-orange-100 text-orange-800 mb-3">Why We Back Them</span>
               
               {/* Why We Selected Content - First part of merged section */}
-              <div className={`${BRAND_COLORS.bgBeige} rounded-lg pb-6 px-0 pt-0`}>
-                <h2 className="text-xl font-bold text-dark font-heading mb-4">Why We Selected {project.slug === 'ignis-careers' ? 'Ignis Careers' : project.title}</h2>
-                <div className="space-y-4 text-neutral leading-relaxed">
+              <div className={`${BRAND_COLORS.bgBeige} rounded-lg pb-6 px-0 pt-0 w-full`}>
+                <h2 className="text-xl font-bold text-dark font-heading mb-4 w-full">Why We Selected {project.slug === 'ignis-careers' ? 'Ignis Careers' : project.title}</h2>
+                <div className="space-y-4 text-neutral leading-relaxed w-full">
                     {(() => {
                       // Check all possible field name variations (Supabase may return different casing)
                       const projectAny = project as any;
@@ -1158,13 +1158,13 @@ ${url}
                       
                       if (reasoningText && typeof reasoningText === 'string' && reasoningText.trim()) {
                         // Use project-specific text from database
-                        return <div className="whitespace-pre-line">{reasoningText}</div>;
+                        return <div className="whitespace-pre-line w-full block text-left">{reasoningText}</div>;
                       } else {
                         // Fallback to generic text if no selectionReasoning is provided
                         return (
-                          <p>
+                          <div className="w-full block text-left">
                             At Dopaya, we carefully select social enterprises that demonstrate genuine commitment to measurable impact, sustainable growth, and community-driven solutions. {project.title} stood out to us for several compelling reasons.
-                          </p>
+                          </div>
                         );
                       }
                     })()}
@@ -1174,10 +1174,10 @@ ${url}
               {/* Backers Content - Second part of merged section */}
               {backers.length > 0 && (
                 <>
-                  <h2 className="text-xl font-bold text-dark font-heading mb-4 mt-8">Trusted by Leading Organizations</h2>
-                  <p className="text-base text-neutral mb-6 max-w-3xl">
+                  <h2 className="text-xl font-bold text-dark font-heading mb-4 mt-8 w-full block">Trusted by Leading Organizations</h2>
+                  <div className="text-base text-neutral mb-6 w-full block">
                     This social enterprise is trusted and supported by the following leading institutions:
-                  </p>
+                  </div>
                   
                   {/* Backer Logos Grid - 2 on mobile, 3 on md, 4 on lg with infinite carousel */}
                   {/* Desktop: Show 4 */}
@@ -1455,10 +1455,10 @@ ${url}
 
               {/* Recognition & Media Mentions Section */}
               {pressMentions.length > 0 && (
-                <div className="mt-4">
-                  <p className="text-base text-neutral mb-4 max-w-3xl">
+                <div className="mt-4 w-full">
+                  <div className="text-base text-neutral mb-4 w-full block">
                     This social enterprise has been recognized and featured in the following press and media:
-                  </p>
+                  </div>
                   
                   {/* Press Mentions Carousel */}
                   <div className="relative">
@@ -1565,58 +1565,47 @@ ${url}
                     {/* Left: Text Content (2/3) */}
                     <div className="lg:col-span-2 flex flex-col">
                       <h2 className="text-xl font-bold font-heading mb-3" style={{ color: BRAND_COLORS.textPrimary }}>Ready to make a difference?</h2>
-                      <div className="space-y-2">
-                        {/* Line 1: Support with amount */}
-                        <div className="text-2xl lg:text-3xl font-semibold leading-relaxed" style={{ color: BRAND_COLORS.textPrimary }}>
-                          Support <span className="font-bold" style={{ color: BRAND_COLORS.textPrimary }}>{project.title}</span> with{' '}
-                          <span className="relative inline-block donation-dropdown-container">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setShowDonationDropdown(!showDonationDropdown);
-                              }}
-                              className="inline-flex items-center gap-1 border-b-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors min-h-[48px] px-2 font-bold"
-                              style={{ color: BRAND_COLORS.primaryOrange }}
-                            >
-                              ${donationAmountInteractive}
-                              <ChevronDown className="h-5 w-5" />
-                            </button>
-                            {showDonationDropdown && (
-                              <div className="absolute top-full left-0 mt-2 bg-white border rounded-lg shadow-lg z-10 min-w-[140px]" style={{ borderColor: BRAND_COLORS.borderSubtle }}>
-                                {availableTiers.map((tier) => (
-                                  <button 
-                                    key={tier.donation} 
-                                    onClick={(e) => { 
-                                      e.stopPropagation();
-                                      setDonationAmountInteractive(tier.donation); 
-                                      setShowDonationDropdown(false); 
-                                    }} 
-                                    className="w-full p-2 text-left hover:bg-gray-50 transition-colors min-h-[36px]"
-                                  >
-                                    <span className="text-lg font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>
-                                      ${tier.donation}
-                                    </span>
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-                          </span>
-                        </div>
-
-                        {/* Line 2: and help impact */}
-                        <div className="text-2xl lg:text-3xl font-semibold leading-relaxed" style={{ color: BRAND_COLORS.textPrimary }}>
-                          and help{' '}
-                          <span className="font-bold" style={{ color: BRAND_COLORS.textPrimary }}>{impactVerb}</span>{' '}
-                          <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>{impactAmount}</span>{' '}
-                          <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>{impactNoun}</span>
-                        </div>
-
-                        {/* Line 3: Earn Impact Points */}
-                        <div className="text-2xl lg:text-3xl font-semibold leading-relaxed" style={{ color: BRAND_COLORS.textPrimary }}>
-                          <span style={{ color: BRAND_COLORS.textSecondary }}>Earn</span>{' '}
-                          <span className="font-bold" style={{ color: BRAND_COLORS.textPrimary }}>{impactPoints}</span>{' '}
-                          <span style={{ color: BRAND_COLORS.textSecondary }}>Impact Points</span>
-                        </div>
+                      <div className="text-2xl lg:text-3xl font-semibold leading-relaxed" style={{ color: BRAND_COLORS.textPrimary }}>
+                        Support <span className="font-bold" style={{ color: BRAND_COLORS.textPrimary }}>{project.title}</span> with{' '}
+                        <span className="relative inline-block donation-dropdown-container">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowDonationDropdown(!showDonationDropdown);
+                            }}
+                            className="inline-flex items-center gap-1 border-b-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors min-h-[48px] px-2 font-bold"
+                            style={{ color: BRAND_COLORS.primaryOrange }}
+                          >
+                            ${donationAmountInteractive}
+                            <ChevronDown className="h-5 w-5" />
+                          </button>
+                          {showDonationDropdown && (
+                            <div className="absolute top-full left-0 mt-2 bg-white border rounded-lg shadow-lg z-10 min-w-[140px]" style={{ borderColor: BRAND_COLORS.borderSubtle }}>
+                              {availableTiers.map((tier) => (
+                                <button 
+                                  key={tier.donation} 
+                                  onClick={(e) => { 
+                                    e.stopPropagation();
+                                    setDonationAmountInteractive(tier.donation); 
+                                    setShowDonationDropdown(false); 
+                                  }} 
+                                  className="w-full p-2 text-left hover:bg-gray-50 transition-colors min-h-[36px]"
+                                >
+                                  <span className="text-lg font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>
+                                    ${tier.donation}
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </span>
+                        {' '}and help{' '}
+                        <span className="font-bold" style={{ color: BRAND_COLORS.textPrimary }}>{impactVerb}</span>{' '}
+                        <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>{impactAmount}</span>{' '}
+                        <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>{impactNoun}</span>
+                        {' '}— <span style={{ color: BRAND_COLORS.textSecondary }}>earn</span>{' '}
+                        <span className="font-bold" style={{ color: BRAND_COLORS.textPrimary }}>{impactPoints}</span>{' '}
+                        <span style={{ color: BRAND_COLORS.textSecondary }}>Impact Points</span>
                       </div>
 
                       <div className="mt-4">
@@ -1897,7 +1886,7 @@ ${url}
           <DialogHeader>
             <DialogTitle>Impact Multiplier</DialogTitle>
             <DialogDescription>
-              When you donate to this social enterprise, we multiply your Impact Points with {project.impactPointsMultiplier || 10}.
+              Your $10 contribution earns 100 Impact Points — based on Dopaya's verified impact system.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

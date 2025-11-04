@@ -106,17 +106,20 @@ export function InstitutionalProofSimple() {
 
         {/* Selected Institution Details */}
         {selectedBacker && (
-          <div className="bg-white rounded-2xl p-8 shadow-lg relative" style={{ border: `1px solid ${BRAND_COLORS.borderSubtle}` }}>
-            {/* Close Button */}
-            <button
-              onClick={() => setSelectedInstitutionId(null)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors z-10"
-              aria-label="Close"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+          <>
+            {/* Mobile: Popup Overlay */}
+            <div className="md:hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setSelectedInstitutionId(null)}>
+              <div className="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-white rounded-2xl p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+                {/* Close Button */}
+                <button
+                  onClick={() => setSelectedInstitutionId(null)}
+                  className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors z-10"
+                  aria-label="Close"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
             <div className="grid lg:grid-cols-3 gap-8">
               {/* Left: Institution Info */}
               <div className="lg:col-span-2">
@@ -225,7 +228,131 @@ export function InstitutionalProofSimple() {
                 )}
               </div>
             </div>
-          </div>
+              </div>
+            </div>
+            
+            {/* Desktop: Box below (unchanged) */}
+            <div className="hidden md:block bg-white rounded-2xl p-8 shadow-lg relative" style={{ border: `1px solid ${BRAND_COLORS.borderSubtle}` }}>
+              {/* Close Button */}
+              <button
+                onClick={() => setSelectedInstitutionId(null)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors z-10"
+                aria-label="Close"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <div className="grid lg:grid-cols-3 gap-8">
+                {/* Left: Institution Info */}
+                <div className="lg:col-span-2">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-16 h-16 flex items-center justify-center">
+                      {(() => {
+                        const logoUrl = getLogoUrl(selectedBacker.logoPath || selectedBacker.logo_path);
+                        return logoUrl ? (
+                          <img 
+                            src={logoUrl} 
+                            alt={`${selectedBacker.name} logo`}
+                            className="w-full h-full object-contain"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                              if (fallback) fallback.style.display = 'flex';
+                            }}
+                          />
+                        ) : null;
+                      })()}
+                      <div className="w-full h-full bg-gradient-to-br from-blue-100 to-green-100 flex items-center justify-center text-lg font-medium" style={{ display: 'none' }}>
+                        {selectedBacker.name?.charAt(0) || '?'}
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold" style={{ color: BRAND_COLORS.textPrimary }}>
+                        {selectedBacker.name}
+                      </h3>
+                    </div>
+                  </div>
+                  
+                  <p className="text-base mb-6 leading-relaxed" style={{ color: BRAND_COLORS.textSecondary }}>
+                    {selectedBacker.shortDescription || selectedBacker.short_description || 'No description available.'}
+                  </p>
+                  
+                  {selectedBacker.websiteUrl || selectedBacker.website_url ? (
+                    <a 
+                      href={selectedBacker.websiteUrl || selectedBacker.website_url || '#'} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-sm font-medium hover:underline"
+                      style={{ color: BRAND_COLORS.primaryOrange }}
+                    >
+                      Visit {selectedBacker.name}
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  ) : null}
+                </div>
+
+                {/* Right: Supported Projects */}
+                <div className="lg:col-span-1">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Users className="h-5 w-5" style={{ color: BRAND_COLORS.primaryOrange }} />
+                    <h4 className="text-lg font-semibold" style={{ color: BRAND_COLORS.textPrimary }}>
+                      Supported Projects
+                    </h4>
+                  </div>
+                  
+                  {isLoadingProjects ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin" style={{ color: BRAND_COLORS.primaryOrange }} />
+                    </div>
+                  ) : supportedProjects.length === 0 ? (
+                    <div className="text-sm" style={{ color: BRAND_COLORS.textSecondary }}>
+                      No projects found for this institution.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {supportedProjects.map((project) => {
+                        const projectImage = getProjectImageUrl(project) || '/api/placeholder/100/100';
+                        return (
+                          <Link key={project.id} href={`/project/${project.slug}`}>
+                            <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
+                              <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
+                                <img 
+                                  src={projectImage} 
+                                  alt={project.title || 'Project'}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                    const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                                    if (fallback) fallback.style.display = 'flex';
+                                  }}
+                                />
+                                <div className="w-full h-full bg-gradient-to-br from-blue-100 to-green-100 flex items-center justify-center text-xs font-medium" style={{ display: 'none' }}>
+                                  {project.title?.charAt(0) || '?'}
+                                </div>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium text-sm" style={{ color: BRAND_COLORS.textPrimary }}>
+                                  {project.title}
+                                </div>
+                                <div className="text-xs line-clamp-2" style={{ color: BRAND_COLORS.textSecondary }}>
+                                  {(() => {
+                                    const text = project.missionStatement || project.mission_statement || project.summary || project.description || 'No description available.';
+                                    // Truncate to ~80 characters for a teaser
+                                    return text.length > 80 ? `${text.substring(0, 80)}...` : text;
+                                  })()}
+                                </div>
+                              </div>
+                            </div>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </>
         )}
       </div>
     </section>
