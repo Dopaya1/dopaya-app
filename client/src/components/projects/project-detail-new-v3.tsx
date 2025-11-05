@@ -1121,15 +1121,14 @@ ${url}
               <h2 className="text-xl font-bold text-dark font-heading mb-4 w-full">Impact Created So Far</h2>
               <div className="space-y-3 w-full">
                 {project.impactAchievements
-                  .split(/[.•\-\*]\s*/)
+                  .split(/\s*•\s*/)
                   .filter(point => point.trim().length > 0)
                   .map((point, idx) => {
-                    // Clean up any remaining bullet points or formatting
-                    const cleanedPoint = point.trim().replace(/^[•\-\*]\s*/, '');
+                    const cleanedPoint = point.trim();
                     return (
                       <div key={idx} className="flex items-start w-full">
                         <FaCheckCircle className="h-5 w-5 text-green-500 mt-1 mr-3 flex-shrink-0" />
-                        <div className="text-neutral leading-relaxed flex-1 w-full block text-left">{cleanedPoint}</div>
+                        <div className="text-neutral leading-relaxed flex-1 w-full block text-left whitespace-normal">{cleanedPoint}</div>
                       </div>
                     );
                   })}
@@ -1609,14 +1608,13 @@ ${url}
                       </div>
 
                       <div className="mt-4">
-                        <div style={{ backgroundColor: BRAND_COLORS.primaryOrange }} className="rounded-lg">
-                          <DonationButton 
-                            project={project}
-                            className="text-white font-semibold px-6 lg:px-8 py-3 lg:py-4 text-base lg:text-lg min-h-[44px] lg:min-h-[48px] w-full sm:w-auto hover:opacity-90 transition-opacity"
-                          >
-                            Support This Project
-                          </DonationButton>
-                        </div>
+                        <DonationButton 
+                          project={project}
+                          className="text-white font-semibold px-6 lg:px-8 py-3 lg:py-4 text-base lg:text-lg min-h-[44px] lg:min-h-[48px] w-full sm:w-auto rounded-lg"
+                          style={{ backgroundColor: BRAND_COLORS.primaryOrange }}
+                        >
+                          Support This Project
+                        </DonationButton>
                         
                         {/* Clickable info icon below button */}
                         <button

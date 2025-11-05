@@ -276,45 +276,81 @@ export default function HomePage() {
 
               {/* Circles: SEs on left, Brands on right - side by side with 3 circles each */}
               <div className="grid grid-cols-2 gap-3 w-full mt-4 relative overflow-x-hidden mb-0" style={{ minHeight: '360px' }}>
+                {/* Subtle curved line connecting both sides - Mobile only, behind bubbles */}
+                <div className="absolute bottom-0 left-0 right-0 h-20 pointer-events-none" style={{ zIndex: 0 }}>
+                  <svg 
+                    className="w-full h-full overflow-visible" 
+                    viewBox="0 0 400 100"
+                    preserveAspectRatio="xMidYMid slice"
+                  >
+                    <defs>
+                      <marker 
+                        id="arrowhead-mobile-curved" 
+                        markerWidth="8" 
+                        markerHeight="8" 
+                        refX="6" 
+                        refY="4" 
+                        orient="auto"
+                      >
+                        <polygon 
+                          points="0 0, 8 4, 0 8" 
+                          fill="#f2662d" 
+                          opacity="0.4"
+                        />
+                      </marker>
+                    </defs>
+                    {/* Geschwungene Linie von links nach rechts (vertikal gespiegelt - Kurve nach unten) */}
+                    <path
+                      d="M 50 50 Q 200 100, 350 50"
+                      stroke="#f2662d"
+                      strokeWidth="1.2"
+                      fill="none"
+                      strokeDasharray="3,3"
+                      opacity="0.4"
+                      markerEnd="url(#arrowhead-mobile-curved)"
+                    />
+                  </svg>
+                </div>
+                
                 {/* Left: Social Enterprises - 3 circles with different sizes and positions */}
-                <div className="relative h-[360px]">
+                <div className="relative h-[360px]" style={{ zIndex: 2 }}>
                   {bubbleProjects[0] && (
-                    <div className="absolute left-1 top-2">
+                    <div className="absolute left-1 top-2" style={{ zIndex: 30 }}>
                       <div className="relative group cursor-pointer">
                         <img 
                           src={getProjectImageUrl(bubbleProjects[0]) || ''} 
                           alt={bubbleProjects[0].title} 
-                          className="w-24 h-24 rounded-full object-cover ring-2 ring-orange-100 transition-transform duration-300 group-active:scale-110" 
+                          className="w-28 h-28 rounded-full object-cover ring-2 ring-orange-100 transition-transform duration-300 group-active:scale-110" 
                         />
-                        <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[10px] bg-white text-gray-800 px-2 py-0.5 rounded border border-gray-200 max-w-[140px] whitespace-nowrap overflow-hidden text-ellipsis text-center">
+                        <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white text-gray-800 px-2 py-0.5 rounded border border-gray-200 max-w-[140px] whitespace-nowrap overflow-hidden text-ellipsis text-center">
                           Impact: {bubbleProjects[0].category || 'Impact'}
                         </span>
                       </div>
                     </div>
                   )}
                   {bubbleProjects[1] && (
-                    <div className="absolute left-16 top-32">
+                    <div className="absolute left-16 top-28" style={{ zIndex: 20 }}>
                       <div className="relative group cursor-pointer">
                         <img 
                           src={getProjectImageUrl(bubbleProjects[1]) || ''} 
                           alt={bubbleProjects[1].title} 
-                          className="w-20 h-20 rounded-full object-cover ring-2 ring-orange-100 transition-transform duration-300 group-active:scale-110" 
+                          className="w-24 h-24 rounded-full object-cover ring-2 ring-orange-100 transition-transform duration-300 group-active:scale-110" 
                         />
-                        <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[10px] bg-white text-gray-800 px-2 py-0.5 rounded border border-gray-200 max-w-[140px] whitespace-nowrap overflow-hidden text-ellipsis text-center">
+                        <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white text-gray-800 px-2 py-0.5 rounded border border-gray-200 max-w-[140px] whitespace-nowrap overflow-hidden text-ellipsis text-center">
                           Impact: {bubbleProjects[1].category || 'Impact'}
                         </span>
                       </div>
                     </div>
                   )}
                   {bubbleProjects[2] && (
-                    <div className="absolute left-0 bottom-4">
+                    <div className="absolute left-0 top-52" style={{ zIndex: 10 }}>
                       <div className="relative group cursor-pointer">
                         <img 
                           src={getProjectImageUrl(bubbleProjects[2]) || ''} 
                           alt={bubbleProjects[2].title} 
-                          className="w-24 h-24 rounded-full object-cover ring-2 ring-orange-100 transition-transform duration-300 group-active:scale-110" 
+                          className="w-28 h-28 rounded-full object-cover ring-2 ring-orange-100 transition-transform duration-300 group-active:scale-110" 
                         />
-                        <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[10px] bg-white text-gray-800 px-2 py-0.5 rounded border border-gray-200 max-w-[140px] whitespace-nowrap overflow-hidden text-ellipsis text-center">
+                        <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white text-gray-800 px-2 py-0.5 rounded border border-gray-200 max-w-[140px] whitespace-nowrap overflow-hidden text-ellipsis text-center">
                           Impact: {bubbleProjects[2].category || 'Impact'}
                         </span>
                       </div>
@@ -323,86 +359,50 @@ export default function HomePage() {
                 </div>
 
                 {/* Right: Brand Rewards - 3 circles with different sizes and positions */}
-                <div className="relative h-[360px]">
+                <div className="relative h-[360px]" style={{ zIndex: 2 }}>
                   {bubbleRewards[0] && (
-                    <div className="absolute right-1 top-2">
+                    <div className="absolute right-1 top-2" style={{ zIndex: 30 }}>
                       <div className="relative group cursor-pointer">
                         <img 
                           src={bubbleRewards[0].imageUrl || ''} 
                           alt={bubbleRewards[0].title} 
-                          className="w-24 h-24 rounded-full object-cover ring-2 ring-orange-100 transition-transform duration-300 group-active:scale-110" 
+                          className="w-28 h-28 rounded-full object-cover ring-2 ring-orange-100 transition-transform duration-300 group-active:scale-110" 
                         />
-                        <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[10px] bg-white px-2 py-0.5 rounded border border-gray-200 text-gray-800 max-w-[140px] whitespace-nowrap overflow-hidden text-ellipsis text-center">
+                        <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white px-2 py-0.5 rounded border border-gray-200 text-gray-800 max-w-[140px] whitespace-nowrap overflow-hidden text-ellipsis text-center">
                           Reward: {bubbleRewards[0].category || 'Reward'}
                         </span>
                       </div>
                     </div>
                   )}
                   {bubbleRewards[1] && (
-                    <div className="absolute right-16 top-32">
+                    <div className="absolute right-16 top-28" style={{ zIndex: 20 }}>
                       <div className="relative group cursor-pointer">
                         <img 
                           src={bubbleRewards[1].imageUrl || ''} 
                           alt={bubbleRewards[1].title} 
-                          className="w-20 h-20 rounded-full object-cover ring-2 ring-orange-100 transition-transform duration-300 group-active:scale-110" 
+                          className="w-24 h-24 rounded-full object-cover ring-2 ring-orange-100 transition-transform duration-300 group-active:scale-110" 
                         />
-                        <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[10px] bg-white px-2 py-0.5 rounded border border-gray-200 text-gray-800 max-w-[140px] whitespace-nowrap overflow-hidden text-ellipsis text-center">
+                        <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white px-2 py-0.5 rounded border border-gray-200 text-gray-800 max-w-[140px] whitespace-nowrap overflow-hidden text-ellipsis text-center">
                           Reward: {bubbleRewards[1].category || 'Reward'}
                         </span>
                       </div>
                     </div>
                   )}
                   {bubbleRewards[2] && (
-                    <div className="absolute right-0 bottom-4">
+                    <div className="absolute right-0 top-52" style={{ zIndex: 10 }}>
                       <div className="relative group cursor-pointer">
                         <img 
                           src={bubbleRewards[2].imageUrl || ''} 
                           alt={bubbleRewards[2].title} 
-                          className="w-24 h-24 rounded-full object-cover ring-2 ring-orange-100 transition-transform duration-300 group-active:scale-110" 
+                          className="w-28 h-28 rounded-full object-cover ring-2 ring-orange-100 transition-transform duration-300 group-active:scale-110" 
                         />
-                        <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[10px] bg-white px-2 py-0.5 rounded border border-gray-200 text-gray-800 max-w-[140px] whitespace-nowrap overflow-hidden text-ellipsis text-center">
+                        <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white px-2 py-0.5 rounded border border-gray-200 text-gray-800 max-w-[140px] whitespace-nowrap overflow-hidden text-ellipsis text-center">
                           Reward: {bubbleRewards[2].category || 'Reward'}
                         </span>
                       </div>
                     </div>
                   )}
                 </div>
-              </div>
-
-              {/* Subtle curved line connecting both sides - Mobile only, below bubbles */}
-              <div className="relative w-full h-24 mt-0 mb-0 pointer-events-none" style={{ zIndex: 1 }}>
-                <svg 
-                  className="w-full h-full overflow-visible" 
-                  viewBox="0 0 400 100"
-                  preserveAspectRatio="none"
-                >
-                  <defs>
-                    <marker 
-                      id="arrowhead-mobile-curved" 
-                      markerWidth="10" 
-                      markerHeight="10" 
-                      refX="8" 
-                      refY="5" 
-                      orient="auto"
-                    >
-                      <polygon 
-                        points="0 0, 10 5, 0 10" 
-                        fill="#f2662d" 
-                        opacity="0.4"
-                      />
-                    </marker>
-                  </defs>
-                  {/* Geschwungene Linie von links nach rechts (vertikal gespiegelt - Kurve nach unten) */}
-                  <path
-                    d="M 50 50 Q 200 100, 350 50"
-                    stroke="#f2662d"
-                    strokeWidth="1.5"
-                    fill="none"
-                    strokeDasharray="3,3"
-                    opacity="0.5"
-                    markerEnd="url(#arrowhead-mobile-curved)"
-                  />
-                </svg>
               </div>
             </div>
           </div>
@@ -479,6 +479,10 @@ export default function HomePage() {
     </>
   );
 }
+
+
+
+
 
 
 

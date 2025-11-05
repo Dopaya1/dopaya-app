@@ -19,6 +19,7 @@ interface DonationButtonProps {
   className?: string;
   children?: React.ReactNode;
   generalDonation?: boolean;
+  style?: React.CSSProperties;
 }
 
 export function DonationButton({ 
@@ -27,7 +28,8 @@ export function DonationButton({
   size = "default", 
   className = "",
   children,
-  generalDonation = false
+  generalDonation = false,
+  style
 }: DonationButtonProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -37,6 +39,7 @@ export function DonationButton({
         variant={variant}
         size={size}
         className={className}
+        style={style}
         onClick={() => {
           trackDonation(project?.slug || 'general', 0);
           setIsDialogOpen(true);

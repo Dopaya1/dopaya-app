@@ -29,10 +29,10 @@ export function InstitutionalProofSimple() {
             color: BRAND_COLORS.textPrimary, 
             fontFamily: "'Satoshi', 'Inter', system-ui, sans-serif" 
           }}>
-            Trusted by Leading Institutions
+            Selected for impact. Built on trust.
           </h2>
           <p className="text-xl max-w-2xl mx-auto" style={{ color: BRAND_COLORS.textSecondary }}>
-            Our selected social enterprises are backed by leading, impact-focused institutions
+            Dopaya features changemakers that have earned our confidence - and often the trust of respected global partners, too.
           </p>
         </div>
 

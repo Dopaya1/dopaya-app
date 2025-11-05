@@ -13,6 +13,7 @@ import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import type { Project } from "@shared/schema";
 import { supabase } from "@/lib/supabase";
+import { getProjectImageUrl } from "@/lib/image-utils";
 import { TextRotate } from "@/components/ui/text-rotate";
 import DisplayCards from "@/components/ui/display-cards";
 import { DopayaTimelineSimplified } from "@/components/ui/dopaya-timeline-simplified";

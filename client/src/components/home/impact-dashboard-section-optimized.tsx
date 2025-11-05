@@ -458,7 +458,7 @@ export function ImpactDashboardSection() {
             Transparent impact tracking
           </h2>
           <p className="text-xl max-w-2xl mx-auto" style={{ color: BRAND_COLORS.textSecondary }}>
-            Your personal dashboard shows real impact, not just points
+            We're building a system that makes every donation traceable. Giving you full transparency into your personal impact journey.
           </p>
         </div>
 
@@ -607,7 +607,7 @@ export function ImpactDashboardSection() {
                 Transparent impact tracking
               </h2>
               <p className="text-xl max-w-2xl mx-auto" style={{ color: BRAND_COLORS.textSecondary }}>
-                Your personal dashboard shows real impact, not just points
+                We're building a system that makes every donation traceable. Giving you full transparency into your personal impact journey.
               </p>
             </div>
 
