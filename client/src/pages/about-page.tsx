@@ -3,7 +3,6 @@ import { Link } from "wouter";
 import { Check } from "lucide-react";
 import patrickWidmannImage from "@/assets/Patrick Widmann_1749545204060.png";
 import abdulMujeebImage from "@/assets/Abdul Mujeeb_1749476510704.png";
-import shaliniSinghImage from "@/assets/Shalini Singh_1749476510708.png";
 import SESpectrumSlider from "@/components/ui/se-spectrum-slider";
 import { TYPOGRAPHY } from "@/constants/typography";
 import { SEOHead } from "@/components/seo/seo-head";
@@ -172,12 +171,6 @@ export default function AboutPageV2() {
                   quote: "Passionate about sustainable change"
                 },
                 { 
-                  name: "Shalini", 
-                  role: "Impact Contributor", 
-                  image: shaliniSinghImage,
-                  quote: "Connecting ecosystems and brands"
-                },
-                { 
                   name: "Tarun", 
                   role: "Impact Partner", 
                   image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1374&q=80",
@@ -194,12 +187,6 @@ export default function AboutPageV2() {
                   role: "Automation Partner", 
                   image: "https://images.unsplash.com/photo-1531746790731-6c087fecd65a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1374&q=80",
                   quote: "Streamlining operations and workflows"
-                },
-                { 
-                  name: "Replit", 
-                  role: "Development Platform", 
-                  image: "https://images.unsplash.com/photo-1531746790731-6c087fecd65a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1374&q=80",
-                  quote: "Enabling rapid development and deployment"
                 },
               ].map((member, index) => (
                 <div key={index} className="bg-white rounded-lg overflow-hidden shadow-sm border">
