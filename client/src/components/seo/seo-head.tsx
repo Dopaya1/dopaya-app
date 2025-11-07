@@ -5,6 +5,8 @@ interface SEOHeadProps {
   description: string;
   keywords?: string;
   ogImage?: string;
+  ogImageWidth?: number; // Optional: OG image width in pixels (default: 1200)
+  ogImageHeight?: number; // Optional: OG image height in pixels (default: 630)
   ogType?: string;
   canonicalUrl?: string;
   structuredData?: any;
@@ -15,6 +17,8 @@ export function SEOHead({
   description,
   keywords,
   ogImage = "https://dopaya.com/og-default.jpg", // Updated to dopaya.com
+  ogImageWidth = 1200, // Standard OG image width
+  ogImageHeight = 630, // Standard OG image height (1.91:1 aspect ratio)
   ogType = "website",
   canonicalUrl,
   structuredData
@@ -60,6 +64,8 @@ export function SEOHead({
       <meta property="og:type" content={ogType} />
       <meta property="og:url" content={currentUrl.replace('dopaya.org', 'dopaya.com')} />
       <meta property="og:image" content={normalizedOgImage} />
+      <meta property="og:image:width" content={ogImageWidth.toString()} />
+      <meta property="og:image:height" content={ogImageHeight.toString()} />
       <meta property="og:site_name" content="Dopaya" />
       <meta property="og:locale" content="en_US" />
       
