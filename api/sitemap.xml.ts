@@ -93,9 +93,9 @@ function generateSitemapXML(pages: Array<{url: string; priority: string; changef
 // Helper function to fetch project pages with timeout and error handling
 async function fetchProjectPages(baseUrl: string): Promise<Array<{url: string; priority: string; changefreq: string; lastmod: string}>> {
   try {
-    // Get environment variables with fallbacks
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-    const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+    // Get environment variables with fallbacks (using VITE_ prefix as per codebase convention)
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
+    const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
 
     // If Supabase credentials are missing, return empty array (fallback to static only)
     if (!supabaseUrl || !supabaseKey) {
