@@ -7,7 +7,7 @@ export default function PrivacyPolicy() {
         title="Privacy Policy"
         description="Learn about how Dopaya collects, uses, and protects your personal information. Read our comprehensive privacy policy and data protection practices."
         keywords="privacy policy, data protection, personal information, GDPR, user privacy, data security"
-        canonicalUrl="https://dopaya.org/privacy"
+        canonicalUrl="https://dopaya.com/privacy"
       />
       <div className="min-h-screen bg-white py-16">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -7,7 +7,7 @@ export default function CookiePolicy() {
         title="Cookie Policy"
         description="Understand how Dopaya uses cookies and similar technologies. Learn about cookie types, purposes, and how to manage your cookie preferences."
         keywords="cookie policy, cookies, web tracking, browser storage, user preferences, website analytics"
-        canonicalUrl="https://dopaya.org/cookies"
+        canonicalUrl="https://dopaya.com/cookies"
       />
       <div className="min-h-screen bg-white py-16">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">

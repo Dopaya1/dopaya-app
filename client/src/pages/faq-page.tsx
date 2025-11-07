@@ -16,9 +16,9 @@ export default function FAQPage() {
         title="FAQ | Frequently Asked Questions About Dopaya | Social Impact Platform"
         description="Get answers to common questions about Dopaya, social enterprise contributions, platform fees, impact points, and how to join our community of changemakers."
         keywords="FAQ, frequently asked questions, social enterprise contributions, platform fees, NGO vs social enterprise, supporter questions, impact points, social impact platform, how does dopaya work"
-        canonicalUrl="https://dopaya.org/faq"
+        canonicalUrl="https://dopaya.com/faq"
         ogType="website"
-        ogImage="https://dopaya.org/og-faq.jpg"
+        ogImage="https://dopaya.com/og-faq.jpg"
         structuredData={{
           "@context": "https://schema.org",
           "@type": "FAQPage",

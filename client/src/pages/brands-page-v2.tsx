@@ -167,9 +167,9 @@ export default function BrandsPageV2() {
         title="For Sustainable Brands | FREE Partnership | Dopaya"
         description="Join 50+ sustainable brands creating measurable impact while reaching conscious consumers. 100% FREE partnership for values-aligned brands with first mover advantages."
         keywords="sustainable brands, free partnership, conscious consumers, eco-friendly brands, social impact, brand partnerships, sustainability, ethical brands"
-        canonicalUrl="https://dopaya.org/brands-v2"
+        canonicalUrl="https://dopaya.com/brands"
         ogType="website"
-        ogImage="https://dopaya.org/og-brands-v2.jpg"
+        ogImage="https://dopaya.com/og-brands.jpg"
         structuredData={{
           "@context": "https://schema.org",
           "@type": "Service",

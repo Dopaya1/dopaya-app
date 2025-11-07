@@ -219,15 +219,15 @@ export default function SocialEnterprisesPage() {
         title="For Social Enterprises | Get Funding & Support | Dopaya Platform"
         description="Join Dopaya's social enterprise program. Get funding from supporters who understand your value, build a community of advocates, and access exclusive resources to scale your impact."
         keywords="social enterprises, social enterprise funding, impact funding, social entrepreneurship, startup funding, social impact platform, community building, impact investors"
-        canonicalUrl="https://dopaya.org/social-enterprises"
+        canonicalUrl="https://dopaya.com/social-enterprises"
         ogType="website"
-        ogImage="https://dopaya.org/og-social-enterprises.jpg"
+        ogImage="https://dopaya.com/og-social-enterprises.jpg"
         structuredData={{
           "@context": "https://schema.org",
           "@type": "WebPage",
           "name": "Social Enterprises Program",
           "description": "Platform for social enterprises to access funding, investors, and grant support",
-          "url": "https://dopaya.org/social-enterprises",
+          "url": "https://dopaya.com/social-enterprises",
           "mainEntity": {
             "@type": "Service",
             "name": "Social Enterprise Support Program",

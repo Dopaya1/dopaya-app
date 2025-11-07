@@ -14,13 +14,33 @@ export function SEOHead({
   title,
   description,
   keywords,
-  ogImage = "https://dopaya.org/og-default.jpg",
+  ogImage = "https://dopaya.com/og-default.jpg", // Updated to dopaya.com
   ogType = "website",
   canonicalUrl,
   structuredData
 }: SEOHeadProps) {
   const fullTitle = title.includes("Dopaya") ? title : `${title} | Dopaya`;
-  const currentUrl = canonicalUrl || typeof window !== 'undefined' ? window.location.href : '';
+  
+  // Fallback: Use canonicalUrl if provided, otherwise try to construct from window.location
+  // If window is not available (SSR), use a safe fallback
+  let currentUrl = canonicalUrl;
+  if (!currentUrl && typeof window !== 'undefined') {
+    try {
+      currentUrl = window.location.href;
+    } catch (e) {
+      // Fallback if window.location fails
+      currentUrl = 'https://dopaya.com';
+    }
+  }
+  if (!currentUrl) {
+    currentUrl = 'https://dopaya.com'; // Final fallback
+  }
+  
+  // Ensure canonicalUrl uses dopaya.com (normalize any dopaya.org references)
+  const normalizedCanonicalUrl = canonicalUrl ? canonicalUrl.replace('dopaya.org', 'dopaya.com') : undefined;
+  
+  // Normalize OG image URL to use dopaya.com
+  const normalizedOgImage = ogImage.replace('dopaya.org', 'dopaya.com');
 
   return (
     <Helmet>
@@ -32,14 +52,14 @@ export function SEOHead({
       <meta name="author" content="Dopaya" />
       
       {/* Canonical URL */}
-      {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+      {normalizedCanonicalUrl && <link rel="canonical" href={normalizedCanonicalUrl} />}
       
       {/* Open Graph Tags */}
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={description} />
       <meta property="og:type" content={ogType} />
-      <meta property="og:url" content={currentUrl} />
-      <meta property="og:image" content={ogImage} />
+      <meta property="og:url" content={currentUrl.replace('dopaya.org', 'dopaya.com')} />
+      <meta property="og:image" content={normalizedOgImage} />
       <meta property="og:site_name" content="Dopaya" />
       <meta property="og:locale" content="en_US" />
       
@@ -47,7 +67,7 @@ export function SEOHead({
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
-      <meta name="twitter:image" content={ogImage} />
+      <meta name="twitter:image" content={normalizedOgImage} />
       <meta name="twitter:site" content="@dopaya" />
       <meta name="twitter:creator" content="@dopaya" />
       

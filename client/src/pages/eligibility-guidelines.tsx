@@ -10,7 +10,7 @@ export default function EligibilityGuidelines() {
         title="Eligibility Guidelines"
         description="Discover the eligibility criteria for social enterprises to join Dopaya. Learn about our requirements for business model, impact orientation, and founder profile."
         keywords="eligibility criteria, social enterprises, application requirements, impact ventures, business model, social entrepreneurship"
-        canonicalUrl="https://dopaya.org/eligibility"
+        canonicalUrl="https://dopaya.com/eligibility"
       />
       <EligibilityContent />
     </>

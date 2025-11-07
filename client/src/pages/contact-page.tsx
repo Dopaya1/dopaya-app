@@ -55,15 +55,15 @@ export default function ContactPage() {
         title="Contact Us | Get in Touch with Dopaya | Social Impact Platform"
         description="Contact the Dopaya team with your questions about donations, partnerships, social enterprises, or platform support. We're here to help you make a real impact."
         keywords="contact Dopaya, customer support, partnerships, donations help, platform support, social enterprise support, impact platform contact, get in touch"
-        canonicalUrl="https://dopaya.org/contact"
+        canonicalUrl="https://dopaya.com/contact"
         ogType="website"
-        ogImage="https://dopaya.org/og-contact.jpg"
+        ogImage="https://dopaya.com/og-contact.jpg"
         structuredData={{
           "@context": "https://schema.org",
           "@type": "ContactPage",
           "name": "Contact Dopaya",
           "description": "Get in touch with the Dopaya team for support and partnerships",
-          "url": "https://dopaya.org/contact",
+          "url": "https://dopaya.com/contact",
           "mainEntity": {
             "@type": "Organization",
             "name": "Dopaya",

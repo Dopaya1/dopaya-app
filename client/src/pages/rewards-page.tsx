@@ -180,9 +180,9 @@ export default function RewardsPage() {
         title="Impact Rewards | Redeem Points for Exclusive Sustainable Products | Dopaya"
         description="Redeem your impact points for exclusive rewards from sustainable brands. Earn rewards by supporting social enterprises and making a real difference in the world."
         keywords="impact rewards, sustainability rewards, social impact points, brand partnerships, sustainable products, eco-friendly rewards, social enterprise rewards, impact points redemption"
-        canonicalUrl="https://dopaya.org/rewards"
+        canonicalUrl="https://dopaya.com/rewards"
         ogType="website"
-        ogImage="https://dopaya.org/og-rewards.jpg"
+        ogImage="https://dopaya.com/og-rewards.jpg"
         structuredData={{
           "@context": "https://schema.org",
           "@type": "Product",

@@ -72,15 +72,15 @@ export default function ProjectsPage() {
         title="Social Impact Projects | Support Verified Social Enterprises | Dopaya"
         description="Discover and support carefully vetted high-impact social enterprises making a difference worldwide. Track your donations, earn impact points, and see real-world change."
         keywords="social impact projects, social enterprises, impact investing, charitable donations, development projects, sustainability projects, social enterprise funding, impact measurement"
-        canonicalUrl="https://dopaya.org/projects"
+        canonicalUrl="https://dopaya.com/projects"
         ogType="website"
-        ogImage="https://dopaya.org/og-projects.jpg"
+        ogImage="https://dopaya.com/og-projects.jpg"
         structuredData={{
           "@context": "https://schema.org",
           "@type": "CollectionPage",
           "name": "Social Impact Projects",
           "description": "Discover and support carefully vetted high-impact social enterprises",
-          "url": "https://dopaya.org/projects",
+          "url": "https://dopaya.com/projects",
           "mainEntity": {
             "@type": "ItemList",
             "name": "Social Impact Projects",

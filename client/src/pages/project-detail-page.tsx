@@ -67,7 +67,7 @@ export default function ProjectDetailPage() {
         title={project.title}
         description={project.description || project.summary || `Support ${project.title}, a social impact project making a difference in ${project.category}.`}
         keywords={`${project.title}, ${project.category}, social impact, donation, ${project.primarySdg ? `SDG ${project.primarySdg}, ` : ''}social enterprise, development project`}
-        canonicalUrl={useV3Template ? `https://dopaya.org/project-v3/${project.slug}` : `https://dopaya.org/projects/${project.slug}`}
+        canonicalUrl={useV3Template ? `https://dopaya.com/project/${project.slug}` : `https://dopaya.com/project/${project.slug}`}
         ogType="article"
         ogImage={project.imageUrl || undefined}
         structuredData={{
@@ -83,9 +83,9 @@ export default function ProjectDetailPage() {
           "publisher": {
             "@type": "Organization",
             "name": "Dopaya",
-            "logo": "https://dopaya.org/logo.png"
+            "logo": "https://dopaya.com/logo.png"
           },
-          "mainEntityOfPage": useV3Template ? `https://dopaya.org/project-v3/${project.slug}` : `https://dopaya.org/projects/${project.slug}`,
+          "mainEntityOfPage": `https://dopaya.com/project/${project.slug}`,
           "about": {
             "@type": "Thing",
             "name": project.category

@@ -14,15 +14,15 @@ export default function AboutPageV2() {
         title="About Dopaya - Building the Future of Social Impact | Our Mission & Team"
         description="Learn about Dopaya's mission to make social impact more transparent and rewarding. Meet our team building the platform that connects supporters with verified social enterprises."
         keywords="about dopaya, social impact mission, social enterprise platform, impact transparency, social impact team, sustainable development, social entrepreneurship"
-        canonicalUrl="https://dopaya.org/about"
+        canonicalUrl="https://dopaya.com/about"
         ogType="website"
-        ogImage="https://dopaya.org/og-about.jpg"
+        ogImage="https://dopaya.com/og-about.jpg"
         structuredData={{
           "@context": "https://schema.org",
           "@type": "AboutPage",
           "name": "About Dopaya",
           "description": "Learn about Dopaya's mission to make social impact more transparent and rewarding",
-          "url": "https://dopaya.org/about",
+          "url": "https://dopaya.com/about",
           "mainEntity": {
             "@type": "Organization",
             "name": "Dopaya",
