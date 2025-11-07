@@ -1170,10 +1170,14 @@ ${url}
                   </div>
                 </div>
 
+              {/* Trusted by Leading Organizations - Show if there are backers OR press mentions */}
+              {(backers.length > 0 || pressMentions.length > 0) && (
+                <h2 className="text-xl font-bold text-dark font-heading mb-4 mt-8 w-full block">Trusted by Leading Organizations</h2>
+              )}
+
               {/* Backers Content - Second part of merged section */}
               {backers.length > 0 && (
                 <>
-                  <h2 className="text-xl font-bold text-dark font-heading mb-4 mt-8 w-full block">Trusted by Leading Organizations</h2>
                   <div className="text-base text-neutral mb-6 w-full block">
                     This social enterprise is trusted and supported by the following leading institutions:
                   </div>

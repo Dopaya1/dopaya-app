@@ -12,24 +12,46 @@ export function useProjectPressMentions(projectId: number | null) {
     queryFn: async () => {
       if (!projectId) return [];
 
-      // Fetch all press mentions for this project
+      // Fetch all press mentions for this project with press source name
+      // Try with press_source_id foreign key first
       const { data, error } = await supabase
         .from('project_press_mentions')
-        .select('*')
+        .select(`
+          *,
+          press_sources!press_source_id (
+            name
+          )
+        `)
         .eq('project_id', projectId)
         .order('created_at', { ascending: false });
 
       if (error) {
-        // Try alternative column names
+        // Try without explicit foreign key specification
         const { data: data2, error: error2 } = await supabase
           .from('project_press_mentions')
-          .select('*')
-          .eq('projectId', projectId)
-          .order('createdAt', { ascending: false });
+          .select(`
+            *,
+            press_sources (
+              name
+            )
+          `)
+          .eq('project_id', projectId)
+          .order('created_at', { ascending: false });
 
         if (error2) {
-          console.error('Error fetching project_press_mentions:', error2);
-          return [];
+          // Try alternative column names or without join
+          const { data: data3, error: error3 } = await supabase
+            .from('project_press_mentions')
+            .select('*')
+            .eq('project_id', projectId)
+            .order('created_at', { ascending: false });
+
+          if (error3) {
+            console.error('Error fetching project_press_mentions:', error3);
+            return [];
+          }
+
+          return (data3 || []) as ProjectPressMention[];
         }
 
         return (data2 || []) as ProjectPressMention[];

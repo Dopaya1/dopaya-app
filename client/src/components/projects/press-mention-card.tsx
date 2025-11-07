@@ -35,6 +35,24 @@ export function PressMentionCard({ pressMention }: PressMentionCardProps) {
   const logoUrl = getLogoUrl(institutionLogo);
   const hasValidLink = link && link.trim() !== '' && (link.trim().startsWith('http') || link.trim().startsWith('//'));
 
+  // Get press source name from joined table (priority 1)
+  const pressSourceName = (pressMention as any).press_sources?.name || '';
+  
+  // Extract domain name from URL as fallback for source name
+  const getSourceNameFromUrl = (url: string): string => {
+    try {
+      const urlObj = new URL(url.startsWith('//') ? `https:${url}` : url);
+      const hostname = urlObj.hostname.replace('www.', '');
+      // Capitalize first letter of domain
+      return hostname.split('.')[0].charAt(0).toUpperCase() + hostname.split('.')[0].slice(1);
+    } catch {
+      return '';
+    }
+  };
+
+  // Priority: press_sources.name > institutionName > extracted from URL
+  const displaySourceName = pressSourceName || institutionName || (hasValidLink ? getSourceNameFromUrl(link) : '');
+
   const cardContent = (
     <div className="flex flex-col h-full">
       {/* Logo */}
@@ -51,35 +69,36 @@ export function PressMentionCard({ pressMention }: PressMentionCardProps) {
         </div>
       )}
 
-      {/* Institution Name (if no logo) */}
-      {!logoUrl && institutionName && (
-        <div className="text-xs font-medium mb-3" style={{ color: BRAND_COLORS.textSecondary }}>
-          {institutionName}
-        </div>
-      )}
-
       {/* Summary - replaces headline, full text visible, no truncation, wrapped in quotes */}
       {summary && (
-        <p className="text-[13px] font-semibold mb-2 flex-grow whitespace-pre-line" style={{ color: BRAND_COLORS.textPrimary }}>
+        <p className="text-[13px] font-semibold mb-3 flex-grow whitespace-pre-line" style={{ color: BRAND_COLORS.textPrimary }}>
           &ldquo;{summary}&rdquo;
         </p>
       )}
 
-      {/* External Link - below summary text */}
-      {hasValidLink && (
-        <div className="mt-auto pt-1">
+      {/* Institution Name and Link - side by side */}
+      <div className="flex items-center justify-between gap-2 mt-auto pt-1">
+        {/* Institution Name */}
+        {displaySourceName && (
+          <div className="text-xs font-medium" style={{ color: BRAND_COLORS.textSecondary }}>
+            {displaySourceName}
+          </div>
+        )}
+        
+        {/* External Link */}
+        {hasValidLink && (
           <a
             href={link.trim().startsWith('//') ? `https:${link.trim()}` : link.trim()}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-xs hover:underline transition-all font-medium"
+            className="inline-flex items-center gap-1 text-xs hover:underline transition-all font-medium flex-shrink-0"
             style={{ color: BRAND_COLORS.primaryOrange }}
           >
             <span>Read article</span>
             <ExternalLink className="h-3 w-3" />
           </a>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 

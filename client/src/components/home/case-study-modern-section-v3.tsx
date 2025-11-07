@@ -19,21 +19,54 @@ export function CaseStudyModernSectionV3() {
   const initializedRef = React.useRef<string | null>(null);
 
   // Featured projects for case study section (up to 3, plus "All Projects" box)
+  // Fetch latest featured projects ordered by creation date
   const { data: projects = [] } = useQuery<Project[]>({
-    queryKey: ["projects-case-study-modern-v3"],
+    queryKey: ["projects-case-study-modern-v3-latest"],
     queryFn: async () => {
-      const projectOrder = ['ignis-careers', 'openversum', 'allika-eco-products', 'panjurli-labs', 'sanitrust-pads'];
-      const { data, error } = await supabase
+      // Try with created_at first (snake_case)
+      let { data, error } = await supabase
         .from('projects')
         .select('*')
         .eq('status', 'active')
         .eq('featured', true)
-        .in('slug', projectOrder);
-      if (error) throw error;
-      const sorted = projectOrder
-        .map(slug => data?.find(p => p.slug === slug))
-        .filter(Boolean) as Project[];
-      return sorted;
+        .order('created_at', { ascending: false })
+        .limit(5);
+      
+      // If that fails, try with createdAt (camelCase)
+      if (error) {
+        console.warn('Error with created_at, trying createdAt:', error);
+        const result = await supabase
+          .from('projects')
+          .select('*')
+          .eq('status', 'active')
+          .eq('featured', true)
+          .order('createdAt', { ascending: false })
+          .limit(5);
+        data = result.data;
+        error = result.error;
+      }
+      
+      if (error) {
+        console.error('Error fetching featured projects:', error);
+        // Return empty array instead of throwing to prevent breaking the UI
+        return [];
+      }
+      
+      // If no featured projects found, fallback to any active projects
+      if (!data || data.length === 0) {
+        console.warn('No featured projects found, fetching latest active projects as fallback');
+        const fallback = await supabase
+          .from('projects')
+          .select('*')
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .limit(5);
+        return (fallback.data || []) as Project[];
+      }
+      
+      const result = (data || []) as Project[];
+      console.log(`Case Study: Found ${result.length} featured projects:`, result.map(p => p.title));
+      return result;
     },
     staleTime: Infinity,
     retry: false,
@@ -41,6 +74,7 @@ export function CaseStudyModernSectionV3() {
 
   // Prepare gallery images and taglines from first three highlighted projects (always max 3)
   const topProjects = projects.slice(0, 3);
+  console.log(`Case Study: Using ${topProjects.length} projects for gallery`);
   const images = [
     ...topProjects.map(p => getProjectImageUrl(p) || p.imageUrl || 'https://images.unsplash.com/photo-1527529482837-4698179dc6ce?q=80&w=1200&auto=format&fit=crop'),
     (sdgWheelImg as unknown as string)
