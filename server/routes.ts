@@ -627,7 +627,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/newsletter/subscribe", subscribeNewsletter);
   app.get("/api/newsletter/stats", getNewsletterStats);
 
-  // Dynamic sitemap generator
+  // Dynamic sitemap generator (server-side version)
   app.get("/sitemap.xml", async (_req, res) => {
     try {
       const sitemapXML = await getSitemapXML();
@@ -636,6 +636,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error generating sitemap:', error);
       res.status(500).send('Error generating sitemap');
+    }
+  });
+
+  // Test endpoint for Vercel API route sitemap (for local testing)
+  // This tests the same logic that will run on Vercel
+  app.get("/api/test-sitemap-vercel", async (_req, res) => {
+    try {
+      // Import the Vercel handler module
+      const sitemapModule = await import('../api/sitemap.xml');
+      
+      // Create a mock Vercel request/response
+      const mockReq = {} as any;
+      const mockRes = {
+        setHeader: (name: string, value: string) => {
+          res.set(name, value);
+        },
+        status: (code: number) => {
+          res.status(code);
+          return mockRes;
+        },
+        send: (body: string) => {
+          res.send(body);
+        },
+      } as any;
+      
+      // Call the Vercel handler
+      await sitemapModule.default(mockReq, mockRes);
+    } catch (error) {
+      console.error('Error testing Vercel sitemap:', error);
+      res.status(500).json({ 
+        error: 'Error testing Vercel sitemap', 
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      });
     }
   });
 

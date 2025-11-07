@@ -90,128 +90,95 @@ function generateSitemapXML(pages: Array<{url: string; priority: string; changef
   return `${urlsetOpen}\n${urls}\n${urlsetClose}`;
 }
 
-// Helper function to fetch project pages with comprehensive error handling
-// Returns empty array on any error (safe fallback)
+// Helper function to fetch project pages with timeout and error handling
 async function fetchProjectPages(baseUrl: string): Promise<Array<{url: string; priority: string; changefreq: string; lastmod: string}>> {
-  // Layer 1: Get Supabase credentials with multiple fallbacks
-  const supabaseUrl = process.env.VITE_SUPABASE_URL 
-    || process.env.SUPABASE_URL 
-    || 'https://mpueatfperbxbbojlrwd.supabase.co'; // Hardcoded fallback
+  try {
+    // Get environment variables with fallbacks (using VITE_ prefix as per codebase convention)
+    // Also include hardcoded fallbacks from client code as last resort
+    const supabaseUrl = process.env.VITE_SUPABASE_URL 
+      || process.env.SUPABASE_URL 
+      || 'https://mpueatfperbxbbojlrwd.supabase.co'; // Fallback from client code
       
-  const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY 
-    || process.env.SUPABASE_ANON_KEY 
-    || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wdWVhdGZwZXJieGJib2pscndkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYwODk3NzAsImV4cCI6MjA2MTY2NTc3MH0.GPBxZ2yEbtB3Ws_nKWeDaE-yuyH-uvufV-Mq9aN8hEc'; // Hardcoded fallback
+    const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY 
+      || process.env.SUPABASE_ANON_KEY 
+      || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wdWVhdGZwZXJieGJib2pscndkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYwODk3NzAsImV4cCI6MjA2MTY2NTc3MH0.GPBxZ2yEbtB3Ws_nKWeDaE-yuyH-uvufV-Mq9aN8hEc'; // Fallback from client code
 
-  // Log for debugging (but don't fail if logging fails)
-  try {
+    // Log which source we're using (for debugging)
     const usingEnvVars = !!(process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL);
-    console.log(`[Sitemap] Using ${usingEnvVars ? 'environment variables' : 'hardcoded fallback'} for Supabase`);
-  } catch (e) {
-    // Ignore logging errors
-  }
+    if (!usingEnvVars) {
+      console.warn('Using hardcoded Supabase credentials (env vars not found)');
+      console.warn('Available env vars:', {
+        hasViteUrl: !!process.env.VITE_SUPABASE_URL,
+        hasViteKey: !!process.env.VITE_SUPABASE_ANON_KEY,
+        hasSupabaseUrl: !!process.env.SUPABASE_URL,
+        hasSupabaseKey: !!process.env.SUPABASE_ANON_KEY,
+        allEnvKeys: Object.keys(process.env).filter(k => k.includes('SUPABASE'))
+      });
+    } else {
+      console.log('Using environment variables for Supabase');
+    }
+    
+    console.log('Fetching projects from Supabase...');
 
-  // Layer 2: Create Supabase client with error handling
-  let supabase;
-  try {
-    supabase = createClient(supabaseUrl, supabaseKey, {
+    // Create Supabase client
+    const supabase = createClient(supabaseUrl, supabaseKey, {
       auth: {
         persistSession: false,
         autoRefreshToken: false
       }
     });
-  } catch (error) {
-    console.error('[Sitemap] Failed to create Supabase client:', error);
-    return []; // Safe fallback: return empty array
-  }
 
-  // Layer 3: Fetch projects with timeout and comprehensive error handling
-  try {
-    // Use Promise.race for timeout (5 seconds)
-    const timeoutPromise = new Promise<{ type: 'timeout' }>((resolve) => 
+    // Fetch projects with timeout protection (5 seconds max)
+    const fetchPromise = supabase
+      .from('projects')
+      .select('slug, updated_at, created_at, status')
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+      .limit(10000); // Limit to prevent huge sitemaps (max 50k URLs per sitemap)
+      .then(result => ({ type: 'success', ...result }))
+      .catch(error => ({ type: 'error', error }));
+
+    const timeoutPromise = new Promise((resolve) => 
       setTimeout(() => resolve({ type: 'timeout' }), 5000)
     );
 
-           // Fetch ALL projects first (like server version), then filter in JavaScript
-           // This is safer than using .eq('status', 'active') which might exclude projects without status
-           // Note: Database column is createdAt (camelCase), not created_at
-           const queryPromise = supabase
-             .from('projects')
-             .select('slug, createdAt, status')
-             .order('createdAt', { ascending: false })
-             .limit(10000)
-             .then((result: any) => ({ type: 'query', ...result }))
-             .catch((error: any) => ({ type: 'error', error }));
-
-    const raceResult = await Promise.race([queryPromise, timeoutPromise]) as any;
+    const result = await Promise.race([fetchPromise, timeoutPromise]) as any;
     
     // Handle timeout
-    if (raceResult.type === 'timeout') {
-      console.warn('[Sitemap] Project fetch timed out after 5 seconds');
-      return []; // Safe fallback
+    if (result.type === 'timeout') {
+      console.warn('Project fetch timed out after 5 seconds, using static pages only');
+      return [];
     }
     
-    // Handle query error
-    if (raceResult.type === 'error' || raceResult.error) {
-      console.error('[Sitemap] Supabase query error:', raceResult.error);
-      return []; // Safe fallback
+    // Handle error
+    if (result.type === 'error' || result.error) {
+      console.error('Error fetching projects for sitemap:', result.error);
+      return [];
     }
     
-    // Extract data
-    const { data: allProjects } = raceResult;
+    const { data: projects } = result;
 
-    if (!allProjects || !Array.isArray(allProjects) || allProjects.length === 0) {
-      console.log('[Sitemap] No projects found in database');
-      return []; // Safe fallback
+    if (!projects || projects.length === 0) {
+      console.log('No active projects found for sitemap');
+      return [];
     }
 
-    // Filter for active projects in JavaScript (safer than database filter)
-    // Include projects with status='active' OR no status field (backwards compatible)
-    const activeProjects = allProjects.filter((project: any) => 
-      project.status === 'active' || !project.status || project.status === null
-    );
-
-    if (activeProjects.length === 0) {
-      console.log('[Sitemap] No active projects found after filtering');
-      return []; // Safe fallback
-    }
-
-    console.log(`[Sitemap] Found ${activeProjects.length} active projects`);
-
-           // Map projects to sitemap URLs
-           // Note: Database column is createdAt (camelCase), not created_at
-           return activeProjects.map((project: any) => {
-             // Database uses camelCase: createdAt
-             const createdAt = project.createdAt;
-             const slug = project.slug;
-
-             if (!slug) {
-               console.warn('[Sitemap] Project missing slug, skipping:', project);
-               return null;
-             }
-
-             // Determine lastmod date using createdAt
-             let lastmod = new Date().toISOString().split('T')[0]; // Default to today
-             if (createdAt) {
-               try {
-                 lastmod = new Date(createdAt).toISOString().split('T')[0];
-               } catch (e) {
-                 // Keep default if date parsing fails
-                 console.warn('[Sitemap] Invalid createdAt date for project:', slug, createdAt);
-               }
-             }
-
-      return {
-        url: `${baseUrl}/project/${slug}`,
-        priority: '0.8',
-        changefreq: 'weekly',
-        lastmod
-      };
-    }).filter((item): item is {url: string; priority: string; changefreq: string; lastmod: string} => item !== null);
+    // Map projects to sitemap URLs
+    return projects.map(project => ({
+      url: `${baseUrl}/project/${project.slug}`,
+      priority: '0.8',
+      changefreq: 'weekly',
+      lastmod: project.updated_at 
+        ? new Date(project.updated_at).toISOString().split('T')[0]
+        : (project.created_at 
+            ? new Date(project.created_at).toISOString().split('T')[0]
+            : new Date().toISOString().split('T')[0])
+    }));
 
   } catch (error) {
-    // Catch-all error handler - return empty array (safe fallback)
-    console.error('[Sitemap] Unexpected error in fetchProjectPages:', error);
-    return []; // Safe fallback: always return valid array
+    // Log error but don't throw - we'll fallback to static pages
+    console.error('Error generating project pages for sitemap:', error);
+    return [];
   }
 }
 

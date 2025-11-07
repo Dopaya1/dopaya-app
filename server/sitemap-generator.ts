@@ -84,11 +84,12 @@ export async function generateSitemap(): Promise<{ staticPages: SitemapUrl[], pr
   let projectPages: SitemapUrl[] = [];
   
   try {
-    // First, let's try to get all projects to see what's available
+    // Fetch all projects - database uses camelCase: createdAt (not created_at)
+    // Note: projects table doesn't have updated_at column
     const { data: allProjects, error: allError } = await supabase
       .from('projects')
-      .select('slug, updated_at, created_at, status, title')
-      .order('created_at', { ascending: false });
+      .select('slug, createdAt, status, title')
+      .order('createdAt', { ascending: false });
 
     console.log('All projects for sitemap:', allProjects?.length || 0);
     console.log('Sample project:', allProjects?.[0]);
@@ -107,9 +108,9 @@ export async function generateSitemap(): Promise<{ staticPages: SitemapUrl[], pr
         url: `${baseUrl}/project/${project.slug}`,
         priority: '0.8',
         changefreq: 'weekly',
-        lastmod: project.updated_at ? 
-          new Date(project.updated_at).toISOString().split('T')[0] : 
-          new Date(project.created_at).toISOString().split('T')[0]
+        lastmod: project.createdAt ? 
+          new Date(project.createdAt).toISOString().split('T')[0] : 
+          new Date().toISOString().split('T')[0]
       }));
     } else {
       console.log('No projects found in database for sitemap');
