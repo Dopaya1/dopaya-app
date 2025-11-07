@@ -100,8 +100,17 @@ async function fetchProjectPages(baseUrl: string): Promise<Array<{url: string; p
     // If Supabase credentials are missing, return empty array (fallback to static only)
     if (!supabaseUrl || !supabaseKey) {
       console.warn('Supabase credentials not found, skipping project pages in sitemap');
+      console.warn('Available env vars:', {
+        hasViteUrl: !!process.env.VITE_SUPABASE_URL,
+        hasViteKey: !!process.env.VITE_SUPABASE_ANON_KEY,
+        hasSupabaseUrl: !!process.env.SUPABASE_URL,
+        hasSupabaseKey: !!process.env.SUPABASE_ANON_KEY,
+        allEnvKeys: Object.keys(process.env).filter(k => k.includes('SUPABASE'))
+      });
       return [];
     }
+    
+    console.log('Supabase credentials found, fetching projects...');
 
     // Create Supabase client
     const supabase = createClient(supabaseUrl, supabaseKey, {
