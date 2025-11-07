@@ -94,12 +94,19 @@ function generateSitemapXML(pages: Array<{url: string; priority: string; changef
 async function fetchProjectPages(baseUrl: string): Promise<Array<{url: string; priority: string; changefreq: string; lastmod: string}>> {
   try {
     // Get environment variables with fallbacks (using VITE_ prefix as per codebase convention)
-    const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
-    const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
+    // Also include hardcoded fallbacks from client code as last resort
+    const supabaseUrl = process.env.VITE_SUPABASE_URL 
+      || process.env.SUPABASE_URL 
+      || 'https://mpueatfperbxbbojlrwd.supabase.co'; // Fallback from client code
+      
+    const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY 
+      || process.env.SUPABASE_ANON_KEY 
+      || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wdWVhdGZwZXJieGJib2pscndkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYwODk3NzAsImV4cCI6MjA2MTY2NTc3MH0.GPBxZ2yEbtB3Ws_nKWeDaE-yuyH-uvufV-Mq9aN8hEc'; // Fallback from client code
 
-    // If Supabase credentials are missing, return empty array (fallback to static only)
-    if (!supabaseUrl || !supabaseKey) {
-      console.warn('Supabase credentials not found, skipping project pages in sitemap');
+    // Log which source we're using (for debugging)
+    const usingEnvVars = !!(process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL);
+    if (!usingEnvVars) {
+      console.warn('Using hardcoded Supabase credentials (env vars not found)');
       console.warn('Available env vars:', {
         hasViteUrl: !!process.env.VITE_SUPABASE_URL,
         hasViteKey: !!process.env.VITE_SUPABASE_ANON_KEY,
@@ -107,10 +114,11 @@ async function fetchProjectPages(baseUrl: string): Promise<Array<{url: string; p
         hasSupabaseKey: !!process.env.SUPABASE_ANON_KEY,
         allEnvKeys: Object.keys(process.env).filter(k => k.includes('SUPABASE'))
       });
-      return [];
+    } else {
+      console.log('Using environment variables for Supabase');
     }
     
-    console.log('Supabase credentials found, fetching projects...');
+    console.log('Fetching projects from Supabase...');
 
     // Create Supabase client
     const supabase = createClient(supabaseUrl, supabaseKey, {
