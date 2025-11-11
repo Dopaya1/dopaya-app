@@ -236,3 +236,17 @@ VALUES
 ('Organic Food Basket', 'A basket of organic food items from local farmers', 'https://placehold.co/300x300', 'Food', TRUE, 'Silver', 1000),
 ('Digital Gift Card', 'A digital gift card for online shopping', 'https://placehold.co/300x300', 'Gift Card', FALSE, 'Bronze', 750)
 ON CONFLICT DO NOTHING;
+
+-- Brands table (for sustainable brand partners)
+CREATE TABLE IF NOT EXISTS "brands" (
+  "id" SERIAL PRIMARY KEY,
+  "name" TEXT NOT NULL,
+  "logo_path" TEXT,
+  "website_url" TEXT,
+  "description" TEXT,
+  "category" TEXT,
+  "featured" BOOLEAN DEFAULT FALSE,
+  "display_order" INTEGER DEFAULT 0,
+  "created_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);

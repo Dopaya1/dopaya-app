@@ -245,3 +245,26 @@ export const insertProjectPressMentionSchema = createInsertSchema(projectPressMe
 
 export type InsertProjectPressMention = z.infer<typeof insertProjectPressMentionSchema>;
 export type ProjectPressMention = typeof projectPressMentions.$inferSelect;
+
+// Brand Partners schema (for sustainable brand partners)
+export const brands = pgTable("brands", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  logoPath: text("logo_path"), // URL or Supabase Storage path
+  websiteUrl: text("website_url"),
+  description: text("description"), // Short description of the brand
+  category: text("category"), // e.g., "Beauty & Wellness", "Food & Agriculture", "Sustainable Lifestyle"
+  featured: boolean("featured").default(false), // For featured brands in hero sections
+  displayOrder: integer("display_order").default(0), // For controlling display order
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const insertBrandSchema = createInsertSchema(brands).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export type InsertBrand = z.infer<typeof insertBrandSchema>;
+export type Brand = typeof brands.$inferSelect;

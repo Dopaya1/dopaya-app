@@ -3,19 +3,20 @@ import { Button } from "@/components/ui/button";
 import { ExternalLink, Shield, CheckCircle, Leaf, Heart, ArrowLeft, ArrowRight, ArrowUpRight, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import type { Reward } from "@shared/schema";
+import type { Reward, Brand } from "@shared/schema";
 import { TYPOGRAPHY } from "@/constants/typography";
 import { BRAND_COLORS } from "@/constants/colors";
 import { MOBILE } from "@/constants/mobile";
 import { MobileSlider } from "@/components/ui/mobile-slider";
+import { getLogoUrl } from "@/lib/image-utils";
 import bonjiLogo from '@assets/Brand_backers/Bonji sustainable brand - logo.png';
 import aaparLogo from '@assets/Brand_backers/Aapar sustainable brand - logo.png';
 import syangsLogo from '@assets/Syangs logo_1750646598029.png';
 import sankalpaArtVillageLogo from '@assets/Brand_backers/sankalpa-art-village sustainable brand - logo.png';
 import milletarianLogo from '@assets/Brand_backers/milletarian sustainable brand - logo.png';
 
-// Real brand data with available logos
-const impactBrands = [
+// Fallback brand data (used if no brands in database)
+const fallbackBrands = [
   {
     id: 1,
     name: "Bonji",
@@ -68,12 +69,73 @@ const impactBrands = [
   }
 ];
 
+// Fallback logo mapping for brands without logo_path
+const fallbackLogos: Record<string, string> = {
+  "Bonji": bonjiLogo,
+  "Bonji - Beyond just natural": bonjiLogo,
+  "Sankalpa Art Village": sankalpaArtVillageLogo,
+  "Sankalpa": sankalpaArtVillageLogo,
+  "Milletarian": milletarianLogo,
+  "Aapar": aaparLogo,
+  "Syangs": syangsLogo,
+};
+
 export function PartnerShowcaseSection() {
   const [selectedBrand, setSelectedBrand] = useState<number | null>(null);
   // Page-based slider (4 items per page on lg, 3 on md, 2 on sm)
   const [page, setPage] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-  const brands = impactBrands.filter(b => b.featured);
+
+  // Fetch brands from Supabase (only featured brands)
+  const { data: brandsData = [], isLoading: brandsLoading } = useQuery<Brand[]>({
+    queryKey: ["brands-showcase"],
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase
+          .from('brands')
+          .select('*')
+          .eq('featured', true)
+          .order('display_order', { ascending: true })
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Error fetching brands:', error);
+          return [];
+        }
+        return (data || []) as Brand[];
+      } catch (err) {
+        console.error('Exception fetching brands:', err);
+        return [];
+      }
+    },
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
+
+  // Map database brands to component format, with fallback
+  const brands = brandsData.length > 0
+    ? brandsData.map((brand) => {
+        // Supabase returns snake_case, so access logo_path directly
+        const logoPath = (brand as any).logo_path || brand.logoPath;
+        const websiteUrl = (brand as any).website_url || brand.websiteUrl;
+        const description = brand.description || '';
+        const category = brand.category || '';
+        
+        // Get logo URL with fallback
+        const logoUrl = getLogoUrl(logoPath, fallbackLogos[brand.name]);
+        const finalLogo = logoUrl || fallbackLogos[brand.name] || '';
+        
+        return {
+          id: brand.id,
+          name: brand.name,
+          fullName: brand.name, // Use name as fullName, or you can add a separate fullName field later
+          logo: finalLogo,
+          hoverDescription: description,
+          category: category,
+          website: websiteUrl || '#',
+          featured: brand.featured || false,
+        };
+      }).filter(b => b.logo) // Only include brands with logos
+    : fallbackBrands.filter(b => b.featured);
   const getVisible = (count: number) => {
     const out: typeof brands = [] as any;
     for (let i = 0; i < count; i++) {
@@ -127,10 +189,26 @@ export function PartnerShowcaseSection() {
         </div>
 
         {/* Brand Showcase - Slider that preserves 4-grid layout */}
-        <div className="mb-16" onMouseEnter={() => setIsPaused(true)} onMouseLeave={() => setIsPaused(false)}>
-          {/* Desktop/LG: 4 at a time */}
-          <div className="hidden lg:grid lg:grid-cols-4 gap-8">
-            {getVisible(4).map((brand, idx) => (
+        {brandsLoading ? (
+          <div className="mb-16">
+            <div className="hidden lg:grid lg:grid-cols-4 gap-8">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="flex items-center justify-center p-6 h-24 rounded-lg bg-gray-200" />
+                  <div className="mt-3 w-full p-4 rounded-lg shadow-sm bg-gray-100">
+                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
+                    <div className="h-3 bg-gray-200 rounded w-1/2 mb-2" />
+                    <div className="h-3 bg-gray-200 rounded w-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="mb-16" onMouseEnter={() => setIsPaused(true)} onMouseLeave={() => setIsPaused(false)}>
+            {/* Desktop/LG: 4 at a time */}
+            <div className="hidden lg:grid lg:grid-cols-4 gap-8">
+              {getVisible(4).map((brand, idx) => (
               <div key={`${brand.id}-lg-${idx}`} className="px-0">
                 <div className="cursor-pointer" onClick={() => { setSelectedBrand(selectedBrand === brand.id ? null : brand.id); setIsPaused(true); }}>
                     <div className="flex items-center justify-center p-6 h-24 rounded-lg" style={{ backgroundColor: BRAND_COLORS.bgWhite }}>
@@ -242,6 +320,7 @@ export function PartnerShowcaseSection() {
             )}
           </div>
         </div>
+        )}
 
         {/* Rewards Section */}
         <div>

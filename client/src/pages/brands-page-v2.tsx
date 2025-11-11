@@ -50,6 +50,8 @@ import { TextRotate } from "@/components/ui/text-rotate";
 import SphereImageGrid from "@/components/ui/image-sphere";
 import { ImageComparisonSlider } from "@/components/ui/image-comparison-slider-horizontal";
 import ExpandableGallery from "@/components/ui/gallery-animation";
+import { getLogoUrl } from "@/lib/image-utils";
+import type { Brand } from "@shared/schema";
 
 // Import Conscious consumer image - using fallback for now to ensure page loads
 // import consciousConsumerImg from "@/assets/Conscious consumer.jpg";
@@ -63,6 +65,7 @@ import amazonLogo from "@assets/Brand_backers/amazon.png";
 import flipkartLogo from "@assets/Brand_backers/flipkart.png";
 import bonjiLogo from "@assets/Brand_backers/Bonji sustainable brand - logo.png";
 import aaparLogo from "@assets/Brand_backers/Aapar sustainable brand - logo.png";
+import syangsLogo from "@assets/Syangs logo_1750646598029.png";
 // Local carousel background images (URL imports for Vite)
 import brands1Url from "@/assets/brands-1.jpg?url";
 import brands2Url from "@/assets/brands-2.jpg?url";
@@ -96,6 +99,30 @@ export default function BrandsPageV2() {
       
       if (error) throw error;
       return data || [];
+    },
+  });
+
+  // Fetch brands from Supabase (only featured brands)
+  const { data: brands = [], isLoading: brandsLoading, error: brandsError } = useQuery({
+    queryKey: ["brands"],
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase
+          .from('brands')
+          .select('*')
+          .eq('featured', true)  // Only get featured brands
+          .order('display_order', { ascending: true })
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Error fetching brands:', error);
+          return []; // Return empty array on error instead of throwing
+        }
+        return (data || []) as Brand[];
+      } catch (err) {
+        console.error('Exception fetching brands:', err);
+        return []; // Return empty array on exception
+      }
     },
   });
 
@@ -139,16 +166,95 @@ export default function BrandsPageV2() {
     transition: { duration: 0.3 }
   };
 
-  // Define brand logos with their alt text
-  const brandLogos = [
-    { src: milletarianLogo, alt: "Milletarian" },
-    { src: adithiMilletsLogo, alt: "Adithi Millets" },
-    { src: allikaLogo, alt: "Allika" },
-    { src: sankalpaArtVillageLogo, alt: "Sankalpa Art Village" },
-    { src: amazonLogo, alt: "Amazon" },
-    { src: flipkartLogo, alt: "Flipkart" },
-    { src: bonjiLogo, alt: "Bonji" },
-  ];
+  // Map brands from Supabase to logo URLs with fallbacks
+  // Create a mapping of brand names to fallback logos for backward compatibility
+  const fallbackLogos: Record<string, string> = {
+    "Milletarian": milletarianLogo,
+    "Adithi Millets": adithiMilletsLogo,
+    "Allika": allikaLogo,
+    "Sankalpa Art Village": sankalpaArtVillageLogo,
+    "Sankalpa": sankalpaArtVillageLogo,
+    "Amazon": amazonLogo,
+    "Flipkart": flipkartLogo,
+    "Bonji": bonjiLogo,
+    "Bonji - Beyond just natural": bonjiLogo, // Handle full name
+    "Aapar": aaparLogo,
+    "Syangs": syangsLogo,
+  };
+
+  // Helper function to find fallback logo with flexible matching
+  const findFallbackLogo = (brandName: string): string | undefined => {
+    // First try exact match
+    if (fallbackLogos[brandName]) {
+      return fallbackLogos[brandName];
+    }
+    
+    // Then try case-insensitive partial matching
+    const lowerName = brandName.toLowerCase();
+    for (const [key, logo] of Object.entries(fallbackLogos)) {
+      if (lowerName.includes(key.toLowerCase()) || key.toLowerCase().includes(lowerName)) {
+        return logo;
+      }
+    }
+    
+    // Special cases
+    if (lowerName.includes('bonji')) return bonjiLogo;
+    if (lowerName.includes('syangs')) return syangsLogo;
+    
+    return undefined;
+  };
+
+  // Get brand logos from Supabase, with fallback to hardcoded imports
+  // Note: Supabase returns snake_case, so we need to access logo_path, not logoPath
+  const brandLogos = brands.length > 0 
+    ? brands.map(brand => {
+        // Supabase returns snake_case, so access logo_path directly
+        // TypeScript type says logoPath, but actual data has logo_path
+        const logoPath = (brand as any).logo_path || brand.logoPath;
+        
+        // Debug: Log the raw brand data
+        console.log(`Processing brand "${brand.name}":`, {
+          logo_path: (brand as any).logo_path,
+          logoPath: brand.logoPath,
+          logoPathType: typeof logoPath,
+          logoPathLength: logoPath?.length,
+          rawBrand: brand
+        });
+        
+        const logoUrl = getLogoUrl(logoPath, findFallbackLogo(brand.name));
+        const finalSrc = logoUrl || findFallbackLogo(brand.name) || '';
+        
+        // Debug logging
+        console.log(`Brand "${brand.name}" - logoUrl: ${logoUrl}, finalSrc: ${finalSrc}`);
+        
+        if (!finalSrc) {
+          console.warn(`Brand "${brand.name}" has no logo (logo_path: ${logoPath || 'empty'})`);
+        }
+        
+        return {
+          src: finalSrc,
+          alt: brand.name,
+          name: brand.name,
+        };
+      }).filter(logo => logo.src) // Filter out brands without logos
+    : [
+        // Fallback to hardcoded logos if no brands in database
+        { src: milletarianLogo, alt: "Milletarian", name: "Milletarian" },
+        { src: adithiMilletsLogo, alt: "Adithi Millets", name: "Adithi Millets" },
+        { src: allikaLogo, alt: "Allika", name: "Allika" },
+        { src: bonjiLogo, alt: "Bonji", name: "Bonji" },
+        { src: aaparLogo, alt: "Aapar", name: "Aapar" },
+        { src: sankalpaArtVillageLogo, alt: "Sankalpa Art Village", name: "Sankalpa Art Village" },
+      ];
+
+  // Debug: Log how many brands we have
+  useEffect(() => {
+    if (brands.length > 0) {
+      console.log(`Total brands from Supabase: ${brands.length}`);
+      console.log(`Brands with logos: ${brandLogos.length}`);
+      console.log('Brands data:', brands.map(b => ({ name: b.name, logoPath: b.logoPath, featured: b.featured })));
+    }
+  }, [brands, brandLogos.length]);
 
   // Dynamic rotating words for hero
   const rotatingWords = ["sustainable", "eco-friendly", "ethical", "conscious", "impact-driven"];
@@ -339,50 +445,46 @@ export default function BrandsPageV2() {
               viewport={{ once: true }}
               className="relative overflow-hidden"
             >
-              <div className="flex animate-scroll">
-                {/* First set of logos */}
-                <div className="flex items-center space-x-6 flex-shrink-0 pl-6">
-                  <div className="flex items-center justify-center h-12 w-32">
-                    <img src={milletarianLogo} alt="Milletarian" className="max-h-8 w-auto object-contain" />
+              {brandsError ? (
+                <div className="flex items-center justify-center h-12">
+                  <div className="text-red-500 text-sm">Error loading brands. Check console.</div>
+                </div>
+              ) : brandsLoading ? (
+                <div className="flex items-center justify-center h-12">
+                  <div className="text-gray-400 text-sm">Loading brands...</div>
+                </div>
+              ) : brandLogos.length > 0 ? (
+                <div className="flex animate-scroll">
+                  {/* First set of logos */}
+                  <div className="flex items-center space-x-6 flex-shrink-0 pl-6">
+                    {brandLogos.map((logo, index) => (
+                      <div key={`${logo.name}-first-${index}`} className="flex items-center justify-center h-12 w-32">
+                        <img 
+                          src={logo.src} 
+                          alt={logo.alt} 
+                          className="max-h-8 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" 
+                        />
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex items-center justify-center h-12 w-32">
-                    <img src={adithiMilletsLogo} alt="Adithi Millets" className="max-h-8 w-auto object-contain" />
-                  </div>
-                  <div className="flex items-center justify-center h-12 w-32">
-                    <img src={allikaLogo} alt="Allika" className="max-h-8 w-auto object-contain" />
-                  </div>
-                  <div className="flex items-center justify-center h-12 w-32">
-                    <img src={bonjiLogo} alt="Bonji" className="max-h-8 w-auto object-contain" />
-                  </div>
-                  <div className="flex items-center justify-center h-12 w-32">
-                    <img src={aaparLogo} alt="Aapar" className="max-h-8 w-auto object-contain" />
-                  </div>
-                  <div className="flex items-center justify-center h-12 w-32">
-                    <img src={sankalpaArtVillageLogo} alt="Sankalpa Art Village" className="max-h-8 w-auto object-contain" />
+                  {/* Duplicate set for seamless loop */}
+                  <div className="flex items-center space-x-6 flex-shrink-0">
+                    {brandLogos.map((logo, index) => (
+                      <div key={`${logo.name}-second-${index}`} className="flex items-center justify-center h-12 w-32">
+                        <img 
+                          src={logo.src} 
+                          alt={logo.alt} 
+                          className="max-h-8 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" 
+                        />
+                      </div>
+                    ))}
                   </div>
                 </div>
-                {/* Duplicate set for seamless loop */}
-                <div className="flex items-center space-x-6 flex-shrink-0">
-                  <div className="flex items-center justify-center h-12 w-32">
-                    <img src={milletarianLogo} alt="Milletarian" className="max-h-8 w-auto object-contain" />
-                  </div>
-                  <div className="flex items-center justify-center h-12 w-32">
-                    <img src={adithiMilletsLogo} alt="Adithi Millets" className="max-h-8 w-auto object-contain" />
-                  </div>
-                  <div className="flex items-center justify-center h-12 w-32">
-                    <img src={allikaLogo} alt="Allika" className="max-h-8 w-auto object-contain" />
-                  </div>
-                  <div className="flex items-center justify-center h-12 w-32">
-                    <img src={bonjiLogo} alt="Bonji" className="max-h-8 w-auto object-contain" />
-                  </div>
-                  <div className="flex items-center justify-center h-12 w-32">
-                    <img src={aaparLogo} alt="Aapar" className="max-h-8 w-auto object-contain" />
-                  </div>
-                  <div className="flex items-center justify-center h-12 w-32">
-                    <img src={sankalpaArtVillageLogo} alt="Sankalpa Art Village" className="max-h-8 w-auto object-contain" />
-                  </div>
+              ) : (
+                <div className="flex items-center justify-center h-12">
+                  <div className="text-gray-400 text-sm">No brands available</div>
                 </div>
-              </div>
+              )}
             </motion.div>
           </div>
         </section>
