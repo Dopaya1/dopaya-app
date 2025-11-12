@@ -11,7 +11,7 @@ export default function ProjectDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   
   // Projects that should use the v3 template
-  const v3Slugs = ['openversum', 'ignis-careers', 'vision-friend'];
+  const v3Slugs = ['openversum', 'ignis-careers', 'vision-friend', 'promeat'];
   const useV3Template = slug && v3Slugs.includes(slug);
   
   const { data: project, isLoading, error } = useQuery<Project | null>({
