@@ -74,13 +74,13 @@ export function HeroSectionV3() {
     staleTime: Infinity,
   });
 
-  // Fetch rewards from database
+  // Fetch ONLY featured rewards from database
   const { data: rewards = [] } = useQuery({
     queryKey: ["rewards-hero-v3"],
     queryFn: async () => {
-      console.log('Fetching rewards for HeroSectionV3...');
+      console.log('Fetching FEATURED rewards for HeroSectionV3...');
       
-      // First try to get featured rewards
+      // Get ONLY featured rewards (no fallback to all rewards)
       const { data: featuredData, error: featuredError } = await supabase
         .from('rewards')
         .select('*')
@@ -93,28 +93,10 @@ export function HeroSectionV3() {
         throw featuredError;
       }
       
-      console.log(`Found ${featuredData?.length || 0} featured rewards:`, featuredData?.map(r => r.name));
+      console.log(`Found ${featuredData?.length || 0} featured rewards:`, featuredData?.map(r => r.title));
       
-      // If we have enough featured rewards, use them
-      if (featuredData && featuredData.length >= 4) {
-        return featuredData;
-      }
-      
-      // Otherwise, get ALL rewards to fill the gap
-      console.log('Not enough featured rewards, fetching all rewards...');
-      const { data: allData, error: allError } = await supabase
-        .from('rewards')
-        .select('*')
-        .order('pointsCost', { ascending: true })
-        .limit(8);
-      
-      if (allError) {
-        console.error('Error fetching all rewards:', allError);
-        throw allError;
-      }
-      
-      console.log(`Found ${allData?.length || 0} total rewards:`, allData?.map(r => r.name));
-      return allData || [];
+      // Return only featured rewards (no fallback)
+      return featuredData || [];
     },
     retry: false,
     staleTime: Infinity,

@@ -15,6 +15,7 @@ export interface IStorage {
   // User operations
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserDonationStats(userId: number, stats: { impactPointsToAdd: number; donationAmountToAdd: number }): Promise<void>;
   
@@ -112,6 +113,12 @@ export class MemStorage implements IStorage {
     );
   }
 
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.email === email
+    );
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userIdCounter++;
     const now = new Date();
@@ -119,7 +126,7 @@ export class MemStorage implements IStorage {
       ...insertUser, 
       id, 
       createdAt: now,
-      impactPoints: 0,
+      impactPoints: 50, // Welcome bonus for new users
       totalDonations: 0
     };
     this.users.set(id, user);
@@ -280,15 +287,10 @@ export class MemStorage implements IStorage {
     const uniqueProjectIds = new Set(userDonations.map(donation => donation.projectId));
     const projectsSupported = uniqueProjectIds.size;
     
-    // Determine user level based on impact points
-    let userLevel = "First Steps";
-    if (impactPoints >= 20000) {
-      userLevel = "Impact Legend";
-    } else if (impactPoints >= 5000) {
-      userLevel = "Changemaker";
-    } else if (impactPoints >= 1000) {
-      userLevel = "Supporter";
-    }
+    // Simple two-status system:
+    // - "aspirer": New user with 50 welcome points, no support yet
+    // - "supporter": Has supported at least one project ($10+)
+    const userStatus: "aspirer" | "supporter" = amountDonated > 0 ? "supporter" : "aspirer";
     
     // Calculate percentage changes (mocked for now)
     // In a real application, these would be calculated based on historical data
@@ -299,7 +301,7 @@ export class MemStorage implements IStorage {
       amountDonatedChange: 47,
       projectsSupported,
       projectsSupportedChange: -12,
-      userLevel
+      userStatus
     };
   }
 

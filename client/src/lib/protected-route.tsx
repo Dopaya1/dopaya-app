@@ -37,10 +37,10 @@ export function ProtectedRoute({
   }
 
   if (!user) {
-    console.log('User not authenticated, redirecting to /auth');
+    console.log('User not authenticated, redirecting to home');
     return (
       <Route path={path}>
-        <Redirect to="/auth" />
+        <Redirect to="/" />
       </Route>
     );
   }

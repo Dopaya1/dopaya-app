@@ -117,10 +117,61 @@ export class SupabaseStorage implements IStorage {
     }
   }
 
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .limit(1)
+        .single();
+      
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No rows returned - user doesn't exist
+          return undefined;
+        }
+        console.error('Error retrieving user by email:', error);
+        return undefined;
+      }
+      
+      return data as User;
+    } catch (error) {
+      console.error('Error retrieving user by email:', error);
+      return undefined;
+    }
+  }
+
   async createUser(user: InsertUser): Promise<User> {
     try {
-      const [newUser] = await db.insert(users).values(user).returning();
-      return newUser;
+      // Hash password if provided
+      let hashedPassword = user.password;
+      if (user.password && user.password.length > 0) {
+        const salt = randomBytes(16).toString('hex');
+        const buf = (await scryptAsync(user.password, salt, 64)) as Buffer;
+        hashedPassword = `${buf.toString('hex')}.${salt}`;
+      }
+      
+      const { data, error } = await supabase
+        .from('users')
+        .insert({
+          username: user.username,
+          password: hashedPassword,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          impactPoints: 50, // Welcome bonus for new users
+          totalDonations: 0
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error creating user:', error);
+        throw new Error(`Failed to create user: ${error.message}`);
+      }
+      
+      return data as User;
     } catch (error) {
       console.error('Error creating user:', error);
       throw new Error('Failed to create user');
@@ -472,15 +523,10 @@ export class SupabaseStorage implements IStorage {
       const uniqueProjectIds = new Set(userDonations.map(donation => donation.projectId));
       const projectsSupported = uniqueProjectIds.size;
       
-      // Determine user level based on impact points
-      let userLevel = "First Steps";
-      if (impactPoints >= 20000) {
-        userLevel = "Impact Legend";
-      } else if (impactPoints >= 5000) {
-        userLevel = "Changemaker";
-      } else if (impactPoints >= 1000) {
-        userLevel = "Supporter";
-      }
+      // Simple two-status system:
+      // - "aspirer": New user with 50 welcome points, no support yet
+      // - "supporter": Has supported at least one project ($10+)
+      const userStatus: "aspirer" | "supporter" = amountDonated > 0 ? "supporter" : "aspirer";
       
       // Hard-coded percentage changes for now - in a real app you would compare with previous time period
       return {
@@ -490,7 +536,7 @@ export class SupabaseStorage implements IStorage {
         amountDonatedChange: 47,
         projectsSupported,
         projectsSupportedChange: -12,
-        userLevel
+        userStatus
       };
     } catch (error) {
       console.error(`Error calculating impact for user ${userId}:`, error);
@@ -502,7 +548,7 @@ export class SupabaseStorage implements IStorage {
         amountDonatedChange: 0,
         projectsSupported: 0,
         projectsSupportedChange: 0,
-        userLevel: "First Steps"
+        userStatus: "aspirer"
       };
     }
   }

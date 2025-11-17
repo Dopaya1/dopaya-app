@@ -1,16 +1,19 @@
 import { useState, useMemo, useEffect, useRef } from "react";
+import { useLocation } from "wouter";
 import { SEOHead } from "@/components/seo/seo-head";
 import { useQuery } from "@tanstack/react-query";
-import { Reward } from "@shared/schema";
+import { Reward, UserImpact } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Search, X, ExternalLink, ArrowUpRight } from "lucide-react";
+import { Loader2, Search, X, ExternalLink, ArrowUpRight, Gift, XCircle, Lock } from "lucide-react";
 import { RewardCard } from "@/components/rewards/reward-card";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { BRAND_COLORS } from "@/constants/colors";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { isOnboardingPreviewEnabled } from "@/lib/feature-flags";
 
 // Import logo images - using relative paths
 import milletarianLogo from "@assets/Brand_backers/milletarian sustainable brand - logo.png";
@@ -25,11 +28,41 @@ import aaparLogo from "@assets/Brand_backers/Aapar sustainable brand - logo.png"
 import syangsLogo from "@assets/Syangs logo_1750646598029.png";
 
 export default function RewardsPage() {
+  const [location, navigate] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedBrand, setSelectedBrand] = useState<number | null>(null);
+  const [showUnlockBanner, setShowUnlockBanner] = useState(false);
+  const [maxPointsFilter, setMaxPointsFilter] = useState<number | null>(null);
   const { user } = useAuth();
+  const previewEnabled = isOnboardingPreviewEnabled();
   const popoverRef = useRef<HTMLDivElement>(null);
+  
+  // Fetch user impact to check if first-time user
+  const { data: impact } = useQuery<UserImpact>({
+    queryKey: ["/api/user/impact"],
+    enabled: !!user && previewEnabled,
+  });
+  
+  // Check if user is first-time (50 IP from welcome bonus, 0 projects supported)
+  const isFirstTimeUser = previewEnabled && user && impact
+    ? ((impact?.impactPoints ?? 0) === 50 && (impact?.projectsSupported ?? 0) === 0)
+    : false;
+
+  // Check for unlock query parameters
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const unlock = urlParams.get('unlock');
+    const maxPoints = urlParams.get('maxPoints');
+    
+    if (unlock === '1' && maxPoints) {
+      setShowUnlockBanner(true);
+      setMaxPointsFilter(parseInt(maxPoints, 10));
+      // Clean up URL after showing banner (but keep filter state)
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [location]);
 
   // Handle click outside to close popover
   useEffect(() => {
@@ -111,7 +144,24 @@ export default function RewardsPage() {
 
 
 
+  // Get sample rewards for locked state (≤100 IP)
+  const sampleRewards = useMemo(() => {
+    if (!rewards) return [];
+    return rewards
+      .filter(reward => reward.pointsCost <= 100)
+      .slice(0, 3)
+      .map((reward, index) => ({
+        ...reward,
+        available: index < 2, // First 2 are "Available now", last is "Coming soon"
+      }));
+  }, [rewards]);
+
   const filteredRewards = rewards?.filter((reward) => {
+    // Filter by max points (for unlock flow)
+    if (maxPointsFilter && reward.pointsCost > maxPointsFilter) {
+      return false;
+    }
+    
     // Filter by search query
     const matchesSearch = searchQuery 
       ? reward.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -210,49 +260,159 @@ export default function RewardsPage() {
             </p>
           </div>
 
-          {/* Search and Filters */}
-          <div className="mb-8">
-            <div className="relative mb-6">
-              <Input
-                placeholder="Search rewards..."
-                value={searchQuery}
-                onChange={handleSearch}
-                className="pl-10 pr-10"
-              />
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              {searchQuery && (
-                <button 
-                  onClick={clearSearch}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          {/* Unlock Banner (shown when coming from payment success) */}
+          {showUnlockBanner && (
+            <Alert className="mb-6 bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-200">
+              <Gift className="h-5 w-5 text-yellow-600" />
+              <AlertDescription className="flex items-center justify-between">
+                <div className="flex-1">
+                  <h4 className="font-semibold text-gray-900 mb-1">Unlock your first reward!</h4>
+                  <p className="text-sm text-gray-700">
+                    Showing rewards you can unlock with your current Impact Points (≤100 IP).
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowUnlockBanner(false)}
+                  className="ml-4"
                 >
-                  <X className="h-4 w-4" />
-                </button>
+                  <XCircle className="h-4 w-4" />
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Locked State (preview only, first-time users) */}
+          {previewEnabled && isFirstTimeUser && !showUnlockBanner && (
+            <div className="mb-12 space-y-8">
+              {/* Locked State Message */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg p-8 text-center space-y-4">
+                <div className="flex justify-center">
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                    <Lock className="w-8 h-8 text-blue-600" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    Unlock Your First Reward
+                  </h2>
+                  <p className="text-lg text-gray-700 max-w-2xl mx-auto">
+                    You have already received 50 Impact Points. Support from $5 to unlock your first reward (instead of usually $10).
+                  </p>
+                </div>
+                <Button
+                  onClick={() => navigate('/projects?previewOnboarding=1')}
+                  className="bg-[#f2662d] hover:bg-[#d9551f] text-white font-semibold px-8 py-6 text-lg"
+                  style={{ backgroundColor: '#f2662d' }}
+                >
+                  Support any project with $5 to unlock rewards
+                </Button>
+              </div>
+
+              {/* Sample Rewards Preview */}
+              {sampleRewards.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-xl font-semibold text-gray-900 text-center">
+                    Sample Rewards You Can Unlock
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {sampleRewards.map((reward) => (
+                      <div
+                        key={reward.id}
+                        className="bg-white border-2 border-gray-200 rounded-lg p-6 space-y-3 relative"
+                      >
+                        {reward.imageUrl && (
+                          <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden mb-3">
+                            <img
+                              src={reward.imageUrl}
+                              alt={reward.title}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-semibold text-gray-900">{reward.title}</h4>
+                            <span className="text-sm font-medium text-[#f2662d]">
+                              {reward.pointsCost} IP
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600 line-clamp-2">
+                            {reward.description}
+                          </p>
+                          <div className="pt-2">
+                            {reward.available ? (
+                              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                Available now
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                Coming soon
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-sm text-center text-gray-500 italic">
+                    If a reward becomes unavailable, we'll replace it with equal or higher value.
+                  </p>
+                </div>
               )}
             </div>
-          </div>
+          )}
 
-          {/* Rewards Grid */}
-          {isLoading ? (
-            <div className="flex justify-center items-center py-24">
-              <Loader2 className="h-10 w-10 text-primary animate-spin" />
+          {/* Search and Filters - Only show if not locked state */}
+          {!(previewEnabled && isFirstTimeUser && !showUnlockBanner) && (
+            <div className="mb-8">
+              <div className="relative mb-6">
+                <Input
+                  placeholder="Search rewards..."
+                  value={searchQuery}
+                  onChange={handleSearch}
+                  className="pl-10 pr-10"
+                />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                {searchQuery && (
+                  <button 
+                    onClick={clearSearch}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
             </div>
-          ) : filteredRewards && filteredRewards.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredRewards.map((reward) => (
-                <RewardCard key={reward.id} reward={reward} onRedeem={() => handleRedeemReward(reward)} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-24">
-              <p className="text-xl font-semibold">No rewards match your filters</p>
-              <p className="text-muted-foreground mt-2">Try adjusting your search or filters</p>
-              <Button className="mt-4" onClick={() => {
-                setSearchQuery("");
-                setSelectedCategory("all");
-              }}>
-                Clear All Filters
-              </Button>
-            </div>
+          )}
+
+          {/* Rewards Grid - Only show if not locked state */}
+          {!(previewEnabled && isFirstTimeUser && !showUnlockBanner) && (
+            <>
+              {isLoading ? (
+                <div className="flex justify-center items-center py-24">
+                  <Loader2 className="h-10 w-10 text-primary animate-spin" />
+                </div>
+              ) : filteredRewards && filteredRewards.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredRewards.map((reward) => (
+                    <RewardCard key={reward.id} reward={reward} onRedeem={() => handleRedeemReward(reward)} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-24">
+                  <p className="text-xl font-semibold">No rewards match your filters</p>
+                  <p className="text-muted-foreground mt-2">Try adjusting your search or filters</p>
+                  <Button className="mt-4" onClick={() => {
+                    setSearchQuery("");
+                    setSelectedCategory("all");
+                  }}>
+                    Clear All Filters
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </div>
 

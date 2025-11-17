@@ -59,7 +59,7 @@ export function ImpactChart() {
           </div>
           <div className="flex items-center space-x-2">
             <div className="w-3 h-0.5 bg-purple-500" style={{ borderStyle: 'dashed', borderWidth: '1px 0', background: 'none', borderColor: '#8B5CF6' }}></div>
-            <span className="text-gray-600">Donations ($)</span>
+            <span className="text-gray-600">Support amount ($)</span>
           </div>
         </div>
       </CardHeader>

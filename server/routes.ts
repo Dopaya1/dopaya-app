@@ -3,6 +3,7 @@ import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
+import { requireSupabaseAuth, getSupabaseUser } from "./supabase-auth-middleware";
 import { z } from "zod";
 import { insertDonationSchema, insertRedemptionSchema } from "@shared/schema";
 import { testDatabaseConnection, fetchDatabaseStats } from "./db-test";
@@ -18,6 +19,55 @@ import { getSitemapXML } from "./sitemap-generator";
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes (/api/register, /api/login, /api/logout, /api/user)
   setupAuth(app);
+  
+  // ✅ Ensure user profile exists in public.users (for OAuth and email signup)
+  app.post("/api/auth/ensure-profile", async (req, res) => {
+    try {
+      const { email, username, firstName, lastName } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ error: "Email is required" });
+      }
+      
+      console.log('Ensuring user profile for:', email);
+      
+      // Check if user already exists by email
+      const existingUser = await storage.getUserByEmail(email);
+      
+      if (existingUser) {
+        console.log('User profile already exists:', existingUser.id);
+        return res.json({ 
+          success: true, 
+          user: existingUser,
+          created: false 
+        });
+      }
+      
+      // Create new user with 50 Impact Points welcome bonus
+      console.log('Creating new user profile with 50 Impact Points...');
+      const newUser = await storage.createUser({
+        username: username || email.split('@')[0],
+        email,
+        password: '', // OAuth users don't have a password in our system
+        firstName,
+        lastName,
+      });
+      
+      console.log('User profile created successfully:', newUser.id);
+      
+      res.json({ 
+        success: true, 
+        user: newUser,
+        created: true 
+      });
+    } catch (error) {
+      console.error('Error ensuring user profile:', error);
+      res.status(500).json({ 
+        error: "Failed to create user profile",
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
   
   // Set up Stripe payment routes
   setupStripeRoutes(app);
@@ -559,6 +609,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // User impact data
   app.get("/api/user/impact", async (req, res) => {
+    console.log('[GET /api/user/impact] Request received');
+    console.log('[GET /api/user/impact] Auth header:', req.headers.authorization ? 'Present' : 'Missing');
+    
+    // Try Supabase auth first
+    const supabaseUser = await getSupabaseUser(req);
+    
+    if (supabaseUser) {
+      console.log('[GET /api/user/impact] Supabase user found:', supabaseUser.email);
+      // Get user from public.users by email
+      const dbUser = await storage.getUserByEmail(supabaseUser.email || '');
+      
+      if (!dbUser) {
+        console.log('[GET /api/user/impact] User not found in database for:', supabaseUser.email);
+        return res.status(404).json({ message: "User not found in database" });
+      }
+      
+      console.log('[GET /api/user/impact] Database user found:', dbUser.id, 'impactPoints:', dbUser.impactPoints);
+      
+      try {
+        const userImpact = await storage.getUserImpact(dbUser.id);
+        console.log('[GET /api/user/impact] Returning impact:', userImpact);
+        return res.json(userImpact);
+      } catch (error) {
+        console.error('[GET /api/user/impact] Error:', error);
+        return res.status(500).json({ message: "Failed to fetch impact data" });
+      }
+    }
+    
+    console.log('[GET /api/user/impact] No Supabase user, trying Passport...');
+    
+    // Fallback to Passport auth (for backwards compatibility)
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "You must be logged in to view impact data" });
     }
@@ -572,6 +653,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/user/impact-history", async (req, res) => {
+    // Try Supabase auth first
+    const supabaseUser = await getSupabaseUser(req);
+    
+    if (supabaseUser) {
+      const dbUser = await storage.getUserByEmail(supabaseUser.email || '');
+      if (!dbUser) {
+        return res.status(404).json({ message: "User not found in database" });
+      }
+      try {
+        const impactHistory = await storage.getUserImpactHistory(dbUser.id);
+        return res.json(impactHistory);
+      } catch (error) {
+        return res.status(500).json({ message: "Failed to fetch impact history" });
+      }
+    }
+    
+    // Fallback to Passport auth
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "You must be logged in to view impact history" });
     }
@@ -585,6 +683,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/user/supported-projects", async (req, res) => {
+    // Try Supabase auth first
+    const supabaseUser = await getSupabaseUser(req);
+    
+    if (supabaseUser) {
+      const dbUser = await storage.getUserByEmail(supabaseUser.email || '');
+      if (!dbUser) {
+        return res.status(404).json({ message: "User not found in database" });
+      }
+      try {
+        const projects = await storage.getUserSupportedProjects(dbUser.id);
+        return res.json(projects);
+      } catch (error) {
+        return res.status(500).json({ message: "Failed to fetch supported projects" });
+      }
+    }
+    
+    // Fallback to Passport auth
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "You must be logged in to view supported projects" });
     }

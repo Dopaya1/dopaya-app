@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { Loader2, CheckCircle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { isOnboardingPreviewEnabled } from "@/lib/feature-flags";
 
 export default function AuthCallback() {
   const [location, navigate] = useLocation();
@@ -52,12 +53,25 @@ export default function AuthCallback() {
 
           if (data.user) {
             console.log('User authenticated successfully via email confirmation');
-            setStatus('success');
-            setMessage('Email verified successfully! Redirecting to dashboard...');
             
-            // Redirect to dashboard after brief delay
+            // ✅ SYNC: Ensure user exists in public.users table
+            await ensureUserProfile(data.user);
+            
+            setStatus('success');
+            setMessage('Email verified successfully! Redirecting...');
+            
+            // Check if we should return to payment dialog
+            const returnUrl = sessionStorage.getItem('authReturnUrl');
+            const openPaymentDialog = sessionStorage.getItem('openPaymentDialog') === 'true';
+            
             setTimeout(() => {
+              if (returnUrl && openPaymentDialog) {
+                // Return to original page where Support button was clicked
+                sessionStorage.removeItem('authReturnUrl');
+                window.location.href = returnUrl;
+              } else {
               navigate('/dashboard');
+              }
             }, 1500);
             return;
           }
@@ -76,10 +90,25 @@ export default function AuthCallback() {
         
         if (sessionData.session?.user) {
           console.log('User already authenticated');
+          
+          // ✅ SYNC: Ensure user exists in public.users table
+          await ensureUserProfile(sessionData.session.user);
+          
           setStatus('success');
           setMessage('You are already logged in. Redirecting...');
+          
+          // Check if we should return to payment dialog
+          const returnUrl = sessionStorage.getItem('authReturnUrl');
+          const openPaymentDialog = sessionStorage.getItem('openPaymentDialog') === 'true';
+          
           setTimeout(() => {
+            if (returnUrl && openPaymentDialog) {
+              // Return to original page where Support button was clicked
+              sessionStorage.removeItem('authReturnUrl');
+              window.location.href = returnUrl;
+            } else {
             navigate('/dashboard');
+            }
           }, 1000);
         } else {
           // Check if user is authenticated via getUser as fallback
@@ -91,10 +120,25 @@ export default function AuthCallback() {
             setMessage('Authentication failed. Please try again.');
           } else {
             console.log('User found via getUser()');
+            
+            // ✅ SYNC: Ensure user exists in public.users table
+            await ensureUserProfile(userData.user);
+            
             setStatus('success');
             setMessage('Authentication successful! Redirecting...');
+            
+            // Check if we should return to payment dialog
+            const returnUrl = sessionStorage.getItem('authReturnUrl');
+            const openPaymentDialog = sessionStorage.getItem('openPaymentDialog') === 'true';
+            
             setTimeout(() => {
+              if (returnUrl && openPaymentDialog) {
+                // Return to original page where Support button was clicked
+                sessionStorage.removeItem('authReturnUrl');
+                window.location.href = returnUrl;
+              } else {
               navigate('/dashboard');
+              }
             }, 1000);
           }
         }
@@ -102,6 +146,36 @@ export default function AuthCallback() {
         console.error('Auth callback processing error:', error);
         setStatus('error');
         setMessage('An unexpected error occurred during authentication. Please try again.');
+      }
+    };
+
+    // Helper function to ensure user profile exists in public.users
+    const ensureUserProfile = async (authUser: any) => {
+      try {
+        console.log('Checking if user profile exists for:', authUser.email);
+        
+        // Call our backend API to create user if needed
+        const response = await fetch('/api/auth/ensure-profile', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: authUser.email,
+            username: authUser.user_metadata?.username || authUser.email?.split('@')[0] || 'user',
+            firstName: authUser.user_metadata?.firstName || authUser.user_metadata?.first_name,
+            lastName: authUser.user_metadata?.lastName || authUser.user_metadata?.last_name,
+          }),
+        });
+        
+        if (!response.ok) {
+          console.error('Failed to ensure user profile:', await response.text());
+        } else {
+          console.log('User profile ensured successfully');
+        }
+      } catch (error) {
+        console.error('Error ensuring user profile:', error);
+        // Don't throw - we don't want to block the auth flow
       }
     };
 

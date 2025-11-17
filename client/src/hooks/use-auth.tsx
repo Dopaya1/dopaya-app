@@ -168,23 +168,70 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      console.log('Logout mutation executing with Supabase...');
-      await signOut();
+      console.log('Logout mutation executing...');
+      // Try Supabase logout, but don't wait for it
+      supabase.auth.signOut().catch(err => {
+        console.error('Supabase logout error (ignored):', err);
+      });
+      // Return immediately - don't wait
+      return Promise.resolve();
     },
     onSuccess: () => {
+      // Clear all local state immediately
       setUser(null);
+      queryClient.clear(); // Clear all cached data
       queryClient.setQueryData(["/api/user"], null);
+      
+      // Clear Supabase session from localStorage
+      try {
+        // Clear all Supabase-related keys
+        Object.keys(localStorage).forEach(key => {
+          if (key.includes('supabase') || key.includes('sb-')) {
+            localStorage.removeItem(key);
+          }
+        });
+        // Also clear sessionStorage
+        Object.keys(sessionStorage).forEach(key => {
+          if (key.includes('supabase') || key.includes('sb-')) {
+            sessionStorage.removeItem(key);
+          }
+        });
+      } catch (e) {
+        console.error('Error clearing storage:', e);
+      }
+      
       toast({
         title: "Logged out successfully",
         description: "You have been logged out.",
       });
+      
+      // Force redirect immediately
+      window.location.href = '/';
     },
     onError: (error: Error) => {
-      toast({
-        title: "Logout failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      console.error('Logout error (forcing logout anyway):', error);
+      // Force clear everything and redirect
+      setUser(null);
+      queryClient.clear();
+      queryClient.setQueryData(["/api/user"], null);
+      
+      // Clear localStorage and sessionStorage
+      try {
+        Object.keys(localStorage).forEach(key => {
+          if (key.includes('supabase') || key.includes('sb-')) {
+            localStorage.removeItem(key);
+          }
+        });
+        Object.keys(sessionStorage).forEach(key => {
+          if (key.includes('supabase') || key.includes('sb-')) {
+            sessionStorage.removeItem(key);
+          }
+        });
+      } catch (e) {
+        // Ignore
+      }
+      
+      window.location.href = '/';
     },
   });
 

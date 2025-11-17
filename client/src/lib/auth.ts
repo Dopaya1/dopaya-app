@@ -63,6 +63,6 @@ export function getUserLevel(impactPoints: number): string {
   } else if (impactPoints >= 1000) {
     return "Supporter";
   } else {
-    return "First Steps";
+    return "Impact Aspirer";
   }
 }

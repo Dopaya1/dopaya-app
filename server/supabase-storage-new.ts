@@ -113,6 +113,7 @@ export class SupabaseStorage implements IStorage {
   // User operations
   async getUser(id: number): Promise<User | undefined> {
     try {
+      // Select all columns - Supabase returns them as-is (camelCase if that's the column name)
       const { data, error } = await supabase
         .from('users')
         .select('*')
@@ -125,7 +126,13 @@ export class SupabaseStorage implements IStorage {
         return undefined;
       }
       
-      return data || undefined;
+      if (!data) {
+        return undefined;
+      }
+      
+      // Return data as-is - Supabase preserves column names
+      // If column is "impactPoints" in DB, it will be "impactPoints" in data
+      return data as User;
     } catch (error) {
       console.error(`Error retrieving user with ID ${id}:`, error);
       return undefined;
@@ -149,6 +156,38 @@ export class SupabaseStorage implements IStorage {
       return data || undefined;
     } catch (error) {
       console.error(`Error retrieving user with username ${username}:`, error);
+      return undefined;
+    }
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    try {
+      // Select all columns - Supabase returns them as-is (camelCase if that's the column name)
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .limit(1)
+        .single();
+      
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No rows returned - user doesn't exist
+          return undefined;
+        }
+        console.error(`Error retrieving user with email ${email} from Supabase:`, error);
+        return undefined;
+      }
+      
+      if (!data) {
+        return undefined;
+      }
+      
+      // Return data as-is - Supabase preserves column names
+      // If column is "impactPoints" in DB, it will be "impactPoints" in data
+      return data as User;
+    } catch (error) {
+      console.error(`Error retrieving user with email ${email}:`, error);
       return undefined;
     }
   }
@@ -648,41 +687,86 @@ export class SupabaseStorage implements IStorage {
   // Impact statistics
   async getUserImpact(userId: number): Promise<UserImpact> {
     try {
+      // ✅ Get user's current Impact Points from users table
+      const user = await this.getUser(userId);
+      if (!user) {
+        console.error(`User ${userId} not found`);
+        return {
+          impactPoints: 0,
+          impactPointsChange: 0,
+          amountDonated: 0,
+          amountDonatedChange: 0,
+          projectsSupported: 0,
+          projectsSupportedChange: 0,
+          userStatus: "aspirer",
+        };
+      }
+      
+      // Get current Impact Points from users table
+      // Debug: log what we actually got
+      console.log(`[getUserImpact] User object keys:`, Object.keys(user));
+      console.log(`[getUserImpact] User object:`, JSON.stringify(user, null, 2));
+      
+      const impactPoints = (user as any).impactPoints ?? (user as any).impact_points ?? 0;
+      const totalDonations = (user as any).totalDonations ?? (user as any).total_donations ?? 0;
+      
+      console.log(`[getUserImpact] User ${userId}: impactPoints=${impactPoints}, totalDonations=${totalDonations}`);
+      
       // Get total donations amount
       const { data: donations, error: donationsError } = await supabase
         .from('donations')
-        .select('amount, impactPoints')
+        .select('amount, projectId')
         .eq('userId', userId);
       
       if (donationsError) {
         console.error(`Error fetching donation impact for user ${userId}:`, donationsError);
+        // Still return user's Impact Points even if donations fail
+        const amountDonated = totalDonations; // Already extracted above
+        
+        // Determine user status based on amountDonated (has made at least one donation)
+        const userStatus: "aspirer" | "supporter" = amountDonated > 0 ? "supporter" : "aspirer";
+        
         return {
-          totalDonated: 0,
-          totalImpactPoints: 0,
+          impactPoints,
+          impactPointsChange: 0,
+          amountDonated,
+          amountDonatedChange: 0,
           projectsSupported: 0,
+          projectsSupportedChange: 0,
+          userStatus,
         };
       }
       
-      // Calculate totals
-      const totalDonated = donations?.reduce((sum, d) => sum + d.amount, 0) || 0;
-      const totalImpactPoints = donations?.reduce((sum, d) => sum + (d.impactPoints || 0), 0) || 0;
+      // Calculate totals from donations
+      const amountDonated = donations?.reduce((sum, d) => sum + d.amount, 0) || 0;
       
       // Count distinct projects supported
       const distinctProjectIds = new Set<number>();
       donations?.forEach(d => distinctProjectIds.add(d.projectId));
       const projectsSupported = distinctProjectIds.size;
       
+      // Determine user status based on amountDonated (has made at least one donation)
+      const userStatus: "aspirer" | "supporter" = amountDonated > 0 ? "supporter" : "aspirer";
+      
       return {
-        totalDonated,
-        totalImpactPoints,
+        impactPoints, // ✅ From users table
+        impactPointsChange: 0, // TODO: Calculate change if needed
+        amountDonated,
+        amountDonatedChange: 0, // TODO: Calculate change if needed
         projectsSupported,
+        projectsSupportedChange: 0, // TODO: Calculate change if needed
+        userStatus,
       };
     } catch (error) {
       console.error(`Error calculating user impact for user ${userId}:`, error);
       return {
-        totalDonated: 0,
-        totalImpactPoints: 0,
+        impactPoints: 0,
+        impactPointsChange: 0,
+        amountDonated: 0,
+        amountDonatedChange: 0,
         projectsSupported: 0,
+        projectsSupportedChange: 0,
+        userStatus: "aspirer",
       };
     }
   }

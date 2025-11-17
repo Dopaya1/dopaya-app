@@ -9,7 +9,7 @@ export function ImpactStats() {
 
   const statItems = [
     { 
-      title: "Amount donated", 
+      title: "Support amount", 
       value: impact?.amountDonated || 0, 
       format: (val: number) => `$${val.toLocaleString()}`,
       change: impact?.amountDonatedChange || 0,
@@ -32,7 +32,7 @@ export function ImpactStats() {
     },
     { 
       title: "Impact created", 
-      value: impact?.impactPoints || 0, 
+      value: (impact?.amountDonated || 0) * 2, // Impact created = 2x donation amount (not Impact Points)
       format: (val: number) => val.toLocaleString(),
       change: impact?.impactPointsChange || 0,
       icon: (

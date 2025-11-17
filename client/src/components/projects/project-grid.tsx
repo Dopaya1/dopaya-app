@@ -9,9 +9,10 @@ interface ProjectGridProps {
   projects: Project[] | undefined;
   isLoading: boolean;
   error?: Error | null;
+  showTourTarget?: boolean;
 }
 
-export function ProjectGrid({ projects, isLoading, error }: ProjectGridProps) {
+export function ProjectGrid({ projects, isLoading, error, showTourTarget }: ProjectGridProps) {
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -71,8 +72,10 @@ export function ProjectGrid({ projects, isLoading, error }: ProjectGridProps) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {projects.map((project) => (
-        <ProjectCard key={project.id} project={project} />
+      {projects.map((project, index) => (
+        <div key={project.id} data-tour={index === 0 && showTourTarget ? "first-project" : undefined}>
+          <ProjectCard project={project} />
+        </div>
       ))}
     </div>
   );

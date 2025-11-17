@@ -60,11 +60,12 @@ export default function HomePage() {
   });
 
   const { data: bubbleRewards = [] } = useQuery({
-    queryKey: ["home-bubble-rewards"],
+    queryKey: ["home-bubble-rewards-featured-only"],
     queryFn: async () => {
       const { data } = await supabase
         .from('rewards')
         .select('*')
+        .eq('featured', true)
         .order('pointsCost', { ascending: true })
         .limit(6);
       return data || [];
@@ -460,21 +461,21 @@ export default function HomePage() {
         
         {/* 2. Case Study Section - New layout with ExpandableGallery */}
         <CaseStudyModernSectionV3 />
-        
-        {/* 3. Partner Showcase Section */}
-        <PartnerShowcaseSection />
-        
-        {/* 4. Impact Dashboard Section */}
-        <ImpactDashboardSection />
-        
-        {/* 5. Institutional Proof Section */}
-        <InstitutionalProofSimple />
-        
-        {/* 6. FAQ Section */}
-        <FAQSection />
-        
-        {/* 7. Founding Member CTA */}
-        <FoundingMemberCTA />
+      
+      {/* 3. Partner Showcase Section */}
+      <PartnerShowcaseSection />
+      
+      {/* 4. Impact Dashboard Section */}
+      <ImpactDashboardSection />
+      
+      {/* 5. Institutional Proof Section */}
+      <InstitutionalProofSimple />
+      
+      {/* 6. FAQ Section */}
+      <FAQSection />
+      
+      {/* 7. Founding Member CTA */}
+      <FoundingMemberCTA />
       </div>
     </>
   );

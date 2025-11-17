@@ -12,6 +12,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { isOnboardingPreviewEnabled } from "@/lib/feature-flags";
+import { supabase } from "@/lib/supabase";
+import { useLocation } from "wouter";
 
 const loginSchema = z.object({
   email: z.string().email("Valid email is required"),
@@ -34,11 +37,42 @@ interface AuthModalProps {
   defaultTab?: "login" | "register";
 }
 
+// Google logo SVG component
+const GoogleIcon = () => (
+  <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+    <path
+      fill="#4285F4"
+      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+    />
+    <path
+      fill="#34A853"
+      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+    />
+    <path
+      fill="#FBBC05"
+      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+    />
+    <path
+      fill="#EA4335"
+      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+    />
+  </svg>
+);
+
 export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalProps) {
   const [activeTab, setActiveTab] = useState<string>(defaultTab);
   const { loginMutation, registerMutation } = useAuth();
   const [loginError, setLoginError] = useState<string | null>(null);
   const [registerError, setRegisterError] = useState<string | null>(null);
+  const previewEnabled = isOnboardingPreviewEnabled();
+  const [, navigate] = useLocation();
+  
+  // Preview mode inline auth states
+  const [authEmail, setAuthEmail] = useState<string>("");
+  const [authPassword, setAuthPassword] = useState<string>("");
+  const [authLoading, setAuthLoading] = useState<boolean>(false);
+  const [authError, setAuthError] = useState<string>("");
+  const [isSignUp, setIsSignUp] = useState<boolean>(defaultTab === "register");
 
   // Reset tab when modal opens
   useEffect(() => {
@@ -99,6 +133,256 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
     });
   };
 
+  // Preview mode auth handlers (matching donation flow)
+  const handleGoogleSignIn = async () => {
+    try {
+      setAuthError("");
+      setAuthLoading(true);
+      
+      // Build redirect URL with preview flag if enabled
+      let redirectUrl = `${window.location.origin}/auth/callback`;
+      if (previewEnabled) {
+        redirectUrl += '?previewOnboarding=1';
+      }
+      
+      console.log('Starting Google OAuth with redirect:', redirectUrl);
+      
+      await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: redirectUrl,
+        },
+      });
+      // Supabase will redirect; no further action here
+    } catch (e: any) {
+      setAuthError(e?.message || "Google sign-in failed. Please try again.");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleEmailLogin = async () => {
+    try {
+      setAuthError("");
+      setAuthLoading(true);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: authEmail.trim(),
+        password: authPassword,
+      });
+      if (error) throw error;
+      if (data?.user) {
+        onClose();
+        setAuthEmail("");
+        setAuthPassword("");
+        // Redirect immediately after login for preview flow
+        if (previewEnabled) {
+          window.location.href = '/dashboard?previewOnboarding=1';
+        } else {
+          window.location.href = '/dashboard';
+        }
+      }
+    } catch (e: any) {
+      setAuthError(e?.message || "Email sign-in failed. Please check your credentials.");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleEmailSignUp = async () => {
+    try {
+      setAuthError("");
+      setAuthLoading(true);
+      
+      const username = authEmail.trim().split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+      
+      const { data, error } = await supabase.auth.signUp({
+        email: authEmail.trim(),
+        password: authPassword,
+        options: {
+          data: {
+            username: username,
+          },
+        },
+      });
+      
+      if (error) throw error;
+      
+      if (data?.user) {
+        // ✅ SYNC: ALWAYS ensure user exists in public.users table (regardless of email confirmation)
+        console.log('User signed up successfully, ensuring profile exists...');
+        
+        try {
+          const response = await fetch('/api/auth/ensure-profile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: data.user.email,
+              username: data.user.user_metadata?.username || data.user.email?.split('@')[0] || 'user',
+              firstName: data.user.user_metadata?.firstName,
+              lastName: data.user.user_metadata?.lastName,
+            }),
+          });
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Failed to ensure user profile:', errorText);
+            // Still continue - don't block the flow
+          } else {
+            const result = await response.json();
+            console.log('User profile ensured successfully:', result);
+          }
+        } catch (error) {
+          console.error('Error ensuring user profile:', error);
+          // Still continue - don't block the flow
+        }
+        
+        if (!data.user.email_confirmed_at) {
+          // Email confirmation required
+          setAuthError("Please check your email to confirm your account. Then sign in.");
+          setIsSignUp(false);
+          
+          if (previewEnabled) {
+            sessionStorage.setItem('isNewUser', 'true');
+          }
+        } else {
+          // Email confirmed - user is immediately logged in
+          onClose();
+          setAuthEmail("");
+          setAuthPassword("");
+          
+          // Set new user flag for welcome modal
+          if (previewEnabled) {
+            sessionStorage.setItem('isNewUser', 'true');
+            window.location.href = '/dashboard?newUser=1&previewOnboarding=1';
+          } else {
+            window.location.href = '/dashboard';
+          }
+        }
+      }
+    } catch (e: any) {
+      setAuthError(e?.message || "Registration failed. Please try again.");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  // If preview mode, show inline auth UI (matching payment flow)
+  if (previewEnabled) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-center">
+              {isSignUp ? "Create Your Account" : "Welcome Back"}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            {/* Google Sign In (Primary) */}
+            <Button
+              onClick={handleGoogleSignIn}
+              disabled={authLoading}
+              variant="outline"
+              className="w-full flex items-center justify-center hover:bg-gray-50"
+            >
+              {authLoading ? (
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              ) : (
+                <GoogleIcon />
+              )}
+              Continue with Google
+            </Button>
+
+            {/* Divider */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">Or continue with email</span>
+              </div>
+            </div>
+
+            {/* Email/Password Form */}
+            <div className="space-y-4">
+              {authError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-800">
+                  {authError}
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="your@email.com"
+                  value={authEmail}
+                  onChange={(e) => setAuthEmail(e.target.value)}
+                  disabled={authLoading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={authPassword}
+                  onChange={(e) => setAuthPassword(e.target.value)}
+                  disabled={authLoading}
+                />
+              </div>
+
+              <Button
+                onClick={isSignUp ? handleEmailSignUp : handleEmailLogin}
+                disabled={authLoading || !authEmail || !authPassword}
+                className="w-full bg-[#f2662d] hover:bg-[#d9551f]"
+                style={{ backgroundColor: '#f2662d' }}
+              >
+                {authLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                {isSignUp ? "Sign Up" : "Sign In"}
+              </Button>
+            </div>
+
+            {/* Toggle between Sign In / Sign Up */}
+            <div className="text-center text-sm text-gray-600">
+              {isSignUp ? (
+                <>
+                  Already have an account?{" "}
+                  <button
+                    onClick={() => {
+                      setIsSignUp(false);
+                      setAuthError("");
+                    }}
+                    className="text-[#f2662d] hover:underline font-medium"
+                  >
+                    Sign In
+                  </button>
+                </>
+              ) : (
+                <>
+                  Don't have an account?{" "}
+                  <button
+                    onClick={() => {
+                      setIsSignUp(true);
+                      setAuthError("");
+                    }}
+                    className="text-[#f2662d] hover:underline font-medium"
+                  >
+                    Sign Up
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Original auth modal UI for non-preview mode
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
