@@ -60,3 +60,4 @@ console.log('  - Verify dev server is running on port 3001');
 console.log('\n' + '='.repeat(50));
 console.log('✅ Setup check complete!\n');
 
+

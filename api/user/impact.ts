@@ -153,8 +153,9 @@ async function getUserImpact(userId: number) {
     });
     const projectsSupported = distinctProjectIds.size;
     
-    // Determine user level based on amountDonated
-    const userLevel: string = amountDonated > 0 ? 'supporter' : 'aspirer';
+    // Determine user status based on impactPoints >= 100 (not amountDonated)
+    const userLevel: string = impactPoints >= 100 ? 'supporter' : 'aspirer';
+    const userStatus: string = impactPoints >= 100 ? 'supporter' : 'aspirer';
     
     return {
       impactPoints,
@@ -164,6 +165,7 @@ async function getUserImpact(userId: number) {
       projectsSupported,
       projectsSupportedChange: 0,
       userLevel,
+      userStatus,
     };
   } catch (error) {
     console.error('[getUserImpact] Error:', error);
@@ -195,8 +197,20 @@ export default async function handler(req: any, res: any) {
     const dbUser = await getUserByEmail(supabaseUser.email);
     
     if (!dbUser || !dbUser.id) {
-      console.log('[GET /api/user/impact] User not found in database:', supabaseUser.email);
-      return res.status(404).json({ message: 'User not found in database' });
+      console.log('[GET /api/user/impact] User not found in database, returning default values:', supabaseUser.email);
+      // Return default values instead of 404 - user might be created by trigger soon
+      // This prevents dashboard errors while trigger creates the user
+      // 50 IP = aspirer (need 100+ for supporter)
+      return res.json({
+        impactPoints: 50, // Default welcome bonus
+        impactPointsChange: 0,
+        amountDonated: 0,
+        amountDonatedChange: 0,
+        projectsSupported: 0,
+        projectsSupportedChange: 0,
+        userLevel: 'aspirer',
+        userStatus: 'aspirer', // 50 < 100, so aspirer
+      });
     }
     
     console.log('[GET /api/user/impact] Database user found:', dbUser.id);

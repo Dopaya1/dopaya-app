@@ -67,12 +67,23 @@ export default function AuthCallback() {
             setStatus('success');
             setMessage('Email verified successfully! Redirecting...');
             
+            // Check if we should return to support page (from support page auth modal)
+            const pendingSupportReturnUrl = sessionStorage.getItem('pendingSupportReturnUrl');
             // Check if we should return to payment dialog
             const returnUrl = sessionStorage.getItem('authReturnUrl');
             const openPaymentDialog = sessionStorage.getItem('openPaymentDialog') === 'true';
             
             setTimeout(() => {
-              if (returnUrl && openPaymentDialog) {
+              if (pendingSupportReturnUrl) {
+                // User was trying to support, redirect back to support page
+                sessionStorage.removeItem('pendingSupportReturnUrl');
+                sessionStorage.removeItem('pendingSupportAmount');
+                // Construct full URL if it's a relative path
+                const fullUrl = pendingSupportReturnUrl.startsWith('http') 
+                  ? pendingSupportReturnUrl 
+                  : `${window.location.origin}${pendingSupportReturnUrl}`;
+                window.location.href = fullUrl;
+              } else if (returnUrl && openPaymentDialog) {
                 // Return to original page where Support button was clicked
                 sessionStorage.removeItem('authReturnUrl');
                 window.location.href = returnUrl;
@@ -114,12 +125,23 @@ export default function AuthCallback() {
           setStatus('success');
           setMessage('You are already logged in. Redirecting...');
           
+          // Check if we should return to support page (from support page auth modal)
+          const pendingSupportReturnUrl = sessionStorage.getItem('pendingSupportReturnUrl');
           // Check if we should return to payment dialog
           const returnUrl = sessionStorage.getItem('authReturnUrl');
           const openPaymentDialog = sessionStorage.getItem('openPaymentDialog') === 'true';
           
           setTimeout(() => {
-            if (returnUrl && openPaymentDialog) {
+            if (pendingSupportReturnUrl) {
+              // User was trying to support, redirect back to support page
+              sessionStorage.removeItem('pendingSupportReturnUrl');
+              sessionStorage.removeItem('pendingSupportAmount');
+              // Construct full URL if it's a relative path
+              const fullUrl = pendingSupportReturnUrl.startsWith('http') 
+                ? pendingSupportReturnUrl 
+                : `${window.location.origin}${pendingSupportReturnUrl}`;
+              window.location.href = fullUrl;
+            } else if (returnUrl && openPaymentDialog) {
               // Return to original page where Support button was clicked
               sessionStorage.removeItem('authReturnUrl');
               window.location.href = returnUrl;
@@ -153,12 +175,23 @@ export default function AuthCallback() {
             setStatus('success');
             setMessage('Authentication successful! Redirecting...');
             
+            // Check if we should return to support page (from support page auth modal)
+            const pendingSupportReturnUrl = sessionStorage.getItem('pendingSupportReturnUrl');
             // Check if we should return to payment dialog
             const returnUrl = sessionStorage.getItem('authReturnUrl');
             const openPaymentDialog = sessionStorage.getItem('openPaymentDialog') === 'true';
             
             setTimeout(() => {
-              if (returnUrl && openPaymentDialog) {
+              if (pendingSupportReturnUrl) {
+                // User was trying to support, redirect back to support page
+                sessionStorage.removeItem('pendingSupportReturnUrl');
+                sessionStorage.removeItem('pendingSupportAmount');
+                // Construct full URL if it's a relative path
+                const fullUrl = pendingSupportReturnUrl.startsWith('http') 
+                  ? pendingSupportReturnUrl 
+                  : `${window.location.origin}${pendingSupportReturnUrl}`;
+                window.location.href = fullUrl;
+              } else if (returnUrl && openPaymentDialog) {
                 // Return to original page where Support button was clicked
                 sessionStorage.removeItem('authReturnUrl');
                 window.location.href = returnUrl;

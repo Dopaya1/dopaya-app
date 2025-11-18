@@ -31,7 +31,7 @@ export function ImpactStats() {
       )
     },
     { 
-      title: "Impact Created", 
+      title: "Total Impact Created", 
       value: (impact?.amountDonated || 0) * 2, // Impact created = 2x donation amount (not Impact Points)
       format: (val: number) => val.toLocaleString(),
       change: impact?.impactPointsChange || 0,

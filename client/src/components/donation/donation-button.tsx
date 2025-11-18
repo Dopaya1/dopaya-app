@@ -534,7 +534,7 @@ export function DonationButton({
             navigate(`/support/${project.slug}?previewOnboarding=1`);
           } else {
             // Fallback: existing modal behavior
-          setIsDialogOpen(true);
+            setIsDialogOpen(true);
           }
         }}
         data-testid="button-support-project"

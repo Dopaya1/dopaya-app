@@ -70,8 +70,8 @@ function Router({ onOpenAuthModal }: { onOpenAuthModal: (tab: "login" | "registe
       <Route path="/projects" component={ProjectsPage} />
       <Route path="/project-v3/:slug" component={ProjectDetailPageV3} />
       <Route path="/project/:slug" component={ProjectDetailPage} />
-      <ProtectedRoute path="/dashboard" component={DashboardPage} />
-      <ProtectedRoute path="/dashboard-v2" component={DashboardV2} />
+      <ProtectedRoute path="/dashboard" component={DashboardV2} />
+      <ProtectedRoute path="/dashboard-old" component={DashboardPage} />
       <Route path="/contact" component={ContactPage} />
       <Route path="/about" component={AboutPage} />
       <Route path="/rewards" component={RewardsPage} />

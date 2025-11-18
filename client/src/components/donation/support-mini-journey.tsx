@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Sparkles, Trophy, ArrowRight } from "lucide-react";
+import { CheckCircle2, Sparkles, Trophy, ArrowRight, Heart, BarChart3 } from "lucide-react";
 
 type JourneyOption = "rewards" | "impact" | "invite";
 
@@ -103,35 +103,35 @@ export function SupportMiniJourney({
       {step === 1 && (
         <div className="space-y-5">
           <div className="flex flex-col items-center text-center space-y-3">
-            <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mb-2">
+            <div className="w-20 h-20 rounded-full bg-green-50 flex items-center justify-center mb-2">
               <CheckCircle2 className="w-10 h-10 text-green-500" />
             </div>
-            <h2 className="text-xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-gray-900">
               You made real impact!
             </h2>
-            <p className="text-sm text-gray-700">
+            <p className="text-base text-gray-700">
               You just supported <span className="font-semibold">{projectTitle}</span>!
             </p>
-            <p className="text-sm text-gray-600">
+            <p className="text-base text-gray-600">
               Your{" "}
               <span className="font-semibold">
                 ${supportAmount.toFixed(2)}
               </span>{" "}
-              will help provide real impact on the ground.
+              will help them to create sustainable change.
             </p>
           </div>
 
-          <div className="border border-gray-200 rounded-lg p-3 bg-gray-50 text-[11px] text-gray-600 flex items-start gap-2">
-            <Sparkles className="w-4 h-4 text-[#f2662d] mt-0.5" />
+          <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 text-sm text-gray-600 flex items-start gap-3">
+            <Sparkles className="w-5 h-5 text-[#f2662d] mt-0.5 flex-shrink-0" />
             <p>
               100% goes to the project, supported by our nonprofit partner
               Impaktera (minus unavoidable payment fees).
             </p>
           </div>
 
-          <div className="pt-2">
+          <div className="pt-4">
             <Button
-              className="w-full h-11 text-sm font-semibold bg-[#f2662d] hover:bg-[#d9551f] text-white"
+              className="w-full h-11 text-base font-semibold bg-[#f2662d] hover:bg-[#d9551f] text-white"
               onClick={handleNext}
             >
               Next
@@ -152,25 +152,21 @@ export function SupportMiniJourney({
                 <Trophy className="w-4 h-4 text-yellow-800" />
               </div>
             </div>
-            <h2 className="text-xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-gray-900">
               You earned {impactPoints.toLocaleString()} Impact Points!
             </h2>
-            <p className="text-sm text-gray-600">
+            <p className="text-base text-gray-600">
               Counter:&nbsp;
               <span className="font-mono font-semibold text-gray-900">
                 {displayPoints.toLocaleString()}
               </span>
             </p>
-            <p className="text-sm text-gray-700">
-              You’re now a{" "}
-              <span className="font-semibold">{userLevel}</span>.
-            </p>
-            <p className="text-sm text-gray-600">
-              That’s enough to unlock your first reward!
+            <p className="text-base text-gray-600">
+              That's enough to unlock your first reward!
             </p>
           </div>
 
-          <div className="grid grid-cols-3 gap-3 text-center text-[11px] text-gray-600">
+          <div className="grid grid-cols-3 gap-3 text-center text-sm text-gray-600">
             <div className="flex flex-col items-center gap-1">
               <span className="text-lg">🌱</span>
               <span>Support projects</span>
@@ -185,13 +181,9 @@ export function SupportMiniJourney({
             </div>
           </div>
 
-          <p className="text-[11px] text-center text-gray-500">
-            500 points ≈ up to $7.50+ in rewards.
-          </p>
-
-          <div className="pt-2">
+          <div className="pt-4">
             <Button
-              className="w-full h-11 text-sm font-semibold bg-[#f2662d] hover:bg-[#d9551f] text-white"
+              className="w-full h-11 text-base font-semibold bg-[#f2662d] hover:bg-[#d9551f] text-white"
               onClick={handleNext}
             >
               Next
@@ -204,11 +196,11 @@ export function SupportMiniJourney({
       {step === 3 && (
         <div className="space-y-5">
           <div className="text-center space-y-2">
-            <h2 className="text-xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-gray-900">
               Choose your next move
             </h2>
-            <p className="text-sm text-gray-600">
-              You’ve completed 3/3 steps. Where do you want to go next?
+            <p className="text-base text-gray-600">
+              Where do you want to go next?
             </p>
           </div>
 
@@ -217,47 +209,68 @@ export function SupportMiniJourney({
             <button
               type="button"
               onClick={() => handleOptionClick("rewards")}
-              className="w-full text-left p-4 rounded-xl border border-gray-200 bg-white hover:bg-orange-50 transition-colors active:scale-[0.99]"
+              className="w-full text-left p-4 rounded-xl border border-gray-200 bg-white hover:bg-orange-50 transition-colors active:scale-[0.99] flex items-start gap-3"
             >
-              <p className="text-sm font-semibold text-gray-900">
-                Find a Reward
-              </p>
-              <p className="text-xs text-gray-700 mt-1">
-                See what you can already unlock with your points. You already
-                qualify for your first reward.
-              </p>
+              <div className="flex-shrink-0 mt-0.5">
+                <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
+                  <Trophy className="w-5 h-5 text-[#f2662d]" />
+                </div>
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-gray-900">
+                  Find a Reward
+                </p>
+                <p className="text-xs text-gray-700 mt-1">
+                  See what you can already unlock with your points. You already
+                  qualify for your first reward.
+                </p>
+              </div>
             </button>
 
             {/* Option B: Impact */}
             <button
               type="button"
               onClick={() => handleOptionClick("impact")}
-              className="w-full text-left p-4 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition-colors active:scale-[0.99]"
+              className="w-full text-left p-4 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition-colors active:scale-[0.99] flex items-start gap-3"
             >
-              <p className="text-sm font-semibold text-gray-900">
-                See My Impact
-              </p>
-              <p className="text-xs text-gray-700 mt-1">
-                View your timeline & track your impact story in one place.
-              </p>
+              <div className="flex-shrink-0 mt-0.5">
+                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                  <BarChart3 className="w-5 h-5 text-blue-600" />
+                </div>
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-gray-900">
+                  See My Impact
+                </p>
+                <p className="text-xs text-gray-700 mt-1">
+                  View your timeline & track your impact story in one place.
+                </p>
+              </div>
             </button>
 
             {/* Option C: Invite */}
             <button
               type="button"
               onClick={() => handleOptionClick("invite")}
-              className="w-full text-left p-4 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition-colors active:scale-[0.99]"
+              className="w-full text-left p-4 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition-colors active:scale-[0.99] flex items-start gap-3"
             >
-              <p className="text-sm font-semibold text-gray-900">
-                Invite Friends <span className="text-[10px] text-gray-500">(soon)</span>
-              </p>
-              <p className="text-xs text-gray-700 mt-1">
-                Help others discover impact and soon earn bonus points together.
-              </p>
+              <div className="flex-shrink-0 mt-0.5">
+                <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                  <Heart className="w-5 h-5 text-purple-600" />
+                </div>
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-gray-900">
+                  Invite Friends <span className="text-[10px] text-gray-500">(soon)</span>
+                </p>
+                <p className="text-xs text-gray-700 mt-1">
+                  Help others discover impact and soon earn bonus points together.
+                </p>
+              </div>
             </button>
           </div>
 
-          <p className="text-[11px] text-center text-gray-500 mt-1">
+          <p className="text-sm text-center text-gray-500 mt-1">
             Most people start with <span className="font-semibold">Rewards</span> →
           </p>
         </div>

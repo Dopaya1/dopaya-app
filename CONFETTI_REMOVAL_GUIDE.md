@@ -79,3 +79,4 @@ The confetti:
 - ✅ Shows welcome modal after completion
 - ✅ Reduces particle count on mobile (< 768px)
 
+

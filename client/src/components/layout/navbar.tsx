@@ -35,7 +35,10 @@ export function Navbar() {
   const safeImpact = impactError ? undefined : impact;
   
   const impactPoints = safeImpact?.impactPoints ?? 0;
-  const userStatus = safeImpact?.userStatus || "aspirer";
+  // Determine user status: 100+ Impact Points = Supporter, otherwise Aspirer
+  // PRIORITY: Calculate based on impactPoints first, then fall back to API value
+  // This ensures correct status even if API returns stale data
+  const userStatus = impactPoints >= 100 ? "supporter" : (safeImpact?.userStatus || "aspirer");
   
   // Simple two-status system
   const statusDisplayName = userStatus === "supporter" ? "Impact Supporter" : "Impact Aspirer";
@@ -182,6 +185,7 @@ export function Navbar() {
               </>
             ) : (
               <>
+                {/* Join us dropdown - always visible when not logged in */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="text-dark hover:text-primary px-3 py-2 text-sm font-medium">
@@ -200,20 +204,26 @@ export function Navbar() {
                     </div>
                   </DropdownMenuContent>
                 </DropdownMenu>
+                
+                {/* Show Log In in preview mode, Join Waitlist otherwise */}
                 {previewEnabled ? (
                   <Button 
                     onClick={() => openAuthModal("login")}
                     data-testid="button-login-preview"
+                    className="bg-[#f2662d] hover:bg-[#d9551f] text-white"
+                    style={{ backgroundColor: '#f2662d' }}
                   >
                     Log In
                   </Button>
                 ) : (
-                <Button 
-                  onClick={() => window.open("https://tally.so/r/m6MqAe", "_blank")}
-                  data-testid="button-waitlist"
-                >
-                  Join Waitlist
-                </Button>
+                  <Button 
+                    onClick={() => window.open("https://tally.so/r/m6MqAe", "_blank")}
+                    data-testid="button-waitlist"
+                    className="bg-[#f2662d] hover:bg-[#d9551f] text-white"
+                    style={{ backgroundColor: '#f2662d' }}
+                  >
+                    Join Waitlist
+                  </Button>
                 )}
               </>
             )}

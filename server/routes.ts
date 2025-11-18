@@ -575,8 +575,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const dbUser = await storage.getUserByEmail(supabaseUser.email || '');
       
       if (!dbUser) {
-        console.log('[GET /api/user/impact] User not found in database for:', supabaseUser.email);
-        return res.status(404).json({ message: "User not found in database" });
+        console.log('[GET /api/user/impact] User not found in database, returning default values:', supabaseUser.email);
+        // Return default values instead of 404 - user might be created by trigger soon
+        // This prevents dashboard errors while trigger creates the user
+        // 50 IP = aspirer (need 100+ for supporter)
+        return res.json({
+          impactPoints: 50, // Default welcome bonus
+          impactPointsChange: 0,
+          amountDonated: 0,
+          amountDonatedChange: 0,
+          projectsSupported: 0,
+          projectsSupportedChange: 0,
+          userLevel: 'aspirer',
+          userStatus: 'aspirer', // 50 < 100, so aspirer
+        });
       }
       
       console.log('[GET /api/user/impact] Database user found:', dbUser.id, 'impactPoints:', dbUser.impactPoints);
@@ -613,7 +625,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (supabaseUser) {
       const dbUser = await storage.getUserByEmail(supabaseUser.email || '');
       if (!dbUser) {
-        return res.status(404).json({ message: "User not found in database" });
+        // Return empty array instead of 404 - user might be created by trigger soon
+        return res.json([]);
       }
       try {
         const impactHistory = await storage.getUserImpactHistory(dbUser.id);
@@ -643,7 +656,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (supabaseUser) {
       const dbUser = await storage.getUserByEmail(supabaseUser.email || '');
       if (!dbUser) {
-        return res.status(404).json({ message: "User not found in database" });
+        // Return empty array instead of 404 - user might be created by trigger soon
+        return res.json([]);
       }
       try {
         const projects = await storage.getUserSupportedProjects(dbUser.id);

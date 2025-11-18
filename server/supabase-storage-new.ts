@@ -498,6 +498,73 @@ export class SupabaseStorage implements IStorage {
     }
   }
 
+  // Helper method to apply points change and create transaction record
+  async applyPointsChange(
+    userId: number,
+    pointsChange: number,
+    transactionData: {
+      transactionType: 'welcome_bonus' | 'donation' | 'redemption';
+      donationId?: number;
+      projectId?: number;
+      supportAmount?: number;
+      redemptionId?: number;
+      rewardId?: number;
+      description?: string;
+    }
+  ): Promise<void> {
+    try {
+      // Get current balance
+      const { data: user, error: userError } = await supabase
+        .from('users')
+        .select('impactPoints')
+        .eq('id', userId)
+        .single();
+      
+      if (userError || !user) {
+        throw new Error(`User ${userId} not found: ${userError?.message}`);
+      }
+      
+      const currentBalance = (user as any).impactPoints ?? 0;
+      const newBalance = currentBalance + pointsChange;
+      
+      // Insert transaction record (use snake_case for user_transactions table)
+      const { error: transactionError } = await supabase
+        .from('user_transactions')
+        .insert([{
+          user_id: userId,
+          transaction_type: transactionData.transactionType,
+          project_id: transactionData.projectId || null,
+          donation_id: transactionData.donationId || null,
+          support_amount: transactionData.supportAmount || null,
+          reward_id: transactionData.rewardId || null,
+          redemption_id: transactionData.redemptionId || null,
+          points_change: pointsChange,
+          points_balance_after: newBalance,
+          description: transactionData.description || null,
+          metadata: null
+        }]);
+      
+      if (transactionError) {
+        throw new Error(`Failed to create transaction: ${transactionError.message}`);
+      }
+      
+      // Update cached balance in users table (use camelCase for users table)
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ impactPoints: newBalance })
+        .eq('id', userId);
+      
+      if (updateError) {
+        throw new Error(`Failed to update balance: ${updateError.message}`);
+      }
+      
+      console.log(`[applyPointsChange] User ${userId}: ${pointsChange > 0 ? '+' : ''}${pointsChange} points. Balance: ${currentBalance} → ${newBalance}`);
+    } catch (error) {
+      console.error(`[applyPointsChange] Error for user ${userId}:`, error);
+      throw error;
+    }
+  }
+
   // Donation operations
   async createDonation(donation: InsertDonation): Promise<Donation> {
     try {
@@ -741,8 +808,8 @@ export class SupabaseStorage implements IStorage {
         // Still return user's Impact Points even if donations fail
         const amountDonated = totalDonations; // Already extracted above
         
-        // Determine user status based on amountDonated (has made at least one donation)
-        const userStatus: "aspirer" | "supporter" = amountDonated > 0 ? "supporter" : "aspirer";
+        // Determine user status based on impactPoints >= 100 (not amountDonated)
+        const userStatus: "aspirer" | "supporter" = impactPoints >= 100 ? "supporter" : "aspirer";
         
         return {
           impactPoints,
@@ -763,8 +830,8 @@ export class SupabaseStorage implements IStorage {
       donations?.forEach(d => distinctProjectIds.add(d.projectId));
       const projectsSupported = distinctProjectIds.size;
       
-      // Determine user status based on amountDonated (has made at least one donation)
-      const userStatus: "aspirer" | "supporter" = amountDonated > 0 ? "supporter" : "aspirer";
+      // Determine user status based on impactPoints >= 100 (not amountDonated)
+      const userStatus: "aspirer" | "supporter" = impactPoints >= 100 ? "supporter" : "aspirer";
       
       return {
         impactPoints, // ✅ From users table

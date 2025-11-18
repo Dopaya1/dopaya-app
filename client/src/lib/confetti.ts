@@ -154,3 +154,4 @@ export function pulseImpactPointsBadge(element: HTMLElement | null): void {
   }, 1000);
 }
 
+

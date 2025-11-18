@@ -147,3 +147,4 @@ If you're still having issues:
 3. Verify Supabase project settings
 4. Try clearing all browser data for localhost
 
+

@@ -290,7 +290,8 @@ export class MemStorage implements IStorage {
     // Simple two-status system:
     // - "aspirer": New user with 50 welcome points, no support yet
     // - "supporter": Has supported at least one project ($10+)
-    const userStatus: "aspirer" | "supporter" = amountDonated > 0 ? "supporter" : "aspirer";
+    // Determine user status based on impactPoints >= 100 (not amountDonated)
+    const userStatus: "aspirer" | "supporter" = impactPoints >= 100 ? "supporter" : "aspirer";
     
     // Calculate percentage changes (mocked for now)
     // In a real application, these would be calculated based on historical data

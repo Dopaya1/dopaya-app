@@ -15,6 +15,7 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover
 import dopayaLogo from "@assets/Dopaya Logo.png";
 import { ProcessingImpact } from "@/components/donation/processing-impact";
 import { SupportMiniJourney } from "@/components/donation/support-mini-journey";
+import { AuthModal } from "@/components/auth/auth-modal";
 
 // Feature flag: controls whether the post-support mini-journey is shown.
 // Set to false to fall back to the simple redirect-to-rewards behavior.
@@ -74,6 +75,7 @@ export default function SupportPage() {
   const [signUpForUpdates, setSignUpForUpdates] = useState<boolean>(false);
   const [showProcessingImpact, setShowProcessingImpact] = useState<boolean>(false);
   const [showMiniJourney, setShowMiniJourney] = useState<boolean>(false);
+  const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
 
   const predefinedAmounts = [50, 100, 200, 500, 1000];
 
@@ -88,6 +90,24 @@ export default function SupportPage() {
       ? Math.round((currentSupportAmount * (tipPercent / 100)) * 100) / 100
       : 0;
   const totalAmount = Math.round((currentSupportAmount + tipAmount) * 100) / 100;
+
+  // Show auth modal when user is not authenticated
+  // Only show after project has loaded (to avoid showing on loading state)
+  useEffect(() => {
+    if (!isLoading && project && !user && previewEnabled) {
+      // Store the current support page URL so auth-callback can redirect back here after OAuth
+      const supportPageUrl = `/support/${slug}${previewEnabled ? '?previewOnboarding=1' : ''}`;
+      sessionStorage.setItem('pendingSupportReturnUrl', supportPageUrl);
+      setShowAuthModal(true);
+    }
+  }, [isLoading, project, user, previewEnabled, slug]);
+
+  // Close auth modal when user becomes authenticated
+  useEffect(() => {
+    if (user && showAuthModal) {
+      setShowAuthModal(false);
+    }
+  }, [user, showAuthModal]);
 
   // --- Early returns AFTER all hooks (keep hook order stable) ---
   if (!previewEnabled) {
@@ -680,6 +700,20 @@ export default function SupportPage() {
           </div>
         </main>
       </div>
+
+      {/* Auth Modal - shown when user is not authenticated */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => {
+          // Don't allow closing modal if user is not authenticated
+          // User must authenticate to continue
+          if (!user) {
+            return;
+          }
+          setShowAuthModal(false);
+        }}
+        defaultTab="register"
+      />
     </>
   );
 }
