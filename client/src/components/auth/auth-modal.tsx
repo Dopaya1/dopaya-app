@@ -208,33 +208,8 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
       if (error) throw error;
       
       if (data?.user) {
-        // ✅ SYNC: ALWAYS ensure user exists in public.users table (regardless of email confirmation)
-        console.log('User signed up successfully, ensuring profile exists...');
-        
-        try {
-          const response = await fetch('/api/auth/ensure-profile', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: data.user.email,
-              username: data.user.user_metadata?.username || data.user.email?.split('@')[0] || 'user',
-              firstName: data.user.user_metadata?.firstName,
-              lastName: data.user.user_metadata?.lastName,
-            }),
-          });
-          
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Failed to ensure user profile:', errorText);
-            // Still continue - don't block the flow
-          } else {
-            const result = await response.json();
-            console.log('User profile ensured successfully:', result);
-          }
-        } catch (error) {
-          console.error('Error ensuring user profile:', error);
-          // Still continue - don't block the flow
-        }
+        // User profile is automatically created by database trigger (handle_new_user)
+        console.log('User signed up successfully, profile will be created automatically by database trigger');
         
         if (!data.user.email_confirmed_at) {
           // Email confirmation required

@@ -56,21 +56,18 @@ export default function DashboardPage() {
     }
     
     // Check for new user welcome (preview only)
-    if (previewEnabled && newUser === '1') {
-      console.log('[Dashboard] Detected newUser=1 in preview mode → showing signup mini-journey');
+    // Can be triggered by URL param or checkNewUser flag from auth callback
+    const checkNewUser = sessionStorage.getItem('checkNewUser') === 'true';
+    if (previewEnabled && (newUser === '1' || checkNewUser)) {
+      // Remove the flag after checking
+      if (checkNewUser) {
+        sessionStorage.removeItem('checkNewUser');
+      }
+      
+      console.log('[Dashboard] Detected new user in preview mode → checking impact data');
       sessionStorage.setItem('signupFirstFlow', 'true');
       setSignupFirstFlow(true);
-      // Check if welcome was already shown
-      const welcomeShown = sessionStorage.getItem('welcomeModalShown');
-      if (!welcomeShown) {
-        console.log('[Dashboard] welcomeModalShown not found, opening welcome modal');
-        setSignupWelcomeStep(1);
-        setShowWelcomeModal(true);
-        sessionStorage.setItem('welcomeModalShown', 'true');
-      }
-      // Clean up URL
-      const newUrl = window.location.pathname + (previewEnabled ? '?previewOnboarding=1' : '');
-      window.history.replaceState({}, '', newUrl);
+      // Welcome modal will be shown after impact data loads (see useEffect below)
     }
   }, [previewEnabled]);
   
@@ -80,6 +77,25 @@ export default function DashboardPage() {
   
   // Safety check: if query failed, impact could be an error object
   const safeImpact = impactError ? undefined : impact;
+  
+  // Check if user is new (50 Impact Points and 0 donations) and show welcome modal
+  useEffect(() => {
+    if (!previewEnabled || !safeImpact || !signupFirstFlow) return;
+    
+    const impactPoints = safeImpact?.impactPoints ?? 0;
+    const projectsSupported = safeImpact?.projectsSupported ?? 0;
+    const isNewUser = impactPoints === 50 && projectsSupported === 0;
+    
+    if (isNewUser) {
+      const welcomeShown = sessionStorage.getItem('welcomeModalShown');
+      if (!welcomeShown) {
+        console.log('[Dashboard] New user detected (50 IP, 0 donations) → showing welcome modal');
+        setSignupWelcomeStep(1);
+        setShowWelcomeModal(true);
+        sessionStorage.setItem('welcomeModalShown', 'true');
+      }
+    }
+  }, [previewEnabled, safeImpact, signupFirstFlow]);
 
   // DEBUG: Log what we're getting from the API
   if (safeImpact) {

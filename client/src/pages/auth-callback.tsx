@@ -56,10 +56,8 @@ export default function AuthCallback() {
           if (data.user) {
             console.log('User authenticated successfully via email confirmation');
             
-            // ✅ SYNC: Ensure user exists in public.users table
-            const isNewUser = await ensureUserProfile(data.user);
-            
-            // Invalidate user and impact queries to refresh navbar and dashboard
+            // User profile is automatically created by database trigger
+            // Invalidate queries to refresh navbar and dashboard
             await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
             await queryClient.invalidateQueries({ queryKey: ["/api/user/impact"] });
             
@@ -78,9 +76,11 @@ export default function AuthCallback() {
                 // Return to original page where Support button was clicked
                 sessionStorage.removeItem('authReturnUrl');
                 window.location.href = returnUrl;
-              } else if (previewEnabled && isNewUser) {
-                // New user in preview mode → redirect to dashboard with newUser flag
-                navigate('/dashboard?newUser=1&previewOnboarding=1');
+              } else if (previewEnabled) {
+                // In preview mode, check if new user (dashboard will determine based on impact data)
+                // Set flag to let dashboard check if user has 50 points and 0 donations
+                sessionStorage.setItem('checkNewUser', 'true');
+                navigate('/dashboard?previewOnboarding=1');
               } else {
                 navigate('/dashboard');
               }
@@ -103,10 +103,8 @@ export default function AuthCallback() {
         if (sessionData.session?.user) {
           console.log('User already authenticated');
           
-          // ✅ SYNC: Ensure user exists in public.users table
-          const isNewUser = await ensureUserProfile(sessionData.session.user);
-          
-          // Invalidate user and impact queries to refresh navbar and dashboard
+          // User profile is automatically created by database trigger
+          // Invalidate queries to refresh navbar and dashboard
           await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
           await queryClient.invalidateQueries({ queryKey: ["/api/user/impact"] });
           
@@ -125,9 +123,10 @@ export default function AuthCallback() {
               // Return to original page where Support button was clicked
               sessionStorage.removeItem('authReturnUrl');
               window.location.href = returnUrl;
-            } else if (previewEnabled && isNewUser) {
-              // New user in preview mode → redirect to dashboard with newUser flag
-              navigate('/dashboard?newUser=1&previewOnboarding=1');
+            } else if (previewEnabled) {
+              // In preview mode, dashboard will check if new user based on impact data
+              sessionStorage.setItem('checkNewUser', 'true');
+              navigate('/dashboard?previewOnboarding=1');
             } else {
               navigate('/dashboard');
             }
@@ -143,10 +142,8 @@ export default function AuthCallback() {
           } else {
             console.log('User found via getUser()');
             
-            // ✅ SYNC: Ensure user exists in public.users table
-            const isNewUser = await ensureUserProfile(userData.user);
-            
-            // Invalidate user and impact queries to refresh navbar and dashboard
+            // User profile is automatically created by database trigger
+            // Invalidate queries to refresh navbar and dashboard
             await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
             await queryClient.invalidateQueries({ queryKey: ["/api/user/impact"] });
             
@@ -165,9 +162,10 @@ export default function AuthCallback() {
                 // Return to original page where Support button was clicked
                 sessionStorage.removeItem('authReturnUrl');
                 window.location.href = returnUrl;
-              } else if (previewEnabled && isNewUser) {
-                // New user in preview mode → redirect to dashboard with newUser flag
-                navigate('/dashboard?newUser=1&previewOnboarding=1');
+              } else if (previewEnabled) {
+                // In preview mode, dashboard will check if new user based on impact data
+                sessionStorage.setItem('checkNewUser', 'true');
+                navigate('/dashboard?previewOnboarding=1');
               } else {
                 navigate('/dashboard');
               }
@@ -178,48 +176,6 @@ export default function AuthCallback() {
         console.error('Auth callback processing error:', error);
         setStatus('error');
         setMessage('An unexpected error occurred during authentication. Please try again.');
-      }
-    };
-
-    // Helper function to ensure user profile exists in public.users
-    const ensureUserProfile = async (authUser: any): Promise<boolean> => {
-      try {
-        console.log('Checking if user profile exists for:', authUser.email);
-        
-        // Get the auth token for the API call
-        const { data: { session } } = await supabase.auth.getSession();
-        const authToken = session?.access_token;
-        
-        // Call our backend API to create user if needed
-        const response = await fetch('/api/auth/ensure-profile', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(authToken && { 'Authorization': `Bearer ${authToken}` }),
-          },
-          body: JSON.stringify({
-            email: authUser.email,
-            username: authUser.user_metadata?.username || authUser.email?.split('@')[0] || 'user',
-            firstName: authUser.user_metadata?.firstName || authUser.user_metadata?.first_name,
-            lastName: authUser.user_metadata?.lastName || authUser.user_metadata?.last_name,
-          }),
-        });
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Failed to ensure user profile:', response.status, errorText);
-          return false;
-        }
-        
-        const result = await response.json();
-        console.log('User profile ensured successfully:', result);
-        
-        // Return true if user was just created (new user)
-        return result.created === true;
-      } catch (error) {
-        console.error('Error ensuring user profile:', error);
-        // Don't throw - we don't want to block the auth flow
-        return false;
       }
     };
 

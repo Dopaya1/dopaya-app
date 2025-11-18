@@ -20,54 +20,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes (/api/register, /api/login, /api/logout, /api/user)
   setupAuth(app);
   
-  // ✅ Ensure user profile exists in public.users (for OAuth and email signup)
-  app.post("/api/auth/ensure-profile", async (req, res) => {
-    try {
-      const { email, username, firstName, lastName } = req.body;
-      
-      if (!email) {
-        return res.status(400).json({ error: "Email is required" });
-      }
-      
-      console.log('Ensuring user profile for:', email);
-      
-      // Check if user already exists by email
-      const existingUser = await storage.getUserByEmail(email);
-      
-      if (existingUser) {
-        console.log('User profile already exists:', existingUser.id);
-        return res.json({ 
-          success: true, 
-          user: existingUser,
-          created: false 
-        });
-      }
-      
-      // Create new user with 50 Impact Points welcome bonus
-      console.log('Creating new user profile with 50 Impact Points...');
-      const newUser = await storage.createUser({
-        username: username || email.split('@')[0],
-        email,
-        password: '', // OAuth users don't have a password in our system
-        firstName,
-        lastName,
-      });
-      
-      console.log('User profile created successfully:', newUser.id);
-      
-      res.json({ 
-        success: true, 
-        user: newUser,
-        created: true 
-      });
-    } catch (error) {
-      console.error('Error ensuring user profile:', error);
-      res.status(500).json({ 
-        error: "Failed to create user profile",
-        details: error instanceof Error ? error.message : String(error)
-      });
-    }
-  });
+  // User sync is now handled automatically by database trigger (handle_new_user)
+  // No application-level sync needed
   
   // Set up Stripe payment routes
   setupStripeRoutes(app);
