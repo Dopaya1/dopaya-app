@@ -1,8 +1,19 @@
 import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './secrets';
-import { storage } from './storage';
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Initialize Supabase client with validation
+let supabase: ReturnType<typeof createClient>;
+try {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    throw new Error(`Missing Supabase credentials: SUPABASE_URL=${!!SUPABASE_URL}, SUPABASE_ANON_KEY=${!!SUPABASE_ANON_KEY}`);
+  }
+  supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  console.log('[supabase-auth-middleware] Supabase client initialized');
+} catch (error) {
+  console.error('[supabase-auth-middleware] Failed to initialize Supabase client:', error);
+  // Create a minimal client that will fail gracefully
+  supabase = createClient(SUPABASE_URL || 'https://placeholder.supabase.co', SUPABASE_ANON_KEY || 'placeholder-key');
+}
 
 /**
  * Get Supabase user from Authorization header token
@@ -36,6 +47,9 @@ export async function getSupabaseUser(req: any) {
  * Sets req.user to the user from public.users table
  */
 export async function requireSupabaseAuth(req: any, res: any, next: any) {
+  // Import storage dynamically to avoid circular dependencies
+  const { storage } = await import('./storage');
+  
   const supabaseUser = await getSupabaseUser(req);
   
   if (!supabaseUser) {

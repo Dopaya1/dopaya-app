@@ -1,8 +1,22 @@
 // Vercel serverless function for /api/user/impact
-import { storage } from '../../server/storage';
-import { getSupabaseUser } from '../../server/supabase-auth-middleware';
-
 export default async function handler(req: any, res: any) {
+  // Dynamic imports to avoid module initialization issues
+  let storage: any;
+  let getSupabaseUser: any;
+  
+  try {
+    const storageModule = await import('../../server/storage');
+    storage = storageModule.storage;
+    
+    const authModule = await import('../../server/supabase-auth-middleware');
+    getSupabaseUser = authModule.getSupabaseUser;
+  } catch (importError) {
+    console.error('[GET /api/user/impact] Failed to import modules:', importError);
+    return res.status(500).json({ 
+      message: "Server configuration error",
+      error: importError instanceof Error ? importError.message : String(importError)
+    });
+  }
   // Only allow GET requests
   if (req.method !== 'GET') {
     return res.status(405).json({ message: 'Method not allowed' });

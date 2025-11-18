@@ -28,8 +28,19 @@ const STORAGE_BUCKETS = {
 // Use memory store for session storage
 const MemoryStore = createMemoryStore(session);
 
-// Initialize Supabase client
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Initialize Supabase client with validation
+let supabase: ReturnType<typeof createClient>;
+try {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    throw new Error(`Missing Supabase credentials: SUPABASE_URL=${!!SUPABASE_URL}, SUPABASE_ANON_KEY=${!!SUPABASE_ANON_KEY}`);
+  }
+  supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  console.log('[supabase-storage-new] Supabase client initialized');
+} catch (error) {
+  console.error('[supabase-storage-new] Failed to initialize Supabase client:', error);
+  // Create a minimal client that will fail gracefully
+  supabase = createClient(SUPABASE_URL || 'https://placeholder.supabase.co', SUPABASE_ANON_KEY || 'placeholder-key');
+}
 
 // Helper functions for password hashing
 async function hashPassword(password: string) {
