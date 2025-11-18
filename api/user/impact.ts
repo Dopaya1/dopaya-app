@@ -1,67 +1,217 @@
-// Vercel serverless function for /api/user/impact
-export default async function handler(req: any, res: any) {
-  // Dynamic imports to avoid module initialization issues
-  let storage: any;
-  let getSupabaseUser: any;
+// Standalone Vercel serverless function for /api/user/impact
+// SECURITY: No hardcoded credentials, uses environment variables only
+// No dependencies on server/ directory to avoid module resolution issues
+
+/// <reference types="node" />
+
+import { createClient } from '@supabase/supabase-js';
+
+// Security: Validate environment variables at module load
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  throw new Error(
+    'Missing required environment variables: SUPABASE_URL and SUPABASE_ANON_KEY must be set'
+  );
+}
+
+// Initialize Supabase client (secure - no hardcoded values)
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/**
+ * Get Supabase user from Authorization header token
+ * Returns null if token is invalid or missing
+ */
+async function getSupabaseUser(req: any) {
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader?.startsWith('Bearer ')) {
+    return null;
+  }
+  
+  const token = authHeader.substring(7);
+  
+  // Security: Validate token format (basic check)
+  if (!token || token.length < 10) {
+    return null;
+  }
   
   try {
-    const storageModule = await import('../../server/storage');
-    storage = storageModule.storage;
+    const { data: { user }, error } = await supabase.auth.getUser(token);
     
-    const authModule = await import('../../server/supabase-auth-middleware');
-    getSupabaseUser = authModule.getSupabaseUser;
-  } catch (importError) {
-    console.error('[GET /api/user/impact] Failed to import modules:', importError);
-    return res.status(500).json({ 
-      message: "Server configuration error",
-      error: importError instanceof Error ? importError.message : String(importError)
-    });
+    if (error || !user) {
+      return null;
+    }
+    
+    return user;
+  } catch (error) {
+    console.error('[getSupabaseUser] Error verifying token:', error);
+    return null;
   }
-  // Only allow GET requests
+}
+
+/**
+ * Get user from public.users table by email
+ */
+async function getUserByEmail(email: string) {
+  if (!email || typeof email !== 'string') {
+    return null;
+  }
+  
+  // Security: Basic email validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    console.error('[getUserByEmail] Invalid email format:', email);
+    return null;
+  }
+  
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email.toLowerCase().trim())
+      .limit(1)
+      .single();
+    
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // No rows returned - user doesn't exist
+        return null;
+      }
+      console.error('[getUserByEmail] Error:', error);
+      return null;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('[getUserByEmail] Unexpected error:', error);
+    return null;
+  }
+}
+
+/**
+ * Get user impact data
+ */
+async function getUserImpact(userId: number) {
+  // Security: Validate userId is a positive integer
+  if (!Number.isInteger(userId) || userId <= 0) {
+    throw new Error('Invalid user ID');
+  }
+  
+  try {
+    // Get user from users table
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id, "impactPoints", "totalDonations"')
+      .eq('id', userId)
+      .single();
+    
+    if (userError || !user) {
+      console.error('[getUserImpact] User not found:', userId);
+      return {
+        impactPoints: 0,
+        impactPointsChange: 0,
+        amountDonated: 0,
+        amountDonatedChange: 0,
+        projectsSupported: 0,
+        projectsSupportedChange: 0,
+        userLevel: 'aspirer',
+      };
+    }
+    
+    const impactPoints = (user as any).impactPoints ?? 0;
+    const totalDonations = (user as any).totalDonations ?? 0;
+    
+    // Get donations to calculate amountDonated and projectsSupported
+    const { data: donations, error: donationsError } = await supabase
+      .from('donations')
+      .select('amount, projectId')
+      .eq('userId', userId);
+    
+    if (donationsError) {
+      console.error('[getUserImpact] Error fetching donations:', donationsError);
+      // Return user's Impact Points even if donations fail
+      return {
+        impactPoints,
+        impactPointsChange: 0,
+        amountDonated: totalDonations,
+        amountDonatedChange: 0,
+        projectsSupported: 0,
+        projectsSupportedChange: 0,
+        userLevel: totalDonations > 0 ? 'supporter' : 'aspirer',
+      };
+    }
+    
+    // Calculate totals
+    const amountDonated = donations?.reduce((sum, d) => sum + (d.amount || 0), 0) || 0;
+    const distinctProjectIds = new Set<number>();
+    donations?.forEach(d => {
+      if (d.projectId && Number.isInteger(d.projectId)) {
+        distinctProjectIds.add(d.projectId);
+      }
+    });
+    const projectsSupported = distinctProjectIds.size;
+    
+    // Determine user level based on amountDonated
+    const userLevel: string = amountDonated > 0 ? 'supporter' : 'aspirer';
+    
+    return {
+      impactPoints,
+      impactPointsChange: 0,
+      amountDonated,
+      amountDonatedChange: 0,
+      projectsSupported,
+      projectsSupportedChange: 0,
+      userLevel,
+    };
+  } catch (error) {
+    console.error('[getUserImpact] Error:', error);
+    throw error;
+  }
+}
+
+// Vercel serverless function handler
+export default async function handler(req: any, res: any) {
+  // Security: Only allow GET requests
   if (req.method !== 'GET') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
   console.log('[GET /api/user/impact] Request received');
-  console.log('[GET /api/user/impact] Auth header:', req.headers.authorization ? 'Present' : 'Missing');
   
   try {
-    // Try Supabase auth first
+    // Get authenticated user
     const supabaseUser = await getSupabaseUser(req);
     
-    if (supabaseUser) {
-      console.log('[GET /api/user/impact] Supabase user found:', supabaseUser.email);
-      // Get user from public.users by email
-      const dbUser = await storage.getUserByEmail(supabaseUser.email || '');
-      
-      if (!dbUser) {
-        console.log('[GET /api/user/impact] User not found in database for:', supabaseUser.email);
-        return res.status(404).json({ message: "User not found in database" });
-      }
-      
-      console.log('[GET /api/user/impact] Database user found:', dbUser.id, 'impactPoints:', (dbUser as any).impactPoints);
-      
-      try {
-        const userImpact = await storage.getUserImpact(dbUser.id);
-        console.log('[GET /api/user/impact] Returning impact:', userImpact);
-        return res.json(userImpact);
-      } catch (error) {
-        console.error('[GET /api/user/impact] Error fetching impact:', error);
-        return res.status(500).json({ 
-          message: "Failed to fetch impact data",
-          error: error instanceof Error ? error.message : String(error)
-        });
-      }
+    if (!supabaseUser || !supabaseUser.email) {
+      console.log('[GET /api/user/impact] No authenticated user');
+      return res.status(401).json({ message: 'You must be logged in to view impact data' });
     }
     
-    console.log('[GET /api/user/impact] No Supabase user found');
-    return res.status(401).json({ message: "You must be logged in to view impact data" });
+    console.log('[GET /api/user/impact] Authenticated user:', supabaseUser.email);
+    
+    // Get user from database
+    const dbUser = await getUserByEmail(supabaseUser.email);
+    
+    if (!dbUser || !dbUser.id) {
+      console.log('[GET /api/user/impact] User not found in database:', supabaseUser.email);
+      return res.status(404).json({ message: 'User not found in database' });
+    }
+    
+    console.log('[GET /api/user/impact] Database user found:', dbUser.id);
+    
+    // Get impact data
+    const userImpact = await getUserImpact(dbUser.id);
+    
+    console.log('[GET /api/user/impact] Returning impact data');
+    return res.json(userImpact);
+    
   } catch (error) {
-    console.error('[GET /api/user/impact] Unexpected error:', error);
+    console.error('[GET /api/user/impact] Error:', error);
     return res.status(500).json({ 
-      message: "Internal server error",
-      error: error instanceof Error ? error.message : String(error),
-      stack: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : undefined) : undefined
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 }
