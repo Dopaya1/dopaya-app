@@ -67,8 +67,8 @@ async function createUser(userData: {
         email: userData.email,
         username: userData.username,
         password: hashedPassword,
-        firstName: userData.firstName,
-        lastName: userData.lastName,
+        first_name: userData.firstName, // Database column name
+        last_name: userData.lastName, // Database column name
         impact_points: 50, // Welcome bonus for new users (database column name)
         total_donations: 0 // Initialize to 0 (database column name)
       }])
