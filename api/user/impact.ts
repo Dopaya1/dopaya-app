@@ -1,7 +1,7 @@
+// Vercel serverless function for /api/user/impact
 import { storage } from '../../server/storage';
 import { getSupabaseUser } from '../../server/supabase-auth-middleware';
 
-// Vercel serverless function - uses standard Node.js request/response
 export default async function handler(req: any, res: any) {
   // Only allow GET requests
   if (req.method !== 'GET') {
@@ -32,8 +32,11 @@ export default async function handler(req: any, res: any) {
         console.log('[GET /api/user/impact] Returning impact:', userImpact);
         return res.json(userImpact);
       } catch (error) {
-        console.error('[GET /api/user/impact] Error:', error);
-        return res.status(500).json({ message: "Failed to fetch impact data" });
+        console.error('[GET /api/user/impact] Error fetching impact:', error);
+        return res.status(500).json({ 
+          message: "Failed to fetch impact data",
+          error: error instanceof Error ? error.message : String(error)
+        });
       }
     }
     
@@ -41,7 +44,10 @@ export default async function handler(req: any, res: any) {
     return res.status(401).json({ message: "You must be logged in to view impact data" });
   } catch (error) {
     console.error('[GET /api/user/impact] Unexpected error:', error);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ 
+      message: "Internal server error",
+      error: error instanceof Error ? error.message : String(error),
+      stack: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : undefined) : undefined
+    });
   }
 }
-

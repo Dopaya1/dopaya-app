@@ -96,16 +96,19 @@ async function fetchProjectPages(baseUrl: string): Promise<Array<{url: string; p
   // Layer 1: Get Supabase credentials with multiple fallbacks
   const supabaseUrl = process.env.VITE_SUPABASE_URL 
     || process.env.SUPABASE_URL 
-    || 'https://mpueatfperbxbbojlrwd.supabase.co'; // Hardcoded fallback
+    || (() => {
+      throw new Error('VITE_SUPABASE_URL or SUPABASE_URL environment variable is required');
+    })();
       
   const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY 
     || process.env.SUPABASE_ANON_KEY 
-    || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wdWVhdGZwZXJieGJib2pscndkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYwODk3NzAsImV4cCI6MjA2MTY2NTc3MH0.GPBxZ2yEbtB3Ws_nKWeDaE-yuyH-uvufV-Mq9aN8hEc'; // Hardcoded fallback
+    || (() => {
+      throw new Error('VITE_SUPABASE_ANON_KEY or SUPABASE_ANON_KEY environment variable is required');
+    })();
 
   // Log for debugging (but don't fail if logging fails)
   try {
-    const usingEnvVars = !!(process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL);
-    console.log(`[Sitemap] Using ${usingEnvVars ? 'environment variables' : 'hardcoded fallback'} for Supabase`);
+    console.log(`[Sitemap] Using environment variables for Supabase connection`);
   } catch (e) {
     // Ignore logging errors
   }

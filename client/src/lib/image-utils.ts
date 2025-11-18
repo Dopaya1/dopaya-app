@@ -188,7 +188,10 @@ export function getLogoUrl(logoPath: string | null | undefined, fallbackAsset?: 
   // Pattern: storage/v1/object/public/[bucket]/[path]
   if (trimmedPath.startsWith('storage/v1/object/public/')) {
     // Extract Supabase URL from environment or use default
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://mpueatfperbxbbojlrwd.supabase.co';
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    if (!supabaseUrl) {
+      throw new Error('VITE_SUPABASE_URL environment variable is not set');
+    }
     return `${supabaseUrl}/${trimmedPath}`;
   }
 
@@ -200,7 +203,10 @@ export function getLogoUrl(logoPath: string | null | undefined, fallbackAsset?: 
   // If it's a relative path without /, assume it's a Supabase Storage path
   // Try to construct the full Supabase Storage URL
   // Common pattern: [bucket]/[path] or just [path]
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://mpueatfperbxbbojlrwd.supabase.co';
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  if (!supabaseUrl) {
+    throw new Error('VITE_SUPABASE_URL environment variable is not set');
+  }
   
   // If path contains a slash, assume it's bucket/path
   if (trimmedPath.includes('/')) {

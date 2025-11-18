@@ -1,8 +1,9 @@
 // Environment variables and secrets
 
 // Supabase variables
-export const SUPABASE_URL = process.env.VITE_SUPABASE_URL || '';
-export const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || '';
+// Support both VITE_ prefixed (for frontend build) and non-prefixed (for serverless functions)
+export const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
+export const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
 
 // Parse the project ID from Supabase URL (e.g., https://your-project-id.supabase.co)
 export const SUPABASE_PROJECT_ID = SUPABASE_URL ? SUPABASE_URL.match(/https:\/\/([^.]+)/)?.[1] || '' : '';
@@ -49,10 +50,10 @@ if (!DATABASE_URL) {
   console.error('Missing DATABASE_URL environment variable');
 }
 if (!SUPABASE_URL) {
-  console.error('Missing VITE_SUPABASE_URL environment variable');
+  console.error('Missing SUPABASE_URL environment variable (check VITE_SUPABASE_URL or SUPABASE_URL)');
 }
 if (!SUPABASE_ANON_KEY) {
-  console.error('Missing VITE_SUPABASE_ANON_KEY environment variable');
+  console.error('Missing SUPABASE_ANON_KEY environment variable (check VITE_SUPABASE_ANON_KEY or SUPABASE_ANON_KEY)');
 }
 
 // Stripe secrets (if needed later)

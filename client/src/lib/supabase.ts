@@ -1,12 +1,20 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Environment variables with fallbacks
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://mpueatfperbxbbojlrwd.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wdWVhdGZwZXJieGJib2pscndkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYwODk3NzAsImV4cCI6MjA2MTY2NTc3MH0.GPBxZ2yEbtB3Ws_nKWeDaE-yuyH-uvufV-Mq9aN8hEc';
+// Environment variables - NO hardcoded fallbacks for security
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Debug environment variables
-console.log('Supabase URL:', supabaseUrl ? '✓ Set' : '✗ Missing');
-console.log('Supabase Key:', supabaseAnonKey ? '✓ Set' : '✗ Missing');
+// Validate environment variables are set
+if (!supabaseUrl || !supabaseAnonKey) {
+  const missing = [];
+  if (!supabaseUrl) missing.push('VITE_SUPABASE_URL');
+  if (!supabaseAnonKey) missing.push('VITE_SUPABASE_ANON_KEY');
+  throw new Error(`Missing required environment variables: ${missing.join(', ')}. Please set them in your environment or Vercel dashboard.`);
+}
+
+// Debug environment variables (only log that they're set, not the actual values)
+console.log('Supabase URL: ✓ Set');
+console.log('Supabase Key: ✓ Set');
 console.log('Using URL:', supabaseUrl);
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);

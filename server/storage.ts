@@ -534,8 +534,9 @@ export class MemStorage implements IStorage {
 import { SupabaseStorage } from './supabase-storage-new';
 
 // Determine which storage implementation to use
-// Use Supabase if DATABASE_URL is present, otherwise fall back to memory storage
-const useSupabase = !!process.env.DATABASE_URL;
+// Use Supabase if SUPABASE_URL is present (SupabaseStorage uses Supabase client, not direct PostgreSQL)
+// DATABASE_URL is only needed for direct PostgreSQL connections (Drizzle ORM), not for Supabase REST API client
+const useSupabase = !!(process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL);
 
 // Try to use Supabase storage, but fall back to in-memory storage if there's an error
 let storageInstance: IStorage;
