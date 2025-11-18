@@ -32,6 +32,36 @@ import { useState, useEffect } from "react";
 import { AuthModal } from "@/components/auth/auth-modal";
 import { trackPageView } from "@/lib/simple-analytics";
 
+// Global auth token detector - redirects to /auth/callback if tokens are in URL hash
+function AuthTokenRedirect() {
+  const [location, navigate] = useLocation();
+  
+  useEffect(() => {
+    // Check if we're already on the auth callback page
+    if (location === '/auth/callback') {
+      return;
+    }
+    
+    // Check for auth tokens in URL hash (Supabase email confirmation)
+    const hash = window.location.hash.substring(1);
+    if (hash) {
+      const hashParams = new URLSearchParams(hash);
+      const accessToken = hashParams.get('access_token');
+      const refreshToken = hashParams.get('refresh_token');
+      
+      if (accessToken && refreshToken) {
+        console.log('Auth tokens detected in URL hash, redirecting to /auth/callback');
+        // Preserve the hash and any query params when redirecting
+        const searchParams = new URLSearchParams(window.location.search);
+        const newUrl = `/auth/callback${searchParams.toString() ? `?${searchParams.toString()}` : ''}${hash ? `#${hash}` : ''}`;
+        navigate(newUrl);
+      }
+    }
+  }, [location, navigate]);
+  
+  return null;
+}
+
 function Router({ onOpenAuthModal }: { onOpenAuthModal: (tab: "login" | "register") => void }) {
   return (
     <Switch>
@@ -83,6 +113,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <AuthTokenRedirect />
         <div className="min-h-screen">
           {!isSupportPage && <Navbar />}
           <Router onOpenAuthModal={openAuthModal} />

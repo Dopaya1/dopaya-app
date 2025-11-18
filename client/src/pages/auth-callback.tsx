@@ -5,9 +5,11 @@ import { Loader2, CheckCircle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { isOnboardingPreviewEnabled } from "@/lib/feature-flags";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function AuthCallback() {
   const [location, navigate] = useLocation();
+  const queryClient = useQueryClient();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('');
 
@@ -57,6 +59,10 @@ export default function AuthCallback() {
             // ✅ SYNC: Ensure user exists in public.users table
             const isNewUser = await ensureUserProfile(data.user);
             
+            // Invalidate user and impact queries to refresh navbar and dashboard
+            await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+            await queryClient.invalidateQueries({ queryKey: ["/api/user/impact"] });
+            
             // Check if preview mode is enabled
             const previewEnabled = isOnboardingPreviewEnabled();
             
@@ -100,6 +106,10 @@ export default function AuthCallback() {
           // ✅ SYNC: Ensure user exists in public.users table
           const isNewUser = await ensureUserProfile(sessionData.session.user);
           
+          // Invalidate user and impact queries to refresh navbar and dashboard
+          await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+          await queryClient.invalidateQueries({ queryKey: ["/api/user/impact"] });
+          
           // Check if preview mode is enabled
           const previewEnabled = isOnboardingPreviewEnabled();
           
@@ -135,6 +145,10 @@ export default function AuthCallback() {
             
             // ✅ SYNC: Ensure user exists in public.users table
             const isNewUser = await ensureUserProfile(userData.user);
+            
+            // Invalidate user and impact queries to refresh navbar and dashboard
+            await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+            await queryClient.invalidateQueries({ queryKey: ["/api/user/impact"] });
             
             // Check if preview mode is enabled
             const previewEnabled = isOnboardingPreviewEnabled();
