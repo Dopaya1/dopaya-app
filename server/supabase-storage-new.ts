@@ -197,10 +197,15 @@ export class SupabaseStorage implements IStorage {
       // Hash the password
       const hashedPassword = await hashPassword(user.password);
       
-      // Create the user record
+      // Create the user record with 50 Impact Points welcome bonus
       const { data, error } = await supabase
         .from('users')
-        .insert([{ ...user, password: hashedPassword }])
+        .insert([{ 
+          ...user, 
+          password: hashedPassword,
+          impactPoints: 50, // Welcome bonus for new users
+          totalDonations: 0 // Initialize to 0
+        }])
         .select()
         .single();
       
@@ -209,6 +214,7 @@ export class SupabaseStorage implements IStorage {
         throw new Error(`Failed to create user: ${error.message}`);
       }
       
+      console.log('User created successfully with 50 Impact Points:', data.id);
       return data;
     } catch (error) {
       console.error('Error creating user:', error);

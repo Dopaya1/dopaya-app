@@ -211,6 +211,15 @@ export default function DashboardPage() {
       return;
     }
     
+    // Handle close button (appears after step 2)
+    if (action === 'close') {
+      console.log('Tour closed by user');
+      setRunTour(false);
+      sessionStorage.setItem('onboardingTourDismissed', 'true');
+      sessionStorage.removeItem('onboardingTourStepIndex');
+      return;
+    }
+    
     // Handle tour completion (only on last step)
     if (status === STATUS.FINISHED) {
       console.log('Tour finished');
@@ -593,7 +602,7 @@ export default function DashboardPage() {
           scrollOffset={0}
           scrollToFirstStep={false}
           spotlightClicks={false}
-          hideCloseButton={true}
+          hideCloseButton={tourStepIndex < 1}
           floaterProps={{
             disableAnimation: false,
           }}
@@ -615,6 +624,10 @@ export default function DashboardPage() {
               cursor: 'pointer',
             },
             buttonSkip: {
+              color: '#666',
+              cursor: 'pointer',
+            },
+            buttonClose: {
               color: '#666',
               cursor: 'pointer',
             },
