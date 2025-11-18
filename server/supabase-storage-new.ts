@@ -713,8 +713,9 @@ export class SupabaseStorage implements IStorage {
       console.log(`[getUserImpact] User object keys:`, Object.keys(user));
       console.log(`[getUserImpact] User object:`, JSON.stringify(user, null, 2));
       
-      const impactPoints = (user as any).impactPoints ?? (user as any).impact_points ?? 0;
-      const totalDonations = (user as any).totalDonations ?? (user as any).total_donations ?? 0;
+      // Use camelCase columns (snake_case columns removed)
+      const impactPoints = (user as any).impactPoints ?? 0;
+      const totalDonations = (user as any).totalDonations ?? 0;
       
       console.log(`[getUserImpact] User ${userId}: impactPoints=${impactPoints}, totalDonations=${totalDonations}`);
       

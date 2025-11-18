@@ -10,8 +10,8 @@ export const users = pgTable("users", {
   email: text("email"),
   firstName: text("first_name"),
   lastName: text("last_name"),
-  impactPoints: integer("impact_points").default(0),
-  totalDonations: integer("total_donations").default(0),
+  impactPoints: integer("impactPoints").default(50), // Database uses camelCase, default 50 for new users
+  totalDonations: integer("totalDonations").default(0), // Database uses camelCase
   createdAt: timestamp("created_at").defaultNow()
 });
 
