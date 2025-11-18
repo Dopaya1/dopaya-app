@@ -55,7 +55,10 @@ export default function AuthCallback() {
             console.log('User authenticated successfully via email confirmation');
             
             // ✅ SYNC: Ensure user exists in public.users table
-            await ensureUserProfile(data.user);
+            const isNewUser = await ensureUserProfile(data.user);
+            
+            // Check if preview mode is enabled
+            const previewEnabled = isOnboardingPreviewEnabled();
             
             setStatus('success');
             setMessage('Email verified successfully! Redirecting...');
@@ -69,8 +72,11 @@ export default function AuthCallback() {
                 // Return to original page where Support button was clicked
                 sessionStorage.removeItem('authReturnUrl');
                 window.location.href = returnUrl;
+              } else if (previewEnabled && isNewUser) {
+                // New user in preview mode → redirect to dashboard with newUser flag
+                navigate('/dashboard?newUser=1&previewOnboarding=1');
               } else {
-              navigate('/dashboard');
+                navigate('/dashboard');
               }
             }, 1500);
             return;
@@ -92,7 +98,10 @@ export default function AuthCallback() {
           console.log('User already authenticated');
           
           // ✅ SYNC: Ensure user exists in public.users table
-          await ensureUserProfile(sessionData.session.user);
+          const isNewUser = await ensureUserProfile(sessionData.session.user);
+          
+          // Check if preview mode is enabled
+          const previewEnabled = isOnboardingPreviewEnabled();
           
           setStatus('success');
           setMessage('You are already logged in. Redirecting...');
@@ -106,8 +115,11 @@ export default function AuthCallback() {
               // Return to original page where Support button was clicked
               sessionStorage.removeItem('authReturnUrl');
               window.location.href = returnUrl;
+            } else if (previewEnabled && isNewUser) {
+              // New user in preview mode → redirect to dashboard with newUser flag
+              navigate('/dashboard?newUser=1&previewOnboarding=1');
             } else {
-            navigate('/dashboard');
+              navigate('/dashboard');
             }
           }, 1000);
         } else {
@@ -122,7 +134,10 @@ export default function AuthCallback() {
             console.log('User found via getUser()');
             
             // ✅ SYNC: Ensure user exists in public.users table
-            await ensureUserProfile(userData.user);
+            const isNewUser = await ensureUserProfile(userData.user);
+            
+            // Check if preview mode is enabled
+            const previewEnabled = isOnboardingPreviewEnabled();
             
             setStatus('success');
             setMessage('Authentication successful! Redirecting...');
@@ -136,8 +151,11 @@ export default function AuthCallback() {
                 // Return to original page where Support button was clicked
                 sessionStorage.removeItem('authReturnUrl');
                 window.location.href = returnUrl;
+              } else if (previewEnabled && isNewUser) {
+                // New user in preview mode → redirect to dashboard with newUser flag
+                navigate('/dashboard?newUser=1&previewOnboarding=1');
               } else {
-              navigate('/dashboard');
+                navigate('/dashboard');
               }
             }, 1000);
           }
@@ -150,15 +168,20 @@ export default function AuthCallback() {
     };
 
     // Helper function to ensure user profile exists in public.users
-    const ensureUserProfile = async (authUser: any) => {
+    const ensureUserProfile = async (authUser: any): Promise<boolean> => {
       try {
         console.log('Checking if user profile exists for:', authUser.email);
+        
+        // Get the auth token for the API call
+        const { data: { session } } = await supabase.auth.getSession();
+        const authToken = session?.access_token;
         
         // Call our backend API to create user if needed
         const response = await fetch('/api/auth/ensure-profile', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            ...(authToken && { 'Authorization': `Bearer ${authToken}` }),
           },
           body: JSON.stringify({
             email: authUser.email,
@@ -169,13 +192,20 @@ export default function AuthCallback() {
         });
         
         if (!response.ok) {
-          console.error('Failed to ensure user profile:', await response.text());
-        } else {
-          console.log('User profile ensured successfully');
+          const errorText = await response.text();
+          console.error('Failed to ensure user profile:', response.status, errorText);
+          return false;
         }
+        
+        const result = await response.json();
+        console.log('User profile ensured successfully:', result);
+        
+        // Return true if user was just created (new user)
+        return result.created === true;
       } catch (error) {
         console.error('Error ensuring user profile:', error);
         // Don't throw - we don't want to block the auth flow
+        return false;
       }
     };
 

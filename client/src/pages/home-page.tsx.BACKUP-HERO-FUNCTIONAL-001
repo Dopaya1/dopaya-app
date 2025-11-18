@@ -10,12 +10,21 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useEffect, useRef, useState } from "react";
 import { BRAND_COLORS } from "@/constants/colors";
+import { getProjectImageUrl } from "@/lib/image-utils";
 
 export default function HomePage() {
   // rotating word for duplicate hero headline
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const h1IntervalRef = useRef<NodeJS.Timeout | null>(null);
   const h1Words = ['rewarding', 'transparent', 'efficient', 'meaningful'];
+  
+  // Info bar slider state (mobile only)
+  const [infoBarIndex, setInfoBarIndex] = useState(0);
+  const infoBarItems = [
+    'Support selected social enterprises',
+    'Get tangible rewards',
+    '100% sustainable products & transparent impact'
+  ];
 
   useEffect(() => {
     h1IntervalRef.current = setInterval(() => {
@@ -25,6 +34,14 @@ export default function HomePage() {
       if (h1IntervalRef.current) clearInterval(h1IntervalRef.current);
     };
   }, []);
+
+  // Auto-rotate info bar items on mobile (every 3 seconds)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setInfoBarIndex((prev) => (prev + 1) % infoBarItems.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [infoBarItems.length]);
   const { data: bubbleProjects = [] } = useQuery({
     queryKey: ["home-bubble-projects-featured-only"],
     queryFn: async () => {
@@ -123,7 +140,7 @@ export default function HomePage() {
                 <div className="absolute left-2 top-6">
                   {bubbleProjects[0] && (
                     <div className="relative">
-                      <img src={bubbleProjects[0].imageUrl || ''} alt={bubbleProjects[0].title} className="w-28 h-28 md:w-32 md:h-32 rounded-full object-cover ring-4 ring-orange-100" />
+                      <img src={getProjectImageUrl(bubbleProjects[0]) || ''} alt={bubbleProjects[0].title} className="w-28 h-28 md:w-32 md:h-32 rounded-full object-cover ring-4 ring-orange-100" />
                       <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white text-gray-800 px-2 py-0.5 rounded border border-gray-200 whitespace-nowrap">
                         {bubbleProjects[0].category || 'Impact'}
                       </span>
@@ -133,7 +150,7 @@ export default function HomePage() {
                 <div className="absolute left-24 md:left-32 top-40">
                   {bubbleProjects[1] && (
                     <div className="relative">
-                      <img src={bubbleProjects[1].imageUrl || ''} alt={bubbleProjects[1].title} className="w-24 h-24 md:w-28 md:h-28 rounded-full object-cover ring-4 ring-orange-100" />
+                      <img src={getProjectImageUrl(bubbleProjects[1]) || ''} alt={bubbleProjects[1].title} className="w-24 h-24 md:w-28 md:h-28 rounded-full object-cover ring-4 ring-orange-100" />
                       <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white text-gray-800 px-2 py-0.5 rounded border border-gray-200 whitespace-nowrap">
                         {bubbleProjects[1].category || 'Impact'}
                       </span>
@@ -143,7 +160,7 @@ export default function HomePage() {
                 <div className="absolute left-0 bottom-4">
                   {bubbleProjects[2] && (
                     <div className="relative">
-                      <img src={bubbleProjects[2].imageUrl || ''} alt={bubbleProjects[2].title} className="w-28 h-28 md:w-32 md:h-32 rounded-full object-cover ring-4 ring-orange-100" />
+                      <img src={getProjectImageUrl(bubbleProjects[2]) || ''} alt={bubbleProjects[2].title} className="w-28 h-28 md:w-32 md:h-32 rounded-full object-cover ring-4 ring-orange-100" />
                       <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white text-gray-800 px-2 py-0.5 rounded border border-gray-200 whitespace-nowrap">
                         {bubbleProjects[2].category || 'Impact'}
                       </span>
@@ -220,7 +237,7 @@ export default function HomePage() {
                       <polygon 
                         points="0 0, 14 7, 0 14" 
                         fill="#f2662d" 
-                        opacity="0.35"
+                        opacity="0.6"
                       />
                     </marker>
                   </defs>
@@ -240,11 +257,39 @@ export default function HomePage() {
         </section>
 
         {/* Info bar under hero */}
-        <section className="py-6" style={{ backgroundColor: '#ebe8df' }}>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <p className="text-base md:text-lg lg:text-xl text-gray-700 text-center">
-              Support selected social enterprises ··· Get tangible rewards ··· 100% sustainable products & transparent impact
-            </p>
+        <section className="py-6 flex items-center" style={{ backgroundColor: '#ebe8df' }}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+            {/* Desktop: 3 columns */}
+            <div className="hidden md:grid md:grid-cols-3 gap-4 lg:gap-8 items-center">
+              <p className="text-base lg:text-xl text-gray-700 text-center">
+                Support selected social enterprises
+              </p>
+              <p className="text-base lg:text-xl text-gray-700 text-center">
+                Get tangible rewards
+              </p>
+              <p className="text-base lg:text-xl text-gray-700 text-center">
+                100% sustainable products & transparent impact
+              </p>
+            </div>
+            
+            {/* Mobile: Auto-slider (1 item at a time) */}
+            <div className="md:hidden relative overflow-hidden min-h-[60px] flex items-center">
+              <div 
+                className="flex transition-transform duration-500 ease-in-out"
+                style={{ transform: `translateX(-${infoBarIndex * 100}%)` }}
+              >
+                {infoBarItems.map((item, index) => (
+                  <div 
+                    key={index}
+                    className="w-full flex-shrink-0 text-center flex items-center justify-center"
+                  >
+                    <p className="text-base text-gray-700 px-4">
+                      {item}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
         
