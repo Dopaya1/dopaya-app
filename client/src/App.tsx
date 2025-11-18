@@ -6,6 +6,7 @@ import ProjectsPage from "@/pages/projects-page";
 import ProjectDetailPage from "@/pages/project-detail-page";
 import ProjectDetailPageV3 from "@/pages/project-detail-page-v3";
 import DashboardPage from "@/pages/dashboard-page";
+import DashboardV2 from "@/pages/dashboard-v2";
 import ContactPage from "@/pages/contact-page";
 import AboutPage from "@/pages/about-page";
 import RewardsPage from "@/pages/rewards-page";
@@ -70,6 +71,7 @@ function Router({ onOpenAuthModal }: { onOpenAuthModal: (tab: "login" | "registe
       <Route path="/project-v3/:slug" component={ProjectDetailPageV3} />
       <Route path="/project/:slug" component={ProjectDetailPage} />
       <ProtectedRoute path="/dashboard" component={DashboardPage} />
+      <ProtectedRoute path="/dashboard-v2" component={DashboardV2} />
       <Route path="/contact" component={ContactPage} />
       <Route path="/about" component={AboutPage} />
       <Route path="/rewards" component={RewardsPage} />

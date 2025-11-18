@@ -9,18 +9,18 @@ export function ImpactStats() {
 
   const statItems = [
     { 
-      title: "Support amount", 
-      value: impact?.amountDonated || 0, 
-      format: (val: number) => `$${val.toLocaleString()}`,
-      change: impact?.amountDonatedChange || 0,
+      title: "Impact Points", 
+      value: impact?.impactPoints || 0, 
+      format: (val: number) => val.toLocaleString(),
+      change: impact?.impactPointsChange || 0,
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
-          <path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" />
+          <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
         </svg>
       )
     },
     { 
-      title: "Projects supported", 
+      title: "Startups Supported", 
       value: impact?.projectsSupported || 0, 
       format: (val: number) => val.toString(),
       change: impact?.projectsSupportedChange || 0,
@@ -31,13 +31,13 @@ export function ImpactStats() {
       )
     },
     { 
-      title: "Impact created", 
+      title: "Impact Created", 
       value: (impact?.amountDonated || 0) * 2, // Impact created = 2x donation amount (not Impact Points)
       format: (val: number) => val.toLocaleString(),
       change: impact?.impactPointsChange || 0,
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
-          <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+          <path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" />
         </svg>
       )
     },

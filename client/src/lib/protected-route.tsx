@@ -45,8 +45,8 @@ export function ProtectedRoute({
     );
   }
 
-  // Check if user's email is verified
-  if (user && !user.email_verified) {
+  // Check if user's email is verified (only if email_verified property exists)
+  if (user && 'email_verified' in user && !user.email_verified) {
     console.log('User email not verified, showing verification prompt');
     return (
       <Route path={path}>

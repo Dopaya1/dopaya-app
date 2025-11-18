@@ -18,6 +18,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Sparkles, Gift, HelpCircle, X } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getDailyQuoteForUser, ImpactQuote } from "@/constants/impact-quotes";
+// CONFETTI: Easy to remove - delete this import and the triggerConfetti() calls below
+import { triggerConfetti, pulseImpactPointsBadge } from "@/lib/confetti";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -39,13 +41,85 @@ export default function DashboardPage() {
     const status = urlParams.get('status');
     const amount = urlParams.get('amount');
     const newUser = urlParams.get('newUser');
+    
+    // Test parameters for offline testing
+    const modal1 = urlParams.get('modal1');
+    const modal2 = urlParams.get('modal2');
+    const clearState = urlParams.get('clearState');
+    const testConfetti = urlParams.get('confetti');
+    
     console.log('[Dashboard] URL params on mount/change:', {
       search: window.location.search,
       status,
       amount,
       newUser,
+      modal1,
+      modal2,
+      clearState,
+      testConfetti,
       previewEnabled,
     });
+    
+    // Clear all state for fresh testing
+    if (clearState === '1') {
+      console.log('[Dashboard] Clearing all sessionStorage flags for testing');
+      sessionStorage.removeItem('welcomeModalShown');
+      sessionStorage.removeItem('welcomeModalClosed');
+      sessionStorage.removeItem('onboardingTourCompleted');
+      sessionStorage.removeItem('onboardingTourDismissed');
+      sessionStorage.removeItem('onboardingTourStepIndex');
+      sessionStorage.removeItem('signupFirstFlow');
+      sessionStorage.removeItem('checkNewUser');
+      sessionStorage.removeItem('confettiShown'); // CONFETTI: Remove confetti flag
+      sessionStorage.removeItem('confettiTime'); // CONFETTI: Remove confetti timestamp
+      setShowWelcomeModal(false);
+      setRunTour(false);
+      // Clean up URL but keep preview flag if enabled
+      const newUrl = window.location.pathname + (previewEnabled ? '?previewOnboarding=1' : '');
+      window.history.replaceState({}, '', newUrl);
+    }
+    
+    // Test: Trigger confetti animation
+    if (previewEnabled && testConfetti === '1') {
+      console.log('[Dashboard] Test: Triggering confetti animation');
+      sessionStorage.removeItem('confettiShown');
+      triggerConfetti(() => {
+        console.log('[Dashboard] Test: Confetti animation completed');
+        // Clean up URL but keep preview flag
+        const newUrl = window.location.pathname + '?previewOnboarding=1';
+        window.history.replaceState({}, '', newUrl);
+      });
+      return; // Don't process other params when testing
+    }
+    
+    // Test: Show welcome modal step 1
+    if (previewEnabled && modal1 === '1') {
+      console.log('[Dashboard] Test: Showing welcome modal step 1');
+      setSignupWelcomeStep(1);
+      setShowWelcomeModal(true);
+      sessionStorage.setItem('welcomeModalShown', 'true');
+      sessionStorage.removeItem('welcomeModalClosed');
+      setRunTour(false);
+      // Clean up URL but keep preview flag
+      const newUrl = window.location.pathname + '?previewOnboarding=1';
+      window.history.replaceState({}, '', newUrl);
+      return; // Don't process other params when testing
+    }
+    
+    // Test: Show welcome modal step 2
+    if (previewEnabled && modal2 === '1') {
+      console.log('[Dashboard] Test: Showing welcome modal step 2');
+      setSignupWelcomeStep(2);
+      setShowWelcomeModal(true);
+      sessionStorage.setItem('welcomeModalShown', 'true');
+      sessionStorage.removeItem('welcomeModalClosed');
+      setRunTour(false);
+      // Clean up URL but keep preview flag
+      const newUrl = window.location.pathname + '?previewOnboarding=1';
+      window.history.replaceState({}, '', newUrl);
+      return; // Don't process other params when testing
+    }
+    
     if (status === 'success' && amount) {
       setDonationAmount(parseFloat(amount));
       setShowSuccessModal(true);
@@ -88,11 +162,38 @@ export default function DashboardPage() {
     
     if (isNewUser) {
       const welcomeShown = sessionStorage.getItem('welcomeModalShown');
+      const confettiShown = sessionStorage.getItem('confettiShown');
+      
       if (!welcomeShown) {
-        console.log('[Dashboard] New user detected (50 IP, 0 donations) → showing welcome modal');
+        console.log('[Dashboard] New user detected (50 IP, 0 donations) → showing modal immediately with confetti');
+        
+        // Show welcome modal IMMEDIATELY (while confetti plays in background)
         setSignupWelcomeStep(1);
         setShowWelcomeModal(true);
         sessionStorage.setItem('welcomeModalShown', 'true');
+        sessionStorage.removeItem('welcomeModalClosed');
+        setRunTour(false); // CRITICAL: Stop tour from starting
+        
+        // CONFETTI: Easy to remove - delete this block if removing confetti
+        if (!confettiShown) {
+          sessionStorage.setItem('confettiShown', 'true');
+          sessionStorage.setItem('confettiTime', Date.now().toString()); // Track when confetti started
+          
+          // Announce for screen readers
+          const announcement = document.createElement('div');
+          announcement.setAttribute('aria-live', 'polite');
+          announcement.setAttribute('aria-atomic', 'true');
+          announcement.className = 'sr-only';
+          announcement.textContent = 'Welcome — 50 Impact Points added to your account.';
+          document.body.appendChild(announcement);
+          
+          // Trigger confetti in background (modal is already showing)
+          triggerConfetti(() => {
+            // Remove announcement after a delay
+            setTimeout(() => announcement.remove(), 1000);
+          });
+        }
+        // END CONFETTI BLOCK
       }
     }
   }, [previewEnabled, safeImpact, signupFirstFlow]);
@@ -148,12 +249,41 @@ export default function DashboardPage() {
   }, [previewEnabled, user, safeImpact, isSupportFirstUser]);
   
   // Check if tour should run (for first-time users or manual trigger)
+  // IMPORTANT: Tour should ONLY start AFTER welcome modal is closed AND confetti is done
   useEffect(() => {
     if (!previewEnabled || !user) return;
     
+    // CRITICAL: Don't even check tour conditions if welcome modal is open
+    // This prevents any brief flash of tooltips before modal appears
+    if (showWelcomeModal) {
+      setRunTour(false);
+      return;
+    }
+    
     // For testing: Check for manual trigger first (works even without impact data)
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('startTour') === '1') {
+    const tourParam = urlParams.get('tour');
+    const startTourParam = urlParams.get('startTour');
+    
+    // Test: Start tour directly via ?tour=1 (assumes modal is closed)
+    if (previewEnabled && tourParam === '1') {
+      console.log('[Dashboard] Test: Starting tour via ?tour=1 parameter');
+      sessionStorage.removeItem('onboardingTourCompleted');
+      sessionStorage.removeItem('onboardingTourDismissed');
+      sessionStorage.setItem('welcomeModalClosed', 'true'); // Mark modal as closed
+      setTourStepIndex(0);
+      setRunTour(false); // Ensure it's stopped first
+      setTimeout(() => {
+        setRunTour(true);
+        // Clean up URL but keep preview flag
+        const newUrl = window.location.pathname + '?previewOnboarding=1';
+        window.history.replaceState({}, '', newUrl);
+      }, 500);
+      return;
+    }
+    
+    // Existing: Start tour via ?startTour=1 (legacy parameter)
+    if (startTourParam === '1') {
       console.log('Manual tour trigger detected');
       sessionStorage.removeItem('onboardingTourCompleted');
       sessionStorage.removeItem('onboardingTourDismissed');
@@ -174,6 +304,41 @@ export default function DashboardPage() {
     // Normal tour logic (requires impact data)
     if (!safeImpact) return;
     
+    // CRITICAL: Don't start tour if welcome modal is still open (check state directly)
+    if (showWelcomeModal) {
+      console.log('Tour check: Welcome modal is open (state check), stopping tour and waiting...');
+      setRunTour(false); // Explicitly stop tour
+      return;
+    }
+    
+    // Also check if welcome modal was shown (even if now closed)
+    // Only start tour if welcome modal was shown and closed, OR if it was never shown
+    const welcomeModalShown = sessionStorage.getItem('welcomeModalShown') === 'true';
+    const welcomeModalClosed = sessionStorage.getItem('welcomeModalClosed') === 'true';
+    const confettiShown = sessionStorage.getItem('confettiShown') === 'true';
+    
+    // CRITICAL: Don't start tour if confetti is playing (confetti runs for 3 seconds)
+    // Wait a bit after confetti to ensure modal has time to appear
+    if (confettiShown && !welcomeModalClosed) {
+      const confettiTime = sessionStorage.getItem('confettiTime');
+      if (confettiTime) {
+        const timeSinceConfetti = Date.now() - parseInt(confettiTime, 10);
+        // Wait at least 3.5 seconds after confetti starts before allowing tour
+        if (timeSinceConfetti < 3500) {
+          console.log('Tour check: Confetti still playing or just finished, stopping tour and waiting...');
+          setRunTour(false);
+          return;
+        }
+      }
+    }
+    
+    // If welcome modal was shown, it MUST be explicitly closed before tour can start
+    if (welcomeModalShown && !welcomeModalClosed) {
+      console.log('Tour check: Welcome modal was shown but not yet closed, stopping tour and waiting...');
+      setRunTour(false); // Explicitly stop tour
+      return;
+    }
+    
     // Debug logging
     console.log('Tour check:', {
       previewEnabled,
@@ -182,19 +347,30 @@ export default function DashboardPage() {
       projectsSupported: safeImpact?.projectsSupported || 0,
       tourCompleted,
       tourDismissed,
-      savedStepIndex
+      savedStepIndex,
+      showWelcomeModal,
+      welcomeModalShown,
+      welcomeModalClosed
     });
     
-    if (isFirstTimeUser && !tourCompleted && !tourDismissed) {
+    // Only start tour if all conditions are met AND welcome modal is not open
+    if (isFirstTimeUser && !tourCompleted && !tourDismissed && !showWelcomeModal && (welcomeModalClosed || !welcomeModalShown)) {
       // Resume from saved step or start from beginning
       if (savedStepIndex) {
         setTourStepIndex(parseInt(savedStepIndex, 10));
       }
       setTimeout(() => {
+        console.log('Starting tour after welcome modal closed');
         setRunTour(true);
       }, 500);
+    } else {
+      // Explicitly stop tour if conditions aren't met
+      if (runTour) {
+        console.log('Tour conditions not met, stopping tour');
+        setRunTour(false);
+      }
     }
-  }, [previewEnabled, isFirstTimeUser, user, safeImpact, impactPoints]);
+  }, [previewEnabled, isFirstTimeUser, user, safeImpact, impactPoints, showWelcomeModal, runTour]);
   
   // Tooltip steps (2 steps on dashboard, step 3 is on projects page)
   const steps: Step[] = [
@@ -287,6 +463,7 @@ export default function DashboardPage() {
     if (signupWelcomeStep === 1) {
       // On first step, back simply closes the mini gamification
       setShowWelcomeModal(false);
+      sessionStorage.setItem('welcomeModalClosed', 'true');
     } else {
       setSignupWelcomeStep(1);
     }
@@ -469,9 +646,24 @@ export default function DashboardPage() {
       
       {/* Signup-only Mini Gamification (new user registration) */}
       {previewEnabled && (
-        <Dialog open={showWelcomeModal} onOpenChange={setShowWelcomeModal}>
+        <Dialog 
+          open={showWelcomeModal} 
+          onOpenChange={(open) => {
+            setShowWelcomeModal(open);
+            if (!open) {
+              // When modal is closed, mark it as closed so tour can start
+              console.log('Welcome modal closed, tour can now start');
+              sessionStorage.setItem('welcomeModalClosed', 'true');
+            } else {
+              // Modal is opening - explicitly stop tour to prevent overlap
+              console.log('Welcome modal opening, stopping any running tour');
+              setRunTour(false);
+            }
+          }}
+        >
           {/* Simple, stable modal content (no outer confetti wrappers) */}
-          <DialogContent className="sm:max-w-md text-center">
+          {/* z-[10000] ensures modal appears above confetti (z-9999) */}
+          <DialogContent className="sm:max-w-md text-center bg-white z-[10000]">
             {/* Step label + optional back (no back on first card) */}
             <div className="flex items-center justify-between mb-3 text-xs text-gray-500">
               {signupWelcomeStep === 1 ? (
@@ -500,22 +692,15 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <DialogTitle className="text-2xl font-bold text-gray-900">
-                  Welcome to Dopaya!
+                  🎉 Welcome to Dopaya!
                 </DialogTitle>
                 <DialogDescription className="text-base text-gray-600 pt-4 space-y-3">
                   <p className="text-sm text-gray-700">
-                    You’ve just earned your <span className="font-semibold">50 Impact Points</span> starter bonus.
+                    To celebrate your first step, we've added <span className="font-semibold">50 Impact Points</span> to your account -
                   </p>
                   <p className="text-sm text-gray-700">
-                    You’re already halfway to unlocking your first reward.
+                    worth about $5 to use toward future rewards :)
                   </p>
-                  <div className="mt-4">
-                    <div className="text-xs text-gray-500 mb-1">Progress to first reward</div>
-                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div className="h-full bg-[#f2662d]" style={{ width: "50%" }} />
-                    </div>
-                    <p className="mt-2 text-sm font-semibold text-gray-900">50 / 100 Impact Points</p>
-                  </div>
                 </DialogDescription>
                 <div className="mt-6">
                   <Button
@@ -523,7 +708,7 @@ export default function DashboardPage() {
                     style={{ backgroundColor: "#f2662d" }}
                     onClick={() => setSignupWelcomeStep(2)}
                   >
-                    Next →
+                    Let's get started →
                   </Button>
                 </div>
               </DialogHeader>
@@ -545,6 +730,7 @@ export default function DashboardPage() {
                     type="button"
                     onClick={() => {
                       setShowWelcomeModal(false);
+                      sessionStorage.setItem('welcomeModalClosed', 'true');
                       window.location.href = "/projects?previewOnboarding=1";
                     }}
                     className="w-full text-left p-4 rounded-xl border border-gray-200 bg-white hover:bg-orange-50 transition-colors active:scale-[0.99]"
@@ -562,6 +748,7 @@ export default function DashboardPage() {
                     type="button"
                     onClick={() => {
                       setShowWelcomeModal(false);
+                      sessionStorage.setItem('welcomeModalClosed', 'true');
                       window.location.href = "/projects?previewOnboarding=1";
                     }}
                     className="w-full text-left p-4 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition-colors active:scale-[0.99]"
@@ -579,9 +766,13 @@ export default function DashboardPage() {
                     type="button"
                     onClick={() => {
                       setShowWelcomeModal(false);
-                      setTourStepIndex(0);
-                      sessionStorage.setItem("onboardingTourStepIndex", "0");
-                      setRunTour(true);
+                      sessionStorage.setItem('welcomeModalClosed', 'true');
+                      // Start tour after a short delay to ensure modal is fully closed
+                      setTimeout(() => {
+                        setTourStepIndex(0);
+                        sessionStorage.setItem("onboardingTourStepIndex", "0");
+                        setRunTour(true);
+                      }, 300);
                     }}
                     className="w-full text-left p-4 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition-colors active:scale-[0.99]"
                   >
@@ -604,7 +795,8 @@ export default function DashboardPage() {
       )}
       
       {/* Onboarding Tour */}
-      {previewEnabled && runTour && steps.length > 0 && (
+      {/* CRITICAL: Only render tour if welcome modal is NOT open */}
+      {previewEnabled && runTour && steps.length > 0 && !showWelcomeModal && (
         <Joyride
           steps={steps}
           run={runTour}

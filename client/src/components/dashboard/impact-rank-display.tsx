@@ -48,9 +48,8 @@ export function ImpactRankDisplay({ impactPoints, totalDonations }: ImpactRankDi
       {!isSupporter && impactPoints === 50 && (
         <div className="text-sm text-gray-600">
           <span className="font-medium text-primary">
-            50 more Impact Points to unlock rewards
+            Earn 50 more Impact Points by supporting your first social enterprise — unlock your first reward!
           </span>
-          {" "}— Support any project with $5 to unlock!
         </div>
       )}
       

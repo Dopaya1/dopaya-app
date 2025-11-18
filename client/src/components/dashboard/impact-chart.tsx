@@ -32,22 +32,13 @@ export function ImpactChart() {
     );
   }
 
-  // Enhanced placeholder data with aligned metrics based on logical relationships
-  // Logic: 1 point per $1 donated, impact created is 2x donation amount
-  const placeholderData = [
-    { date: "Jan 1", points: 0, impactCreated: 0, donationAmount: 0 },
-    { date: "Feb 15", points: 150, impactCreated: 300, donationAmount: 150 },
-    { date: "Mar 3", points: 325, impactCreated: 650, donationAmount: 325 },
-    { date: "Apr 10", points: 500, impactCreated: 1000, donationAmount: 500 },
-    { date: "May 1", points: 650, impactCreated: 1300, donationAmount: 650 },
-  ];
-
-  const chartData = impactHistory || placeholderData;
+  // Check if we have real impact history data
+  const hasImpactHistory = impactHistory && impactHistory.length > 0;
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Impact Performance</CardTitle>
+        <CardTitle>Your Impact Over Time</CardTitle>
         <div className="flex items-center space-x-6 text-sm mt-2">
           <div className="flex items-center space-x-2">
             <div className="w-3 h-0.5 bg-primary"></div>
@@ -68,11 +59,17 @@ export function ImpactChart() {
           <div className="flex justify-center items-center h-64">
             <Skeleton className="h-full w-full" />
           </div>
+        ) : !hasImpactHistory ? (
+          <div className="flex justify-center items-center h-64">
+            <p className="text-sm text-gray-500 text-center">
+              When you start supporting projects, your impact over time will appear here.
+            </p>
+          </div>
         ) : (
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
-                data={chartData}
+                data={impactHistory}
                 margin={{ top: 10, right: 30, left: 0, bottom: 10 }}
               >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eaeaea" />

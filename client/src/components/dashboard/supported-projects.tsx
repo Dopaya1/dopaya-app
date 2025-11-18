@@ -3,11 +3,46 @@ import { Project } from "@shared/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { supabase } from "@/lib/supabase";
 
-export function SupportedProjects() {
-  const { data: projects, isLoading, error } = useQuery<Project[]>({
+interface SupportedProjectsProps {
+  supportCount?: number;
+  showEmptyStateText?: boolean;
+  showTooltipOnFirst?: boolean;
+}
+
+export function SupportedProjects({ supportCount = 0, showEmptyStateText = false, showTooltipOnFirst = false }: SupportedProjectsProps = {}) {
+  const { data: supportedProjects, isLoading: isLoadingSupported, error: supportedError } = useQuery<Project[]>({
     queryKey: ["/api/user/supported-projects"],
   });
+
+  // Fetch featured projects if user has no supported projects (for empty state)
+  const { data: featuredProjects, isLoading: isLoadingFeatured } = useQuery<Project[]>({
+    queryKey: ["/api/projects/featured"],
+    enabled: supportCount === 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('featured', true)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(3);
+      
+      if (error) {
+        console.error('Error fetching featured projects:', error);
+        return [];
+      }
+      
+      return (data || []) as Project[];
+    },
+  });
+
+  // Use supported projects if available, otherwise use featured projects for display
+  const projects = (supportedProjects && supportedProjects.length > 0) ? supportedProjects : (featuredProjects || []);
+  const isLoading = isLoadingSupported || (supportCount === 0 && isLoadingFeatured);
+  const error = supportedError;
 
   if (error) {
     return (
@@ -19,7 +54,10 @@ export function SupportedProjects() {
 
   return (
     <div>
-      <h2 className="text-xl font-bold text-dark font-heading mb-6">Social Enterprises Supported</h2>
+      <h2 className="text-xl font-bold text-dark font-heading mb-6">Featured Social Enterprises</h2>
+      {showEmptyStateText && supportCount === 0 && (
+        <p className="text-sm text-gray-500 mb-4">Start your journey by supporting one of these high-impact social enterprises.</p>
+      )}
       
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -51,24 +89,44 @@ export function SupportedProjects() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((project) => (
-            <Card key={project.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
-              <img src={project.imageUrl} alt={project.title} className="w-full h-48 object-cover" />
-              <CardContent className="p-4">
-                <h3 className="text-lg font-bold text-dark font-heading mb-2">{project.title}</h3>
-                <p className="text-sm text-neutral mb-4 whitespace-pre-line">{project.description}</p>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-xs text-neutral">${project.goalAmount?.toLocaleString() || '0'} goal</span>
-                  <Link href={`/project/${project.slug || project.id}`} className="text-primary hover:underline text-sm font-medium flex items-center">
-                    View
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          {projects.map((project, index) => {
+            const isFirstProject = index === 0;
+            const cardContent = (
+              <Card key={project.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
+                <img src={project.imageUrl} alt={project.title} className="w-full h-48 object-cover" />
+                <CardContent className="p-4">
+                  <h3 className="text-lg font-bold text-dark font-heading mb-2">{project.title}</h3>
+                  <p className="text-sm text-neutral mb-4 whitespace-pre-line">{project.description}</p>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs text-neutral">${project.goalAmount?.toLocaleString() || '0'} goal</span>
+                    <Link href={`/project/${project.slug || project.id}`} className="text-primary hover:underline text-sm font-medium flex items-center">
+                      View
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+
+            if (isFirstProject && showTooltipOnFirst) {
+              return (
+                <TooltipProvider key={project.id}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div>{cardContent}</div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Learn how this enterprise creates real impact.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              );
+            }
+
+            return cardContent;
+          })}
         </div>
       )}
     </div>
