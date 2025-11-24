@@ -25,7 +25,8 @@ const fallbackBrands = [
     hoverDescription: "Anti-pollution skin & hair care products made with natural ingredients. Beyond just trends, basics, and looks - real science-backed solutions for city life damage.",
     category: "Beauty & Wellness",
     website: "https://bonji.in",
-    featured: true
+    featured: true,
+    country: undefined as string | undefined
   },
   {
     id: 2,
@@ -35,7 +36,8 @@ const fallbackBrands = [
     hoverDescription: "Sustainable living through natural dyed clothing, conscious baby clothing, handmade cutlery, wooden toys, and organics. Creating local livelihood with craft and reviving indigenous traditions.",
     category: "Sustainable Lifestyle",
     website: "https://www.sankalpaartvillage.com",
-    featured: true
+    featured: true,
+    country: undefined as string | undefined
   },
   {
     id: 3,
@@ -45,7 +47,8 @@ const fallbackBrands = [
     hoverDescription: "100% natural, no preservatives Ragi Malt that's nutrition simplified. Just add hot water for instant goodness of Finger Millet with added fiber - perfect for health enthusiasts and busy professionals.",
     category: "Health & Nutrition",
     website: "https://milletarian.netlify.app",
-    featured: true
+    featured: true,
+    country: undefined as string | undefined
   },
   {
     id: 4,
@@ -55,7 +58,8 @@ const fallbackBrands = [
     hoverDescription: "Sustainable lifestyle brand focused on traditional crafts and eco-friendly products supporting rural artisans and promoting conscious consumption.",
     category: "Lifestyle",
     website: "https://www.aapar.in",
-    featured: true
+    featured: true,
+    country: undefined as string | undefined
   },
   {
     id: 5,
@@ -65,7 +69,8 @@ const fallbackBrands = [
     hoverDescription: "Organic food products and sustainable agriculture solutions supporting farmers and promoting healthy living through natural, chemical-free products.",
     category: "Food & Agriculture",
     website: "https://www.syangs.com",
-    featured: true
+    featured: true,
+    country: undefined as string | undefined
   }
 ];
 
@@ -91,6 +96,7 @@ export function PartnerShowcaseSection() {
     queryKey: ["brands-showcase"],
     queryFn: async () => {
       try {
+        // Use select('*') to get all columns - Supabase will return them in the actual DB format
         const { data, error } = await supabase
           .from('brands')
           .select('*')
@@ -99,45 +105,140 @@ export function PartnerShowcaseSection() {
           .order('created_at', { ascending: false });
         
         if (error) {
-          console.error('Error fetching brands:', error);
+          console.error('[PartnerShowcase] Error fetching brands:', error);
           return [];
         }
-        return (data || []) as Brand[];
+        
+        // Filter out brands that are NOT featured = true (double-check)
+        if (data && data.length > 0) {
+          const featuredOnly = data.filter(b => {
+            const raw = b as any;
+            const isFeatured = raw.featured === true || raw.featured === 'true' || raw.featured === 1;
+            if (!isFeatured) {
+              console.warn(`[PartnerShowcase] ⚠️ Brand "${b.name}" (ID: ${b.id}) filtered out - featured=${raw.featured}`);
+            }
+            return isFeatured;
+          });
+          
+          // Check for duplicates by name
+          const nameCounts = featuredOnly.reduce((acc, b) => {
+            const name = b.name.toLowerCase().trim();
+            acc[name] = (acc[name] || 0) + 1;
+            return acc;
+          }, {} as Record<string, number>);
+          
+          const duplicates = Object.entries(nameCounts).filter(([_, count]) => count > 1);
+          if (duplicates.length > 0) {
+            console.warn(`[PartnerShowcase] ⚠️ Found duplicate brand names in database:`, duplicates);
+          }
+          
+          return (featuredOnly || []) as Brand[];
+        } else {
+          return [];
+        }
       } catch (err) {
-        console.error('Exception fetching brands:', err);
+        console.error('[PartnerShowcase] Exception fetching brands:', err);
         return [];
       }
     },
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    staleTime: 0, // Always fetch fresh data from database
+    cacheTime: 0, // Don't cache - always get latest data
   });
 
   // Map database brands to component format, with fallback
   const brands = brandsData.length > 0
-    ? brandsData.map((brand) => {
-        // Supabase returns snake_case, so access logo_path directly
-        const logoPath = (brand as any).logo_path || brand.logoPath;
-        const websiteUrl = (brand as any).website_url || brand.websiteUrl;
-        const description = brand.description || '';
-        const category = brand.category || '';
-        
-        // Get logo URL with fallback
-        const logoUrl = getLogoUrl(logoPath, fallbackLogos[brand.name]);
-        const finalLogo = logoUrl || fallbackLogos[brand.name] || '';
-        
-        return {
-          id: brand.id,
-          name: brand.name,
-          fullName: brand.name, // Use name as fullName, or you can add a separate fullName field later
-          logo: finalLogo,
-          hoverDescription: description,
-          category: category,
-          website: websiteUrl || '#',
-          featured: brand.featured || false,
-        };
-      }).filter(b => b.logo) // Only include brands with logos
+    ? brandsData
+        // STEP 1: Deduplicate FIRST (before mapping) to avoid processing duplicates
+        .filter((brand, index, self) => {
+          const firstIndex = self.findIndex(b => 
+            b.name.toLowerCase().trim() === brand.name.toLowerCase().trim()
+          );
+          const isDuplicate = index !== firstIndex;
+          if (isDuplicate) {
+            console.warn(`[PartnerShowcase] ⚠️ Duplicate brand "${brand.name}" (ID: ${brand.id}) filtered out at source`);
+          }
+          return !isDuplicate;
+        })
+        .map((brand) => {
+          // Supabase returns snake_case, try all possible field names
+          const raw = brand as any;
+          const logoPath = raw.logo_path || raw.logoPath || raw.logo_url || raw.logoUrl || '';
+          const websiteUrl = raw.website_url || raw.websiteUrl || '';
+          const description = brand.description || '';
+          const category = brand.category || '';
+          // Check both Country (capital C) and country (lowercase c) - Supabase may preserve case
+          const country = raw.Country || raw.country || '';
+          
+          // Debug: Log country value for troubleshooting
+          if (country) {
+            console.log(`[PartnerShowcase] Brand "${brand.name}" (ID: ${brand.id}): country="${country}" (from Country=${raw.Country}, country=${raw.country})`);
+          }
+          
+          // Get logo URL with fallback - check fallbackLogos first, then try getLogoUrl
+          const fallbackLogo = fallbackLogos[brand.name] || fallbackLogos[brand.name.trim()];
+          const logoUrl = logoPath ? getLogoUrl(logoPath, fallbackLogo) : null;
+          const finalLogo = logoUrl || fallbackLogo || '';
+          
+          // Warn if no logo found (will be filtered out)
+          if (!finalLogo) {
+            console.warn(`[PartnerShowcase] ⚠️ Brand "${brand.name}" (ID: ${brand.id}) filtered out - no logo available`);
+          }
+          
+          // Properly handle featured boolean - ensure it's a true boolean
+          const isFeatured = Boolean((brand as any).featured) === true;
+          
+          return {
+            id: brand.id,
+            name: brand.name,
+            fullName: brand.name, // Use name as fullName, or you can add a separate fullName field later
+            logo: finalLogo,
+            hoverDescription: description,
+            category: category,
+            website: websiteUrl || '#',
+            featured: isFeatured,
+            country: country, // Add country field
+          };
+        })
+        .filter(b => {
+          // Filter brands with logos and log which ones are removed
+          if (!b.logo) {
+            console.warn(`[PartnerShowcase] ⚠️ Brand "${b.name}" (ID: ${b.id}) filtered out - no logo available (no logo_path and not in fallbackLogos)`);
+            return false;
+          }
+          return true;
+        })
+        // Note: No need to filter by featured here since query already filters for featured=true
     : fallbackBrands.filter(b => b.featured);
+
+  // Helper function to render brand name with country flag if applicable
+  const renderBrandName = (brand: typeof brands[0]) => {
+    const countryValue = brand.country;
+    const countryLower = countryValue?.toLowerCase()?.trim();
+    // Check for various Switzerland spellings
+    const isSwitzerland = countryLower === 'switzerland' || 
+                          countryLower === 'schweiz' || 
+                          countryLower === 'ch' ||
+                          countryLower === 'suisse' ||
+                          countryLower === 'svizzera';
+    
+    // Debug logging - always log to see what we're getting
+    console.log(`[PartnerShowcase] renderBrandName for "${brand.name}": country="${countryValue}", lower="${countryLower}", isSwitzerland=${isSwitzerland}`);
+    
+    return (
+      <span className="flex items-center gap-1.5">
+        <span>{brand.fullName}</span>
+        {isSwitzerland && (
+          <span className="text-base" title="Switzerland" aria-label="Switzerland">🇨🇭</span>
+        )}
+      </span>
+    );
+  };
+
   const getVisible = (count: number) => {
+    if (brands.length === 0) return [];
+    
     const out: typeof brands = [] as any;
+    // Use modulo to create infinite scroll effect
     for (let i = 0; i < count; i++) {
       const idx = (page * count + i) % brands.length;
       out.push(brands[idx]);
@@ -146,10 +247,28 @@ export function PartnerShowcaseSection() {
   };
 
   // Auto-advance pages (infinite) and pause on hover or user interaction
+  // Calculate max pages based on screen size: 4 on desktop, 3 on tablet, all on mobile
   useEffect(() => {
     if (isPaused || brands.length === 0) return;
+    
+    // Calculate how many pages we need based on brands count and items per page
+    const getMaxPages = () => {
+      if (typeof window === 'undefined') return brands.length;
+      if (window.innerWidth >= 1024) {
+        // Desktop: 4 per page
+        return Math.ceil(brands.length / 4);
+      } else if (window.innerWidth >= 768) {
+        // Tablet: 3 per page
+        return Math.ceil(brands.length / 3);
+      } else {
+        // Mobile: 1 per page
+        return brands.length;
+      }
+    };
+    
+    const maxPages = getMaxPages();
     const id = setInterval(() => {
-      setPage((p) => (p + 1) % brands.length);
+      setPage((p) => (p + 1) % maxPages);
     }, 3000);
     return () => clearInterval(id);
   }, [isPaused, brands.length]);
@@ -168,7 +287,8 @@ export function PartnerShowcaseSection() {
       if (error) throw error;
       return data || [];
     },
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    staleTime: 0, // Always fetch fresh data from database
+    cacheTime: 0, // Don't cache - always get latest data
   });
 
   return (
@@ -220,7 +340,7 @@ export function PartnerShowcaseSection() {
                     <div className="flex items-start gap-3 mb-2">
                       <img src={brand.logo} alt={brand.name} className="w-6 h-6 object-contain" />
                       <div className="flex-1">
-                        <h4 className="font-semibold text-sm" style={{ color: BRAND_COLORS.textPrimary }}>{brand.fullName}</h4>
+                        <h4 className="font-semibold text-sm" style={{ color: BRAND_COLORS.textPrimary }}>{renderBrandName(brand)}</h4>
                         <span className="text-xs" style={{ color: BRAND_COLORS.textMuted }}>{brand.category}</span>
                       </div>
                       <a href={brand.website} target="_blank" rel="noopener noreferrer" className="text-xs" style={{ color: BRAND_COLORS.textMuted }}>
@@ -247,7 +367,7 @@ export function PartnerShowcaseSection() {
                   <div className="flex items-start gap-3 mb-2">
                     <img src={brand.logo} alt={brand.name} className="w-6 h-6 object-contain" />
                     <div className="flex-1">
-                      <h4 className="font-semibold text-sm" style={{ color: BRAND_COLORS.textPrimary }}>{brand.fullName}</h4>
+                      <h4 className="font-semibold text-sm" style={{ color: BRAND_COLORS.textPrimary }}>{renderBrandName(brand)}</h4>
                       <span className="text-xs" style={{ color: BRAND_COLORS.textMuted }}>{brand.category}</span>
                     </div>
                     <a href={brand.website} target="_blank" rel="noopener noreferrer" className="text-xs" style={{ color: BRAND_COLORS.textMuted }}>
@@ -278,7 +398,7 @@ export function PartnerShowcaseSection() {
                     <div className="flex items-start gap-3 mb-2">
                       <img src={brand.logo} alt={brand.name} className="w-6 h-6 object-contain" />
                       <div className="flex-1">
-                        <h4 className="font-semibold text-sm" style={{ color: BRAND_COLORS.textPrimary }}>{brand.fullName}</h4>
+                        <h4 className="font-semibold text-sm" style={{ color: BRAND_COLORS.textPrimary }}>{renderBrandName(brand)}</h4>
                         <span className="text-xs" style={{ color: BRAND_COLORS.textMuted }}>{brand.category}</span>
                       </div>
                       <a href={brand.website} target="_blank" rel="noopener noreferrer" className="text-xs" style={{ color: BRAND_COLORS.textMuted }}>

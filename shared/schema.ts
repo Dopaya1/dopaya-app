@@ -6,10 +6,11 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+  password: text("password"), // Nullable for Supabase auth users (no password needed)
   email: text("email"),
   firstName: text("first_name"),
   lastName: text("last_name"),
+  auth_user_id: text("auth_user_id"), // UUID from Supabase auth.users table
   impactPoints: integer("impactPoints").default(50), // Database uses camelCase, default 50 for new users
   totalDonations: integer("totalDonations").default(0), // Database uses camelCase
   createdAt: timestamp("created_at").defaultNow()
@@ -116,15 +117,17 @@ export type InsertProject = z.infer<typeof insertProjectSchema>;
 export type Project = typeof projects.$inferSelect;
 
 // Donation schema
+// NOTE: Actual database uses camelCase columns (userId, projectId, impactPoints, createdAt)
+// Drizzle mapping below is for documentation - Supabase client queries use camelCase directly
 export const donations = pgTable("donations", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
-  projectId: integer("project_id").notNull(),
+  userId: integer("userId").notNull(),      // Actual DB column is "userId" (camelCase)
+  projectId: integer("projectId").notNull(), // Actual DB column is "projectId" (camelCase)
   amount: integer("amount").notNull(),
-  impactPoints: integer("impact_points").notNull(),
-  stripeSessionId: text("stripe_session_id"),
+  impactPoints: integer("impactPoints").notNull(), // Actual DB column is "impactPoints" (camelCase)
+  // stripeSessionId removed - column doesn't exist in database
   status: text("status").default("pending"),
-  createdAt: timestamp("created_at").defaultNow()
+  createdAt: timestamp("createdAt").defaultNow() // Actual DB column is "createdAt" (camelCase)
 });
 
 export const insertDonationSchema = createInsertSchema(donations).omit({
@@ -254,6 +257,7 @@ export const brands = pgTable("brands", {
   websiteUrl: text("website_url"),
   description: text("description"), // Short description of the brand
   category: text("category"), // e.g., "Beauty & Wellness", "Food & Agriculture", "Sustainable Lifestyle"
+  country: text("country"), // Country where the brand is based (e.g., "Switzerland")
   featured: boolean("featured").default(false), // For featured brands in hero sections
   displayOrder: integer("display_order").default(0), // For controlling display order
   createdAt: timestamp("created_at").defaultNow(),
