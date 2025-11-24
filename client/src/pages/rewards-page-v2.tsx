@@ -64,6 +64,14 @@ export default function RewardsPageV2() {
   const { user } = useAuth();
   const previewEnabled = isOnboardingPreviewEnabled();
   
+  // Guard: only allow this page in onboarding preview mode
+  // TODO: Remove this guard if preview mode should be disabled for rewards page
+  useEffect(() => {
+    if (!previewEnabled) {
+      navigate('/');
+    }
+  }, [previewEnabled, navigate]);
+  
   // Fetch user impact to check if first-time user
   const { data: impact } = useQuery<UserImpact>({
     queryKey: ["/api/user/impact"],
