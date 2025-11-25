@@ -1081,21 +1081,52 @@ ${url}
               <div className="w-full">
                 {project.founderName ? (
                   <div className="flex flex-col md:flex-row gap-6 w-full">
-                    {/* Left: Founder Image */}
-                    <div className="flex-shrink-0">
-                      <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden md:mx-0" style={{ marginLeft: 0 }}>
-                        {project.founderImage ? (
-                          <OptimizedImage
-                            src={project.founderImage}
-                            alt={project.founderName || 'Founder'}
-                            width={128}
-                            height={128}
-                            className="w-full h-full object-cover"
-                            fallbackSrc="/placeholder-founder.png"
-                          />
-                        ) : (
-                          <FaUser className="h-16 w-16 text-gray-400" />
-                        )}
+                    {/* Left: Founder Images */}
+                    <div className="flex-shrink-0 founder-images-wrapper">
+                      {/* Mobile: Slight overlapping images horizontally (3-5% overlay) */}
+                      {/* Desktop: Slight overlapping images vertically (3-5% overlay) */}
+                      <div className="relative md:relative md:w-auto" style={{ width: '136px', minHeight: '128px' }}>
+                        {/* First Founder Image */}
+                        <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden md:mx-0 relative z-10" style={{ marginLeft: 0 }}>
+                          {project.founderImage ? (
+                            <OptimizedImage
+                              src={project.founderImage}
+                              alt={project.founderName || 'Founder'}
+                              width={128}
+                              height={128}
+                              className="w-full h-full object-cover"
+                              fallbackSrc="/placeholder-founder.png"
+                            />
+                          ) : (
+                            <FaUser className="h-16 w-16 text-gray-400" />
+                          )}
+                        </div>
+                        
+                        {/* Second Founder Image (if founderImage2 exists) */}
+                        {(() => {
+                          const projectAny = project as any;
+                          const founderImage2 = projectAny.founderImage2 || projectAny.founder_image2;
+                          // Check if founderImage2 exists and has a value
+                          if (founderImage2 && founderImage2.trim()) {
+                            return (
+                              <div 
+                                className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden 
+                                  absolute top-0 z-0 left-[122px]
+                                  md:absolute md:left-0 md:top-[122px] md:z-0" 
+                              >
+                                <OptimizedImage
+                                  src={founderImage2}
+                                  alt="Co-Founder"
+                                  width={128}
+                                  height={128}
+                                  className="w-full h-full object-cover"
+                                  fallbackSrc="/placeholder-founder.png"
+                                />
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
                       </div>
                     </div>
                     
@@ -1200,7 +1231,7 @@ ${url}
               {backers.length > 0 && (
                 <>
                   <div className="text-base text-neutral mb-6 w-full block">
-                    This social enterprise is trusted and supported by the following leading institutions:
+                    This social enterprise is trusted and supported by the following leading institutions, among others:
                   </div>
                   
                   {/* Backer Logos Grid - 2 on mobile, 3 on md, 4 on lg with infinite carousel */}
@@ -1685,7 +1716,7 @@ ${url}
         <div className="lg:col-span-4 lg:mt-6 space-y-6">
           {/* About the Changemaker Box - Hidden on mobile */}
           <div 
-            className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-100 p-6 sticky top-32 self-start cursor-pointer hover:shadow-md transition-shadow"
+            className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-100 p-6 self-start cursor-pointer hover:shadow-md transition-shadow"
             onClick={() => scrollToSection('changemakers')}
           >
             <h3 className="font-bold text-dark mb-4">About the Changemaker</h3>
