@@ -277,14 +277,46 @@ export function PartnerShowcaseSection() {
   const { data: rewards = [], isLoading } = useQuery<Reward[]>({
     queryKey: ["rewards-showcase"],
     queryFn: async () => {
+      // Try points_cost first (snake_case - database column name)
       const { data, error } = await supabase
         .from('rewards')
         .select('*')
         .eq('featured', true)
-        .order('pointsCost', { ascending: true })
+        .order('points_cost', { ascending: false }) // Show highest pointsCost first
         .limit(8);
       
-      if (error) throw error;
+      if (error) {
+        console.error('[PartnerShowcase] Error fetching rewards:', error);
+        // Fallback: try pointsCost (camelCase)
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('rewards')
+          .select('*')
+          .eq('featured', true)
+          .order('pointsCost', { ascending: false })
+          .limit(8);
+        
+        if (fallbackError) {
+          console.error('[PartnerShowcase] Fallback error:', fallbackError);
+          throw fallbackError;
+        }
+        
+        // Sort manually if needed
+        const sorted = (fallbackData || []).sort((a: any, b: any) => {
+          const aCost = a.points_cost || a.pointsCost || 0;
+          const bCost = b.points_cost || b.pointsCost || 0;
+          return bCost - aCost; // Descending order
+        });
+        
+        console.log('[PartnerShowcase] Rewards fetched (fallback, manually sorted):', sorted.map((r: any) => ({ title: r.title, pointsCost: r.points_cost || r.pointsCost })));
+        return sorted;
+      }
+      
+      // Debug: Log the rewards with their pointsCost to verify sorting
+      console.log('[PartnerShowcase] Rewards fetched (ordered by points_cost):', data?.map(r => ({ 
+        title: r.title, 
+        pointsCost: (r as any).points_cost || (r as any).pointsCost 
+      })));
+      
       return data || [];
     },
     staleTime: 0, // Always fetch fresh data from database
@@ -507,7 +539,7 @@ export function PartnerShowcaseSection() {
                         )}
                       </div>
                       
-                      <h4 className="font-semibold line-clamp-2" style={{ color: BRAND_COLORS.textPrimary }}>
+                      <h4 className="font-semibold line-clamp-3" style={{ color: BRAND_COLORS.textPrimary }}>
                         {reward.title}
                       </h4>
                     </div>

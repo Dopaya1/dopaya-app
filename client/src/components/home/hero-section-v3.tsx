@@ -81,19 +81,46 @@ export function HeroSectionV3() {
       console.log('Fetching FEATURED rewards for HeroSectionV3...');
       
       // Get ONLY featured rewards (no fallback to all rewards)
+      // Try points_cost first (snake_case - database column name)
       const { data: featuredData, error: featuredError } = await supabase
         .from('rewards')
         .select('*')
         .eq('featured', true)
-        .order('pointsCost', { ascending: true })
+        .order('points_cost', { ascending: false }) // Show highest pointsCost first
         .limit(8);
       
       if (featuredError) {
-        console.error('Error fetching featured rewards:', featuredError);
-        throw featuredError;
+        console.warn('Error ordering by points_cost, trying manual sort:', featuredError);
+        // Fallback: fetch without order and sort manually
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('rewards')
+          .select('*')
+          .eq('featured', true)
+          .limit(8);
+        
+        if (fallbackError) {
+          console.error('Error fetching featured rewards:', fallbackError);
+          throw fallbackError;
+        }
+        
+        // Sort manually by points_cost or pointsCost
+        const sorted = (fallbackData || []).sort((a: any, b: any) => {
+          const aCost = a.points_cost || a.pointsCost || 0;
+          const bCost = b.points_cost || b.pointsCost || 0;
+          return bCost - aCost; // Descending order
+        });
+        
+        console.log(`Found ${sorted.length} featured rewards (manually sorted):`, sorted.map((r: any) => ({ 
+          title: r.title, 
+          pointsCost: r.points_cost || r.pointsCost 
+        })));
+        return sorted;
       }
       
-      console.log(`Found ${featuredData?.length || 0} featured rewards:`, featuredData?.map(r => r.title));
+      console.log(`Found ${featuredData?.length || 0} featured rewards (ordered by points_cost):`, featuredData?.map((r: any) => ({ 
+        title: r.title, 
+        pointsCost: r.points_cost || r.pointsCost 
+      })));
       
       // Return only featured rewards (no fallback)
       return featuredData || [];

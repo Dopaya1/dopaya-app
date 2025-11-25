@@ -150,7 +150,8 @@ export const rewards = pgTable("rewards", {
   featured: boolean("featured").default(false),
   discount: text("discount"),
   discountName: text("discount_name"),
-  companyName: text("company_name")
+  companyName: text("company_name"),
+  createdAt: timestamp("created_at").defaultNow() // Added in Phase 1 migration
 });
 
 export const insertRewardSchema = createInsertSchema(rewards).omit({

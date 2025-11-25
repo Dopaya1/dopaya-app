@@ -56,14 +56,35 @@ export function HeroSection() {
   const { data: rewards = fallbackRewards, isError: rewardsError } = useQuery<Reward[]>({
     queryKey: ["rewards-hero"],
     queryFn: async () => {
+      // Try points_cost first (snake_case - database column name)
       const { data, error } = await supabase
         .from('rewards')
         .select('*')
         .eq('featured', true)
-        .order('pointsCost', { ascending: true })
+        .order('points_cost', { ascending: false }) // Show highest pointsCost first
         .limit(6); // Reduced from 8 to keep focused
       
-      if (error) throw error;
+      if (error) {
+        console.error('[HeroSection] Error fetching rewards:', error);
+        // Fallback: try pointsCost or sort manually
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('rewards')
+          .select('*')
+          .eq('featured', true)
+          .limit(6);
+        
+        if (fallbackError) throw fallbackError;
+        
+        // Sort manually by points_cost or pointsCost
+        const sorted = (fallbackData || []).sort((a: any, b: any) => {
+          const aCost = a.points_cost || a.pointsCost || 0;
+          const bCost = b.points_cost || b.pointsCost || 0;
+          return bCost - aCost; // Descending order
+        });
+        
+        return sorted.length > 0 ? sorted : fallbackRewards;
+      }
+      
       return data || fallbackRewards;
     },
     retry: false,
