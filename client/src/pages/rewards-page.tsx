@@ -80,6 +80,7 @@ export default function RewardsPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [brandFilter, setBrandFilter] = useState<string>("all");
   const [pointsFilter, setPointsFilter] = useState<string>("all");
+  const [highlightedFilter, setHighlightedFilter] = useState<boolean>(false);
   const [sortBy, setSortBy] = useState<string>("newest");
   const [selectedBrandId, setSelectedBrandId] = useState<number | null>(null);
   const [confirmReward, setConfirmReward] = useState<Reward | null>(null);
@@ -134,33 +135,54 @@ export default function RewardsPage() {
     }
   }, [location]);
 
-  // Fetch brands
+  // Fetch brands - need ALL brands that are referenced in rewards, not just featured
   const { data: brands = [], isLoading: brandsLoading } = useQuery<Brand[]>({
-    queryKey: ["brands-rewards-hybrid"],
+    queryKey: ["brands-rewards-all"],
     queryFn: async () => {
-      console.log('🔍 Fetching brands for rewards hybrid page...');
+      console.log('🔍 Fetching ALL brands for rewards page...');
       
-      // First try to get featured brands
-      const { data: featuredData, error: featuredError } = await supabase
+      // Fetch ALL brands (not just featured) to ensure we have logos for all rewards
+      const { data: allBrands, error: brandsError } = await supabase
         .from('brands')
         .select('*')
-        .eq('featured', true);
+        .order('featured', { ascending: false }) // Featured brands first, but include all
+        .order('name', { ascending: true });
       
-      if (featuredError) {
-        console.error('❌ Error fetching featured brands:', featuredError);
+      if (brandsError) {
+        console.error('❌ Error fetching brands:', brandsError);
+        throw brandsError;
       }
       
-      console.log('✅ Featured brands fetched:', featuredData?.length || 0, 'brands');
+      console.log('✅ All brands fetched:', allBrands?.length || 0, 'brands');
       
-      // Only return featured brands (no fallback)
-      if (featuredData && featuredData.length > 0) {
-        console.log('✅ Using featured brands:', featuredData.map(b => b.name));
-        return featuredData;
-      }
+      // Detailed logging for each brand, especially looking for "Adithi Millets"
+      allBrands?.forEach((brand: any) => {
+        const brandName = brand.name || (brand as any).name;
+        const logoUrl = brand.logo_url || brand.logoUrl || (brand as any).logo_url || (brand as any).logoUrl;
+        const allKeys = Object.keys(brand);
+        const logoKeys = allKeys.filter(k => k.toLowerCase().includes('logo'));
+        
+        if (brandName?.toLowerCase().includes('adithi') || brandName?.toLowerCase().includes('millets')) {
+          console.log(`🔍 Found "Adithi Millets" related brand:`, {
+            id: brand.id,
+            name: brandName,
+            logo_url: brand.logo_url,
+            logoUrl: brand.logoUrl,
+            allLogoKeys: logoKeys,
+            allKeys: allKeys,
+            fullBrand: brand
+          });
+        }
+        
+        console.log(`📋 Brand: ${brandName} (ID: ${brand.id})`, {
+          logo_url: brand.logo_url,
+          logoUrl: brand.logoUrl,
+          hasLogo: !!logoUrl,
+          logoKeys: logoKeys
+        });
+      });
       
-      // Return empty array if no featured brands found
-      console.log('⚠️ No featured brands found');
-      return [];
+      return allBrands || [];
     },
   });
 
@@ -277,6 +299,15 @@ export default function RewardsPage() {
       .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   }, [rewards, brands]);
 
+  // Get only featured brands for the "Featured Sustainable Brands" section
+  const featuredBrands = useMemo(() => {
+    return brands.filter(b => {
+      const raw = b as any;
+      const isFeatured = raw.featured === true || raw.featured === 'true' || raw.featured === 1;
+      return isFeatured;
+    });
+  }, [brands]);
+
   // Get unique categories from rewards (for category filter)
   const availableCategories = useMemo(() => {
     const categories = new Set<string>();
@@ -300,24 +331,24 @@ export default function RewardsPage() {
       }));
   }, [rewards]);
 
-  // Get exactly 4 featured rewards for highlighted section
+  // Get exactly 4 featured rewards for highlighted section - but only if no filters are active
   const highlightedRewards = useMemo(() => {
     if (!rewards) return [];
+    
+    // If any filter is active (except highlighted filter), don't show highlighted section separately
+    // They will be included in the main filtered list instead
+    if (brandFilter !== "all" || categoryFilter !== "all" || searchQuery || pointsFilter !== "all" || maxPointsFilter || highlightedFilter) {
+      return [];
+    }
+    
     return rewards
       .filter(reward => reward.featured === true)
       .slice(0, 4); // Take only first 4
-  }, [rewards]);
+  }, [rewards, brandFilter, categoryFilter, searchQuery, pointsFilter, maxPointsFilter, highlightedFilter]);
 
-  // Filter and sort rewards
+  // Filter and sort rewards - include ALL rewards in one unified grid
   const filteredRewards = useMemo(() => {
-    // Get IDs of highlighted rewards to exclude them from main grid
-    const highlightedIds = highlightedRewards.map(r => r.id);
-    
     let filtered = rewards.filter((reward) => {
-      // Exclude highlighted rewards from main grid
-      if (highlightedIds.includes(reward.id)) {
-        return false;
-      }
       
       // Filter by max points (for unlock flow)
       if (maxPointsFilter && reward.pointsCost > maxPointsFilter) {
@@ -366,6 +397,12 @@ export default function RewardsPage() {
         }
       }
       
+      // Filter by highlighted/featured
+      if (highlightedFilter) {
+        const isFeatured = reward.featured === true || reward.featured === 'true' || (reward as any).featured === 1;
+        if (!isFeatured) return false;
+      }
+      
       return true;
     });
 
@@ -407,7 +444,7 @@ export default function RewardsPage() {
     }
 
     return filtered;
-  }, [rewards, highlightedRewards, maxPointsFilter, searchQuery, categoryFilter, brandFilter, pointsFilter, sortBy, brands]);
+    }, [rewards, highlightedRewards, maxPointsFilter, searchQuery, categoryFilter, brandFilter, pointsFilter, highlightedFilter, sortBy, brands]);
 
   // Get selected brand and its rewards
   const selectedBrand = useMemo(() => {
@@ -661,14 +698,14 @@ export default function RewardsPage() {
                       </p>
                     </div>
 
-                    {brands.length === 0 ? (
+                    {featuredBrands.length === 0 ? (
                       <div className="text-center py-12 bg-gray-50 rounded-lg">
                         <p className="text-xl font-semibold mb-2">No featured brands found</p>
                       </div>
                     ) : (
                       <div className="relative">
                         {/* Left Arrow */}
-                        {brands.length > 1 && (
+                        {featuredBrands.length > 1 && (
                           <button
                             onClick={() => scrollBrandSliderV2('left')}
                             className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-2 shadow-lg hover:bg-gray-50 transition-colors"
@@ -679,7 +716,7 @@ export default function RewardsPage() {
                         )}
                         
                         {/* Right Arrow */}
-                        {brands.length > 1 && (
+                        {featuredBrands.length > 1 && (
                           <button
                             onClick={() => scrollBrandSliderV2('right')}
                             className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-2 shadow-lg hover:bg-gray-50 transition-colors"
@@ -693,7 +730,7 @@ export default function RewardsPage() {
                           ref={brandSliderRefV2}
                           className="flex overflow-x-auto snap-x snap-mandatory gap-6 pb-4 scrollbar-hide"
                         >
-                          {brands.map((brand) => {
+                          {featuredBrands.map((brand) => {
                           const brandRewards = rewardsByBrand[brand.id] || [];
                           const brandHighlights = highlightsByBrand[brand.id] || [];
                           const brandImage = brand.heroImageUrl || brand.hero_image_url || brandHighlights[0]?.imageUrl;
@@ -867,16 +904,27 @@ export default function RewardsPage() {
                             <SelectItem value="1000+">1.000+ Points</SelectItem>
                           </SelectContent>
                         </Select>
+
+                        {/* Highlighted Only Filter - Toggle Button */}
+                        <Button
+                          variant={highlightedFilter ? "default" : "outline"}
+                          onClick={() => setHighlightedFilter(!highlightedFilter)}
+                          className={`w-[180px] ${highlightedFilter ? 'bg-orange-600 hover:bg-orange-700 text-white' : ''}`}
+                          aria-label="Filter highlighted rewards only"
+                        >
+                          {highlightedFilter ? '✓ Highlighted Only' : 'Highlighted Only'}
+                        </Button>
                         </div>
                       </div>
                     </div>
                   </section>
 
-                  {/* Highlighted Rewards Section */}
-                  {highlightedRewards.length > 0 && (
-                    <section>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-                        {highlightedRewards.map((reward, index) => {
+                  {/* All Rewards in One Unified Grid */}
+                  <section>
+                    {filteredRewards.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {filteredRewards.map((reward) => {
+                          // Support both brandId (camelCase) and brand_id (snake_case)
                           const rewardBrandId = reward.brandId || (reward as any).brand_id;
                           
                           // More robust brand lookup - try multiple approaches
@@ -900,36 +948,50 @@ export default function RewardsPage() {
                             return false;
                           });
                           
-                          const brandLogo = brand?.logoUrl || brand?.logo_url || (brand as any)?.logo_url;
-                          const productImage = reward.imageUrl || (reward as any).image_url;
-
-                          // Debug logging for 4th card
-                          if (index === 3) {
-                            console.log('🔍 4th card debug:', {
-                              rewardId: reward.id,
-                              rewardTitle: reward.title,
-                              rewardBrandId,
-                              rewardBrandIdType: typeof rewardBrandId,
-                              brandFound: !!brand,
-                              brandId: brand?.id,
-                              brandIdType: typeof brand?.id,
-                              brandLogo,
-                              brandName: brand?.name,
-                              allBrands: brands.map(b => ({ id: b.id, idType: typeof b.id, name: b.name })),
-                              allRewardBrandIds: highlightedRewards.map(r => ({ 
-                                id: r.id, 
-                                brandId: r.brandId || (r as any).brand_id,
-                                title: r.title 
-                              }))
+                          // Try all possible logo field names - check raw data structure
+                          let brandLogo = null;
+                          if (brand) {
+                            const rawBrand = brand as any;
+                            // Try all possible field names
+                            brandLogo = rawBrand.logo_url || 
+                                       rawBrand.logoUrl || 
+                                       rawBrand.logo_url || 
+                                       rawBrand.logoUrl ||
+                                       rawBrand['logo_url'] ||
+                                       rawBrand['logoUrl'] ||
+                                       null;
+                            
+                            // If still no logo, log all fields
+                            if (!brandLogo) {
+                              const allKeys = Object.keys(rawBrand);
+                              const logoKeys = allKeys.filter(k => k.toLowerCase().includes('logo'));
+                              console.warn(`[Rewards] ⚠️ Brand "${brand.name}" (ID: ${brand.id}) found but no logo for reward ${reward.id} (${reward.title})`, {
+                                allKeys: allKeys,
+                                logoKeys: logoKeys,
+                                rawBrand: rawBrand
+                              });
+                            }
+                          }
+                          
+                          // Debug logging for brand lookup
+                          if (!brand && rewardBrandId) {
+                            console.warn(`[Rewards] ⚠️ Brand not found for reward ${reward.id} (${reward.title}), brandId: ${rewardBrandId}, available brands:`, brands.map(b => ({ id: b.id, name: b.name })));
+                          } else if (brand && brandLogo) {
+                            console.log(`[Rewards] ✅ Logo found for reward ${reward.id} (${reward.title}):`, {
+                              brandName: brand.name,
+                              brandId: brand.id,
+                              logoUrl: brandLogo
                             });
                           }
+
+                          const productImage = reward.imageUrl || (reward as any).image_url;
 
                           return (
                             <div
                               key={reward.id}
                               className="bg-white border-2 border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 hover:border-orange-300 flex flex-col"
                               role="article"
-                              aria-label={`Highlighted reward: ${reward.title || 'Reward'}`}
+                              aria-label={`Reward: ${reward.title}`}
                             >
                               {/* Product Image */}
                               {productImage ? (
@@ -939,22 +1001,26 @@ export default function RewardsPage() {
                                     alt={`Product for ${reward.title || 'Reward'}`}
                                     className="w-full h-full object-cover object-center"
                                   />
-                                  {/* Highlighted Badge - Top Right */}
-                                  <div className="absolute top-3 right-3 bg-orange-600 text-white rounded-full px-3 py-1 text-xs font-medium shadow-lg">
-                                    Highlighted
-                                  </div>
+                                  {/* Highlighted Badge - Top Right - Show if featured */}
+                                  {(reward.featured === true || reward.featured === 'true' || (reward as any).featured === 1) && (
+                                    <div className="absolute top-3 right-3 bg-orange-600 text-white rounded-full px-3 py-1 text-xs font-medium shadow-lg">
+                                      Highlighted
+                                    </div>
+                                  )}
                                 </div>
                               ) : (
                                 <div className="relative aspect-[3/2] bg-gray-100">
-                                  {/* Highlighted Badge - Top Right */}
-                                  <div className="absolute top-3 right-3 bg-orange-600 text-white rounded-full px-3 py-1 text-xs font-medium shadow-lg">
-                                    Highlighted
-                                  </div>
+                                  {/* Highlighted Badge - Top Right - Show if featured */}
+                                  {(reward.featured === true || reward.featured === 'true' || (reward as any).featured === 1) && (
+                                    <div className="absolute top-3 right-3 bg-orange-600 text-white rounded-full px-3 py-1 text-xs font-medium shadow-lg">
+                                      Highlighted
+                                    </div>
+                                  )}
                                 </div>
                               )}
 
                               <div className="p-4 flex flex-col flex-grow">
-                                {/* Brand Logo - At the top */}
+                                {/* Brand Logo - At the top - Always shown */}
                                 {brandLogo ? (
                                   <div className="flex justify-center mb-3">
                                     <img
@@ -976,19 +1042,26 @@ export default function RewardsPage() {
                                       </span>
                                     </div>
                                   </div>
-                                ) : null}
+                                ) : (
+                                  // Fallback if no brand at all
+                                  <div className="flex justify-center mb-3">
+                                    <div className="h-12 w-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                                      <span className="text-xl font-bold text-gray-600">R</span>
+                                    </div>
+                                  </div>
+                                )}
 
-                                {/* Reward Name */}
+                                {/* Reward Name - Always shown */}
                                 <h3 className="font-bold text-lg mb-2 text-center">
                                   {reward.title || 'Reward'}
                                 </h3>
 
-                                {/* Description - Below title */}
-                                {reward.description && reward.description.trim() && (
-                                  <p className="text-sm text-gray-600 mb-3 text-center">
-                                    {reward.description}
-                                  </p>
-                                )}
+                                {/* Description - Always shown (below title) */}
+                                <p className="text-sm text-gray-600 mb-3 text-center min-h-[2.5rem]">
+                                  {reward.description && reward.description.trim() 
+                                    ? reward.description 
+                                    : 'No description available'}
+                                </p>
 
                                 {/* Impact Points Badge */}
                                 <div className="flex justify-center mb-3">
@@ -999,99 +1072,13 @@ export default function RewardsPage() {
 
                                 {/* CTA Button */}
                                 <Button
-                                  className="w-full mt-auto"
-                                  style={{ backgroundColor: BRAND_COLORS.primaryOrange }}
+                                  variant="outline"
+                                  className="w-full mt-auto bg-gray-100 hover:bg-orange-600 hover:text-white hover:border-orange-600 transition-colors"
                                   onClick={() => handleRedeemReward(reward)}
                                   aria-label={`Unlock reward: ${reward.title}`}
                                 >
                                   Unlock Reward
                                 </Button>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </section>
-                  )}
-
-                  {/* Main Grid: Emotional Product + Clear Reward Info */}
-                  <section>
-                    {filteredRewards.length > 0 ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {filteredRewards.map((reward) => {
-                          // Support both brandId (camelCase) and brand_id (snake_case)
-                          const rewardBrandId = reward.brandId || (reward as any).brand_id;
-                          const brand = brands.find(b => b.id === rewardBrandId);
-                          const brandLogo = brand?.logoUrl || brand?.logo_url;
-                          
-                          // Debug logging for brand lookup
-                          if (!brand && rewardBrandId) {
-                            console.warn(`[Rewards] Brand not found for reward ${reward.id}, brandId: ${rewardBrandId}, available brands:`, brands.map(b => b.id));
-                          }
-
-                          return (
-                            <div
-                              key={reward.id}
-                              className="bg-white border-2 border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 hover:border-orange-300"
-                              role="article"
-                              aria-label={`Reward: ${reward.title}`}
-                            >
-                              {/* Brand Logo */}
-                              <div className="relative bg-gray-50 flex items-center justify-center">
-                                {brandLogo ? (
-                                  <img
-                                    src={brandLogo}
-                                    alt={`${brand?.name || 'Brand'} logo`}
-                                    className="w-full h-auto object-contain"
-                                  />
-                                ) : brand ? (
-                                  <div className="text-4xl font-bold text-gray-400 py-8">
-                                    {brand.name.charAt(0).toUpperCase()}
-                                  </div>
-                                ) : (
-                                  <div className="text-4xl font-bold text-gray-400 py-8">
-                                    ?
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Reward Details */}
-                              <div className="p-6 space-y-4">
-                                <div>
-                                  <h3 className="font-bold text-lg mb-2">
-                                    {reward.title}
-                                  </h3>
-                                  {reward.description && reward.description.trim() ? (
-                                    <p className="text-sm text-gray-600 mb-2">
-                                      {reward.description}
-                                    </p>
-                                  ) : null}
-                                </div>
-
-                                <div className="flex items-center justify-between">
-                                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-amber-50 text-black border border-amber-200">
-                                    {reward.pointsCost} Impact Points
-                                  </span>
-                                  {reward.retailValue && (
-                                    <div className="text-right">
-                                      <p className="text-sm text-muted-foreground">Value</p>
-                                      <p className="text-lg font-semibold text-green-600">
-                                        {reward.retailValue}
-                                      </p>
-                                    </div>
-                                  )}
-                                </div>
-
-                                <div className="space-y-2">
-                                  <Button
-                                    className="w-full"
-                                    style={{ backgroundColor: BRAND_COLORS.primaryOrange }}
-                                    onClick={() => handleRedeemReward(reward)}
-                                    aria-label={`Unlock reward: ${reward.title}`}
-                                  >
-                                    Unlock Reward
-                                  </Button>
-                                </div>
                               </div>
                             </div>
                           );
