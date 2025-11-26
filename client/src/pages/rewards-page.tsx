@@ -1056,12 +1056,12 @@ export default function RewardsPage() {
                                   {reward.title || 'Reward'}
                                 </h3>
 
-                                {/* Description - Always shown (below title) */}
-                                <p className="text-sm text-gray-600 mb-3 text-center min-h-[2.5rem]">
-                                  {reward.description && reward.description.trim() 
-                                    ? reward.description 
-                                    : 'No description available'}
-                                </p>
+                                {/* Description - Only shown if available */}
+                                {reward.description && reward.description.trim() && (
+                                  <p className="text-sm text-gray-600 mb-3 text-center">
+                                    {reward.description}
+                                  </p>
+                                )}
 
                                 {/* Impact Points Badge */}
                                 <div className="flex justify-center mb-3">
