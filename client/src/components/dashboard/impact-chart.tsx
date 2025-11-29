@@ -36,25 +36,9 @@ export function ImpactChart() {
   const hasImpactHistory = impactHistory && impactHistory.length > 0;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Your Impact Over Time</CardTitle>
-        <div className="flex items-center space-x-6 text-sm mt-2">
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-0.5 bg-primary"></div>
-            <span className="text-gray-600">Impact Points</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-0.5 bg-green-500" style={{ borderStyle: 'dashed', borderWidth: '1px 0', background: 'none', borderColor: '#10B981' }}></div>
-            <span className="text-gray-600">Impact Created</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-0.5 bg-purple-500" style={{ borderStyle: 'dashed', borderWidth: '1px 0', background: 'none', borderColor: '#8B5CF6' }}></div>
-            <span className="text-gray-600">Support amount ($)</span>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
+    <div>
+      {/* Header and description moved to parent component */}
+      <div>
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
             <Skeleton className="h-full w-full" />
@@ -66,7 +50,7 @@ export function ImpactChart() {
             </p>
           </div>
         ) : (
-          <div className="h-64">
+          <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
                 data={impactHistory}
@@ -137,7 +121,7 @@ export function ImpactChart() {
             </ResponsiveContainer>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

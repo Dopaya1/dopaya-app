@@ -7,9 +7,10 @@ interface ExpandableGalleryProps {
   className?: string;
   onImageClick?: (index: number) => void;
   icons?: React.ReactNode[];
+  logos?: (string | null)[];
 }
 
-const ExpandableGallery: React.FC<ExpandableGalleryProps> = ({ images, taglines = [], className = '', onImageClick, icons = [] }) => {
+const ExpandableGallery: React.FC<ExpandableGalleryProps> = ({ images, taglines = [], className = '', onImageClick, icons = [], logos = [] }) => {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
@@ -85,6 +86,19 @@ const ExpandableGallery: React.FC<ExpandableGalleryProps> = ({ images, taglines 
                     transition={{ duration: 0.2 }}
                     className="text-white drop-shadow-lg"
                   >
+                    {/* Brand Logo above title */}
+                    {logos[index] && (
+                      <div className="mb-2 flex justify-start">
+                        <img 
+                          src={logos[index] || ''} 
+                          alt="Brand logo"
+                          className="h-6 w-auto object-contain"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    )}
                     <div className="flex items-center gap-2">
                       {icons[index] ? <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white/20">{icons[index]}</span> : null}
                       <p className="text-sm font-bold leading-tight">
@@ -136,6 +150,19 @@ const ExpandableGallery: React.FC<ExpandableGalleryProps> = ({ images, taglines 
               return (
                 <div className="absolute bottom-3 left-3 right-3 z-10">
                   <div className="text-white drop-shadow-lg">
+                    {/* Brand Logo above title (Mobile) */}
+                    {logos[index] && (
+                      <div className="mb-1.5 flex justify-start">
+                        <img 
+                          src={logos[index] || ''} 
+                          alt="Brand logo"
+                          className="h-5 w-auto object-contain"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    )}
                     <div className="flex items-center gap-2">
                       {icons[index] ? <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/20">{icons[index]}</span> : null}
                       <p className="text-xs font-bold leading-tight">

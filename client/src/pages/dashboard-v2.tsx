@@ -7,7 +7,7 @@ import { ImpactChart } from "@/components/dashboard/impact-chart";
 import { Helmet } from "react-helmet";
 import { Link, useLocation } from "wouter";
 import { DonationSuccessModal } from "@/components/donation/donation-success-modal";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { getDailyQuoteForUser, ImpactQuote } from "@/constants/impact-quotes";
 import { ProjectCard } from "@/components/projects/project-card";
 import { supabase } from "@/lib/supabase";
@@ -17,8 +17,11 @@ import { Badge } from "@/components/ui/badge";
 import { trackEvent } from "@/lib/simple-analytics";
 import { isOnboardingPreviewEnabled } from "@/lib/feature-flags";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Sparkles, Heart, Search, BarChart3 } from "lucide-react";
+import { Sparkles, Heart, Search, BarChart3, ChevronDown, Target, GraduationCap, Droplets, Leaf, Wind, Users, ArrowRight, Gift, Mail, Loader2 } from "lucide-react";
 import { triggerConfetti } from "@/lib/confetti";
+import ExpandableGallery from "@/components/ui/gallery-animation";
+import { getProjectImageUrl, getLogoUrl } from "@/lib/image-utils";
+import { toast } from "@/hooks/use-toast";
 
 
 export default function DashboardV2() {
@@ -31,6 +34,17 @@ export default function DashboardV2() {
   const [signupWelcomeStep, setSignupWelcomeStep] = useState<1 | 2>(1);
   const [signupFirstFlow, setSignupFirstFlow] = useState(false);
   const previewEnabled = isOnboardingPreviewEnabled();
+  
+  // State for ExpandableGallery modal (like homepage)
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [galleryDonationAmount, setGalleryDonationAmount] = useState(0);
+  const [showDonationDropdown, setShowDonationDropdown] = useState(false);
+  const initializedRef = useRef<number | null>(null);
+
+  // Newsletter signup state
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [isNewsletterSubscribed, setIsNewsletterSubscribed] = useState(false);
+  const [isNewsletterLoading, setIsNewsletterLoading] = useState(false);
   
   // Tooltip state management - COMMENTED OUT (not needed)
   // const [currentTooltip, setCurrentTooltip] = useState<number | null>(null);
@@ -95,14 +109,68 @@ export default function DashboardV2() {
         : undefined)
     : impact;
 
+  // Check and apply welcome bonus transaction if needed (one-time check)
+  useEffect(() => {
+    if (!user || !safeImpact) return;
+    
+    const impactPoints = safeImpact.impactPoints ?? 0;
+    
+    // Only check if user has exactly 50 points (from trigger) and hasn't checked before
+    if (impactPoints === 50) {
+      const welcomeBonusChecked = sessionStorage.getItem('welcomeBonusChecked');
+      
+      if (!welcomeBonusChecked) {
+        // Mark as checked immediately to prevent duplicate calls
+        sessionStorage.setItem('welcomeBonusChecked', 'true');
+        
+        // Get auth token and call welcome bonus endpoint
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          const token = session?.access_token;
+          
+          if (token) {
+            console.log('[Dashboard V2] User has 50 IP, checking welcome bonus transaction...');
+            
+            fetch('/api/user/welcome-bonus', {
+              method: 'POST',
+              credentials: 'include',
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            }).then(async res => {
+              const responseText = await res.text();
+              let responseData;
+              try {
+                responseData = JSON.parse(responseText);
+              } catch {
+                responseData = responseText;
+              }
+              
+              if (res.ok) {
+                console.log('[Dashboard V2] Welcome bonus response:', responseData);
+                // NOTE: Do NOT invalidate queries here - it causes infinite loop
+                // The query will refresh automatically on next mount or when user navigates
+              } else {
+                console.warn('[Dashboard V2] Welcome bonus check failed:', res.status, res.statusText, responseData);
+              }
+            }).catch(err => {
+              console.warn('[Dashboard V2] Welcome bonus check error:', err);
+            });
+          }
+        }).catch(err => {
+          console.warn('[Dashboard V2] Failed to get session for welcome bonus:', err);
+        });
+      }
+    }
+  }, [user, safeImpact]);
+
   const displayName = user?.firstName || user?.username || (user?.email ? user.email.split('@')[0] : "Supporter");
   // Use actual impact points from API
   const impactPoints = safeImpact?.impactPoints ?? 0;
-  // Determine user status: 100+ Impact Points = Supporter, otherwise Aspirer
+  // Determine user status: 100+ Impact Points = Changemaker, otherwise Aspirer
   // PRIORITY: Calculate based on impactPoints first, then fall back to API value
   // This ensures correct status even if API returns stale data
-  const userStatus = impactPoints >= 100 ? "supporter" : (safeImpact?.userStatus || safeImpact?.userLevel || "aspirer");
-  const statusDisplayName = userStatus === "supporter" ? "Impact Supporter" : "Impact Aspirer";
+  const userStatus = impactPoints >= 100 ? "changemaker" : (safeImpact?.userStatus || safeImpact?.userLevel || "aspirer");
+  const statusDisplayName = userStatus === "changemaker" ? "Changemaker" : "Impact Aspirer";
   
   // DEBUG: Log status calculation for troubleshooting
   if (safeImpact && impactPoints >= 100) {
@@ -450,18 +518,272 @@ export default function DashboardV2() {
     retry: false,
   });
 
-  // Fetch supported projects (for returning users)
-  const { data: supportedProjects, isLoading: isLoadingSupported } = useQuery<Project[]>({
-    queryKey: ["/api/user/supported-projects"],
+  // Fetch supported projects with aggregated donations (for returning users)
+  type SupportedProjectWithDonations = {
+    project: Project;
+    totalAmount: number;
+    totalImpactPoints: number;
+    donationCount: number;
+    lastDonationDate: Date | null;
+    donations: any[];
+  };
+  
+  const { data: supportedProjectsWithDonations, isLoading: isLoadingSupported } = useQuery<SupportedProjectWithDonations[]>({
+    queryKey: ["/api/user/supported-projects-with-donations"],
     enabled: hasSupported,
   });
+
+  // Load More state for Projects
+  const [visibleCount, setVisibleCount] = useState(4);
+  const INITIAL_COUNT = 4;
+  const LOAD_MORE_COUNT = 4;
+
+  // Load More state for Rewards
+  const [visibleRewardsCount, setVisibleRewardsCount] = useState(4);
+  const INITIAL_REWARDS_COUNT = 4;
+  const LOAD_MORE_REWARDS_COUNT = 4;
 
   // Fetch impact history to check if chart should be shown
   const { data: impactHistory } = useQuery<UserImpactHistory[]>({
     queryKey: ["/api/user/impact-history"],
   });
 
+  // Fetch user redemptions with rewards (for returning users with redemptions)
+  type RedemptionWithReward = {
+    redemption: any;
+    reward: any;
+    pointsSpent: number;
+    redemptionDate: Date | null;
+    status: string;
+  };
+  
+  const { data: redemptionsWithRewards, isLoading: isLoadingRedemptions } = useQuery<RedemptionWithReward[]>({
+    queryKey: ["/api/user/redemptions-with-rewards"],
+    enabled: !!user, // Only fetch if user is logged in
+  });
+
+  // Check if user has redemptions
+  const hasRedemptions = redemptionsWithRewards && redemptionsWithRewards.length > 0;
+
+  // Fetch all brands (for reward logos)
+  const { data: allBrands = [] } = useQuery<any[]>({
+    queryKey: ["brands-dashboard-all"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('brands')
+        .select('*');
+      
+      if (error) {
+        console.error('[Dashboard] Error fetching brands:', error);
+        return [];
+      }
+      
+      return data || [];
+    },
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    retry: false,
+  });
+
+  // Create brand lookup map by ID for reward logos
+  const brandMap = useMemo(() => {
+    const map = new Map<number, { logoUrl: string | null; name: string }>();
+    allBrands.forEach((brand) => {
+      const raw = brand as any;
+      const logoPath = raw.logo_path || raw.logoPath || raw.logo_url || raw.logoUrl || '';
+      const logoUrl = logoPath ? getLogoUrl(logoPath) : null;
+      
+      map.set(brand.id, {
+        logoUrl: logoUrl,
+        name: brand.name,
+      });
+    });
+    return map;
+  }, [allBrands]);
+
+  // Fetch featured rewards (for gallery)
+  const { data: featuredRewards, isLoading: isLoadingFeaturedRewards } = useQuery<any[]>({
+    queryKey: ["dashboard-v2-featured-rewards"],
+    queryFn: async () => {
+      console.log('[Dashboard] Fetching featured rewards...');
+      
+      // Try with points_cost first (snake_case - database column name)
+      const { data: featuredData, error: featuredError } = await supabase
+        .from('rewards')
+        .select('*')
+        .eq('featured', true)
+        .order('points_cost', { ascending: false })
+        .limit(6);
+      
+      if (featuredError) {
+        console.warn('[Dashboard] Error ordering by points_cost, trying without order:', featuredError);
+        // Fallback: fetch without order
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('rewards')
+          .select('*')
+          .eq('featured', true)
+          .limit(6);
+        
+        if (fallbackError) {
+          console.error('[Dashboard] Error fetching featured rewards:', fallbackError);
+          // Last fallback: try to get any rewards (not just featured)
+          const { data: allData, error: allError } = await supabase
+            .from('rewards')
+            .select('*')
+            .limit(6);
+          
+          if (allError) {
+            console.error('[Dashboard] Error fetching all rewards:', allError);
+            return [];
+          }
+          
+          console.log('[Dashboard] Using all rewards as fallback:', allData?.length || 0);
+          return allData || [];
+        }
+        
+        // Sort manually by points_cost or pointsCost
+        const sorted = (fallbackData || []).sort((a: any, b: any) => {
+          const aCost = a.points_cost || a.pointsCost || 0;
+          const bCost = b.points_cost || b.pointsCost || 0;
+          return bCost - aCost; // Descending order
+        });
+        
+        console.log('[Dashboard] Found featured rewards (manually sorted):', sorted.length);
+        return sorted;
+      }
+      
+      console.log('[Dashboard] Found featured rewards:', featuredData?.length || 0);
+      return featuredData || [];
+    },
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    retry: false,
+  });
+
+  // Reset visibleCount when supported projects change
+  useEffect(() => {
+    if (supportedProjectsWithDonations) {
+      setVisibleCount(INITIAL_COUNT);
+    }
+  }, [supportedProjectsWithDonations?.length]);
+
+  // Reset visibleRewardsCount when redemptions change
+  useEffect(() => {
+    if (redemptionsWithRewards) {
+      setVisibleRewardsCount(INITIAL_REWARDS_COUNT);
+    }
+  }, [redemptionsWithRewards?.length]);
+
+  // Debug: Log featured rewards state
+  useEffect(() => {
+    console.log('[Dashboard] Featured Rewards State:', {
+      isLoading: isLoadingFeaturedRewards,
+      count: featuredRewards?.length || 0,
+      hasRedemptions,
+      data: featuredRewards
+    });
+  }, [featuredRewards, isLoadingFeaturedRewards, hasRedemptions]);
+
+  // Prepare gallery data for Featured Rewards (like Projects) - MAX 3 for 3 columns
+  const topRewards = useMemo(() => {
+    if (!featuredRewards || featuredRewards.length === 0) return [];
+    return featuredRewards.slice(0, 3); // Only 3 for 3 columns
+  }, [featuredRewards]);
+
+  const rewardGalleryImages = useMemo(() => {
+    return topRewards.map((reward: any) => {
+      return reward.imageUrl || reward.image_url || '/placeholder-reward.png';
+    });
+  }, [topRewards]);
+
+  const rewardGalleryTaglines = useMemo(() => {
+    return topRewards.map((reward: any) => reward.title || 'Reward');
+  }, [topRewards]);
+
+  // Prepare brand logos for Featured Rewards
+  const rewardGalleryLogos = useMemo(() => {
+    return topRewards.map((reward: any) => {
+      // Get brand from reward (could be brandId or nested brand object)
+      const brandId = reward.brandId || reward.brand_id;
+      if (!brandId) return null;
+      
+      // Look up brand logo from brandMap
+      const brand = brandMap.get(brandId);
+      return brand?.logoUrl || null;
+    });
+  }, [topRewards, brandMap]);
+
+  // Icons for rewards based on category (optional)
+  const rewardGalleryIcons = useMemo(() => {
+    return topRewards.map((reward: any) => {
+      const category = (reward.category || '').toLowerCase();
+      const iconProps = { className: 'w-4 h-4 text-white' } as const;
+      // Simple category-based icons (can be expanded)
+      if (category.includes('food') || category.includes('restaurant')) return <Heart {...iconProps} />;
+      if (category.includes('travel')) return <Wind {...iconProps} />;
+      if (category.includes('fashion') || category.includes('clothing')) return <Users {...iconProps} />;
+      return <Gift {...iconProps} />; // Default gift icon
+    });
+  }, [topRewards]);
+
+  // State for selected reward (for modal)
+  const [selectedReward, setSelectedReward] = useState<any | null>(null);
+
   const hasImpactHistory = impactHistory && impactHistory.length > 0;
+
+  // Helper function for sector icons (stable, no dependencies) - MUST be declared before use
+  const sectorToIcon = (sector: string) => {
+    const s = (sector || '').toLowerCase();
+    const iconProps = { className: 'w-4 h-4 text-white' } as const;
+    if (s.includes('education')) return <GraduationCap {...iconProps} />;
+    if (s.includes('water')) return <Droplets {...iconProps} />;
+    if (s.includes('energy') || s.includes('wind') || s.includes('solar')) return <Wind {...iconProps} />;
+    if (s.includes('health')) return <Heart {...iconProps} />;
+    if (s.includes('environment') || s.includes('agri') || s.includes('eco')) return <Leaf {...iconProps} />;
+    return <Users {...iconProps} />;
+  };
+
+  // Helper function for donation tiers (like homepage) - MUST be declared before use
+  const getAvailableTiers = (project: Project | null) => {
+    if (!project) return [] as { donation: number; impact: string; unit: string; points: number }[];
+    const tiers: { donation: number; impact: string; unit: string; points: number }[] = [];
+    for (let i = 1; i <= 7; i++) {
+      const donation = project[`donation_${i}` as keyof Project] as unknown as number;
+      const impact = project[`impact_${i}` as keyof Project] as unknown as string;
+      const impactUnit = project.impactUnit as string;
+      if (donation && impact) {
+        tiers.push({ donation, impact, unit: impactUnit || 'impact created', points: donation * 10 });
+      }
+    }
+    return tiers.sort((a, b) => a.donation - b.donation);
+  };
+
+  // Prepare gallery data for ExpandableGallery (only when featuredProjects available)
+  const topProjects = featuredProjects?.slice(0, 3) || [];
+  const galleryImages = topProjects.length > 0 ? [
+    ...topProjects.map(p => getProjectImageUrl(p) || p.imageUrl || 'https://images.unsplash.com/photo-1527529482837-4698179dc6ce?q=80&w=1200&auto=format&fit=crop'),
+  ] : [];
+  const galleryTaglines = topProjects.map(p => {
+    const sector = p.category || 'Impact';
+    return `${sector} →:`;
+  });
+  const galleryIcons = topProjects.map(p => sectorToIcon(p.category || ''));
+
+  // Donation tiers for selected project
+  const availableTiers = getAvailableTiers(selectedProject);
+  
+  // Initialize donation amount when project is selected
+  useEffect(() => {
+    if (selectedProject && availableTiers.length > 0 && initializedRef.current !== selectedProject.id) {
+      setGalleryDonationAmount(availableTiers[0].donation);
+      initializedRef.current = selectedProject.id;
+    }
+  }, [selectedProject, availableTiers]);
+  
+  const currentTier = availableTiers.find(t => t.donation === galleryDonationAmount) || availableTiers[0];
+  const impactAmount = currentTier?.impact || '0';
+  const impactUnit = currentTier?.unit || 'impact created';
+  const galleryImpactPoints = currentTier?.points || 0;
+  const impactVerb = selectedProject?.impact_verb || 'help';
+  const impactNoun = selectedProject?.impact_noun || 'people';
 
   const handleSupportClick = (source: string) => {
     trackEvent('support_cta_click', 'conversion', source);
@@ -667,8 +989,8 @@ export default function DashboardV2() {
             </>
           )}
 
-          {/* Impact Supporter Content */}
-          {userStatus === "supporter" && (
+          {/* Changemaker Content */}
+          {userStatus === "changemaker" && (
             <div className="flex flex-row gap-3 items-center">
               {/* Primary CTA - Support a Project */}
               <div className="relative inline-block">
@@ -700,48 +1022,17 @@ export default function DashboardV2() {
         <ImpactStats />
       </div>
 
-      {/* Featured / Highlighted Social Enterprises - above graph */}
-      {!hasSupported ? (
-        // NEW USERS: Show only Highlighted Social Enterprises (full width)
-        <div className="mb-6" style={{ marginTop: '24px' }}>
-          <h2 className="text-xl font-bold text-dark font-heading mb-6">Highlighted Social Enterprises</h2>
-          {isLoadingFeatured ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {Array(3).fill(0).map((_, i) => (
-                <Card key={i} className="impact-card overflow-hidden">
-                  <Skeleton className="w-full h-48" />
-                  <div className="p-4">
-                    <Skeleton className="h-4 w-20 mb-2" />
-                    <Skeleton className="h-6 w-full mb-2" />
-                    <Skeleton className="h-4 w-full mb-4" />
-                    <Skeleton className="h-10 w-full" />
-                  </div>
-                </Card>
-              ))}
-            </div>
-          ) : featuredProjects && featuredProjects.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {featuredProjects.map((project) => (
-                <div key={project.id} onClick={() => handleFeaturedClick(project.slug || '')}>
-                  <ProjectCard project={project} />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-6 bg-white rounded-lg shadow-sm">
-              <p className="text-neutral">No featured social enterprises available at the moment.</p>
-            </div>
-          )}
-        </div>
-      ) : (
-        // RETURNING USERS: Show two side-by-side sections
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-6" style={{ marginTop: '24px' }}>
-          {/* Left: Startups You've Supported */}
+      {/* Social Enterprises Section */}
+      <div className="mb-6" style={{ marginTop: '24px' }}>
+        {/* Main Headline */}
+        <h2 className="text-xl font-bold text-dark font-heading mb-6">Social Enterprises</h2>
+        
+        {!hasSupported ? (
+          // NEW USERS: Show only Highlighted Social Enterprises (full width)
           <div>
-            <h2 className="text-xl font-bold text-dark font-heading mb-6">Startups You've Supported</h2>
-            {isLoadingSupported ? (
-              <div className="grid grid-cols-1 gap-6">
-                {Array(2).fill(0).map((_, i) => (
+            {isLoadingFeatured ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {Array(3).fill(0).map((_, i) => (
                   <Card key={i} className="impact-card overflow-hidden">
                     <Skeleton className="w-full h-48" />
                     <div className="p-4">
@@ -753,11 +1044,143 @@ export default function DashboardV2() {
                   </Card>
                 ))}
               </div>
-            ) : supportedProjects && supportedProjects.length > 0 ? (
-              <div className="grid grid-cols-1 gap-6">
-                {supportedProjects.map((project) => (
-                  <ProjectCard key={project.id} project={project} />
+            ) : featuredProjects && featuredProjects.length > 0 ? (
+              <div className="flex justify-center">
+                <ExpandableGallery
+                  images={galleryImages}
+                  taglines={galleryTaglines}
+                  className="w-full max-w-4xl"
+                  icons={galleryIcons}
+                  onImageClick={(index) => {
+                    if (index < topProjects.length) {
+                      setSelectedProject(topProjects[index]);
+                      handleFeaturedClick(topProjects[index].slug || '');
+                    }
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="text-center py-6 bg-white rounded-lg shadow-sm">
+                <p className="text-neutral">No featured social enterprises available at the moment.</p>
+              </div>
+            )}
+          </div>
+        ) : (
+          // RETURNING USERS: Show two side-by-side sections
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Left: Social Enterprises you have supported */}
+            <div>
+              <h3 className="text-lg font-semibold text-dark font-heading mb-6">Social Enterprises you have supported</h3>
+            {isLoadingSupported ? (
+              <div className="space-y-3">
+                {Array(2).fill(0).map((_, i) => (
+                  <div key={i} className="flex items-stretch rounded-lg border border-gray-200 bg-white overflow-hidden">
+                    <Skeleton className="w-24 h-full flex-shrink-0" />
+                    <div className="flex-1 min-w-0 p-4 flex flex-col justify-center">
+                      <Skeleton className="h-5 w-32 mb-2" />
+                      <Skeleton className="h-4 w-40" />
+                    </div>
+                    <div className="flex-shrink-0 p-6 flex flex-col justify-center items-end border-l border-gray-200 min-w-[180px]">
+                      <Skeleton className="h-9 w-24 mb-2" />
+                      <Skeleton className="h-5 w-32" />
+                    </div>
+                  </div>
                 ))}
+              </div>
+            ) : supportedProjectsWithDonations && supportedProjectsWithDonations.length > 0 ? (
+              <div className="space-y-3">
+                {/* Show only visibleCount projects */}
+                {supportedProjectsWithDonations.slice(0, visibleCount).map((item) => {
+                  const { project, totalAmount, totalImpactPoints, donationCount, lastDonationDate } = item;
+                  
+                  // Calculate impact description from project
+                  // Use impactUnit, impact_verb, impact_noun from project (snake_case from DB)
+                  const projectAny = project as any;
+                  const impactUnit = project.impactUnit || 'impact';
+                  const impactVerb = projectAny.impact_verb || projectAny.impactVerb || 'created';
+                  const impactNoun = projectAny.impact_noun || projectAny.impactNoun || impactUnit;
+                  
+                  // Calculate impact amount based on totalImpactPoints
+                  // For now, we'll use a simple calculation: totalImpactPoints / 10 as a rough estimate
+                  // This could be improved by using the project's donation tiers
+                  const impactAmount = Math.round(totalImpactPoints / 10); // Rough estimate
+                  
+                  const projectImageUrl = getProjectImageUrl(project) || project.imageUrl || '/placeholder-project.png';
+                  const formattedDate = lastDonationDate 
+                    ? new Date(lastDonationDate).toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric', 
+                        year: 'numeric' 
+                      })
+                    : 'N/A';
+                  
+                  return (
+                    <div 
+                      key={project.id}
+                      className="flex items-stretch rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all bg-white group overflow-hidden"
+                    >
+                      {/* Image - Left Side (wider, no padding, flush to edges) */}
+                      <div className="flex-shrink-0">
+                        <img 
+                          src={projectImageUrl}
+                          alt={project.title}
+                          className="w-24 h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = '/placeholder-project.png';
+                          }}
+                        />
+                      </div>
+                      
+                      {/* Middle Section - Name, Amount & Date */}
+                      <div className="flex-1 min-w-0 p-4 flex flex-col justify-center">
+                        {/* Project Name - Clickable Link */}
+                        <Link href={`/project/${project.slug || project.id}`} className="mb-2">
+                          <h4 className="text-base font-semibold text-gray-900 hover:text-[#f2662d] transition-colors group-hover:text-[#f2662d]">
+                            {project.title}
+                          </h4>
+                        </Link>
+                        
+                        {/* Amount & Date - Small */}
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <span>${totalAmount}</span>
+                          {donationCount > 1 && (
+                            <>
+                              <span>•</span>
+                              <span>{donationCount} donations</span>
+                            </>
+                          )}
+                          <span>•</span>
+                          <span>{formattedDate}</span>
+                        </div>
+                      </div>
+                      
+                      {/* Right Section - Impact Information (Wider & Prominent) */}
+                      <div className="flex-shrink-0 p-6 flex flex-col justify-center items-end border-l border-gray-200 min-w-[180px]">
+                        <div className="text-right">
+                          <div className="mb-2">
+                            <span className="text-3xl font-bold text-[#f2662d]">
+                              {impactAmount}
+                            </span>
+                          </div>
+                          <div className="text-base text-gray-600 font-medium">
+                            {impactNoun} {impactVerb}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                
+                {/* Load More Button */}
+                {visibleCount < supportedProjectsWithDonations.length && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setVisibleCount(prev => prev + LOAD_MORE_COUNT)}
+                    className="w-full mt-4"
+                  >
+                    Load More ({supportedProjectsWithDonations.length - visibleCount} remaining)
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="text-center py-6 bg-white rounded-lg shadow-sm">
@@ -768,7 +1191,7 @@ export default function DashboardV2() {
 
           {/* Right: Highlighted Social Enterprises */}
           <div>
-            <h2 className="text-xl font-bold text-dark font-heading mb-6">Highlighted Social Enterprises</h2>
+            <h3 className="text-lg font-semibold text-dark font-heading mb-6">Highlighted Social Enterprises</h3>
             {isLoadingFeatured ? (
               <div className="grid grid-cols-1 gap-6">
                 {Array(2).fill(0).map((_, i) => (
@@ -784,12 +1207,19 @@ export default function DashboardV2() {
                 ))}
               </div>
             ) : featuredProjects && featuredProjects.length > 0 ? (
-              <div className="grid grid-cols-1 gap-6">
-                {featuredProjects.map((project) => (
-                  <div key={project.id} onClick={() => handleFeaturedClick(project.slug || '')}>
-                    <ProjectCard project={project} />
-                  </div>
-                ))}
+              <div className="flex justify-center">
+                <ExpandableGallery
+                  images={galleryImages}
+                  taglines={galleryTaglines}
+                  className="w-full"
+                  icons={galleryIcons}
+                  onImageClick={(index) => {
+                    if (index < topProjects.length) {
+                      setSelectedProject(topProjects[index]);
+                      handleFeaturedClick(topProjects[index].slug || '');
+                    }
+                  }}
+                />
               </div>
             ) : (
               <div className="text-center py-6 bg-white rounded-lg shadow-sm">
@@ -798,44 +1228,450 @@ export default function DashboardV2() {
             )}
           </div>
         </div>
-      )}
+        )}
+      </div>
 
-      {/* Impact Over Time - hidden when empty, replaced with placeholder */}
-      {!hasImpactHistory || supportCount === 0 ? (
-        <Card className="mb-12">
-          <CardHeader>
-            <CardTitle>Your impact over time</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <h3 className="text-lg font-semibold text-gray-700 mb-3">
-                Coming soon
-              </h3>
-              <p className="text-base text-gray-500 mb-4 max-w-md">
-                Your impact over time will appear here after you support your first social enterprise.
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleSupportClick('chart_placeholder')}
-                className="mt-2"
-              >
-                Support a project
-              </Button>
+      {/* Rewards Section */}
+      <div className="mb-6" style={{ marginTop: '24px' }}>
+        {/* Main Headline */}
+        <h2 className="text-xl font-bold text-dark font-heading mb-6">Rewards</h2>
+        
+        {!hasRedemptions ? (
+          // NEW USERS (no redemptions): Show only Featured Rewards (full width) with ExpandableGallery
+          <div>
+            {isLoadingFeaturedRewards ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {Array(3).fill(0).map((_, i) => (
+                  <Card key={i} className="impact-card overflow-hidden">
+                    <Skeleton className="w-full h-48" />
+                    <div className="p-4">
+                      <Skeleton className="h-4 w-20 mb-2" />
+                      <Skeleton className="h-6 w-full mb-2" />
+                      <Skeleton className="h-4 w-full mb-4" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            ) : featuredRewards && featuredRewards.length > 0 ? (
+              <div className="flex justify-center">
+                <ExpandableGallery
+                  images={rewardGalleryImages}
+                  taglines={rewardGalleryTaglines}
+                  className="w-full max-w-4xl"
+                  icons={rewardGalleryIcons}
+                  logos={rewardGalleryLogos}
+                  onImageClick={() => {
+                    // Always navigate to rewards page
+                    navigate('/rewards');
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="text-center py-6 bg-white rounded-lg shadow-sm">
+                <p className="text-neutral">No featured rewards available at the moment.</p>
+              </div>
+            )}
+          </div>
+        ) : (
+          // RETURNING USERS (with redemptions): Show two side-by-side sections
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Left: Sustainable rewards you have unlocked */}
+            <div>
+              <h3 className="text-lg font-semibold text-dark font-heading mb-6">Sustainable rewards you have unlocked</h3>
+              {isLoadingRedemptions ? (
+                <div className="space-y-3">
+                  {Array(2).fill(0).map((_, i) => (
+                    <div key={i} className="flex items-stretch rounded-lg border border-gray-200 bg-white overflow-hidden">
+                      <Skeleton className="w-24 h-full flex-shrink-0" />
+                      <div className="flex-1 min-w-0 p-4 flex flex-col justify-center">
+                        <Skeleton className="h-5 w-32 mb-2" />
+                        <Skeleton className="h-4 w-40" />
+                      </div>
+                      <div className="flex-shrink-0 p-6 flex flex-col justify-center items-end border-l border-gray-200 min-w-[180px]">
+                        <Skeleton className="h-9 w-24 mb-2" />
+                        <Skeleton className="h-5 w-32" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : redemptionsWithRewards && redemptionsWithRewards.length > 0 ? (
+                <div className="space-y-3">
+                  {/* Show only visibleRewardsCount redemptions */}
+                  {redemptionsWithRewards.slice(0, visibleRewardsCount).map((item, index) => {
+                    const { reward, pointsSpent, redemptionDate, status } = item;
+                    
+                    if (!reward) return null; // Skip if reward data is missing
+                    
+                    const rewardImageUrl = reward.imageUrl || reward.image_url || '/placeholder-reward.png';
+                    const formattedDate = redemptionDate 
+                      ? new Date(redemptionDate).toLocaleDateString('en-US', { 
+                          month: 'short', 
+                          day: 'numeric', 
+                          year: 'numeric' 
+                        })
+                      : 'N/A';
+                    
+                    return (
+                      <div 
+                        key={`${item.redemption.id || index}`}
+                        className="flex items-stretch rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all bg-white group overflow-hidden"
+                      >
+                        {/* Image - Left Side (wider, no padding, flush to edges) */}
+                        <div className="flex-shrink-0">
+                          <img 
+                            src={rewardImageUrl}
+                            alt={reward.title}
+                            className="w-24 h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = '/placeholder-reward.png';
+                            }}
+                          />
+                        </div>
+                        
+                        {/* Middle Section - Name, Points & Date */}
+                        <div className="flex-1 min-w-0 p-4 flex flex-col justify-center">
+                          {/* Brand Logo - Above Title */}
+                          {(() => {
+                            const rewardAny = reward as any;
+                            const brand = rewardAny.brands || rewardAny.brand;
+                            if (brand) {
+                              const rawBrand = brand as any;
+                              const logoPath = rawBrand.logo_path || rawBrand.logoPath || rawBrand.logo_url || rawBrand.logoUrl;
+                              const logoUrl = logoPath ? getLogoUrl(logoPath) : null;
+                              
+                              if (logoUrl) {
+                                return (
+                                  <div className="mb-2">
+                                    <img 
+                                      src={logoUrl}
+                                      alt={brand.name || 'Brand logo'}
+                                      className="h-6 w-auto object-contain"
+                                      onError={(e) => {
+                                        (e.target as HTMLImageElement).style.display = 'none';
+                                      }}
+                                    />
+                                  </div>
+                                );
+                              }
+                            }
+                            return null;
+                          })()}
+                          
+                          {/* Reward Name - Clickable Link */}
+                          <Link href="/rewards" className="mb-2">
+                            <h4 className="text-base font-semibold text-gray-900 hover:text-[#f2662d] transition-colors group-hover:text-[#f2662d]">
+                              {reward.title}
+                            </h4>
+                          </Link>
+                          
+                          {/* Points & Date - Small */}
+                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <span>{pointsSpent} points</span>
+                            <span>•</span>
+                            <span>{formattedDate}</span>
+                            {status && status !== 'fulfilled' && (
+                              <>
+                                <span>•</span>
+                                <span className="text-orange-600">{status}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Right Section - Points Information (Wider & Prominent) */}
+                        <div className="flex-shrink-0 p-6 flex flex-col justify-center items-end border-l border-gray-200 min-w-[180px]">
+                          <div className="text-right">
+                            <div className="mb-2">
+                              <span className="text-3xl font-bold text-[#f2662d]">
+                                {pointsSpent}
+                              </span>
+                            </div>
+                            <div className="text-base text-gray-600 font-medium">
+                              points spent
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  
+                  {/* Load More Button */}
+                  {visibleRewardsCount < redemptionsWithRewards.length && (
+                    <Button
+                      variant="outline"
+                      onClick={() => setVisibleRewardsCount(prev => prev + LOAD_MORE_REWARDS_COUNT)}
+                      className="w-full mt-4"
+                    >
+                      Load More ({redemptionsWithRewards.length - visibleRewardsCount} remaining)
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-6 bg-white rounded-lg shadow-sm">
+                  <p className="text-neutral">You haven't redeemed any rewards yet.</p>
+                </div>
+              )}
             </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="mb-12">
-          <ImpactChart />
-        </div>
-      )}
+
+            {/* Right: Highlighted sustainable rewards */}
+            <div>
+              <h3 className="text-lg font-semibold text-dark font-heading mb-6">Highlighted sustainable rewards</h3>
+              {isLoadingFeaturedRewards ? (
+                <div className="grid grid-cols-1 gap-6">
+                  {Array(2).fill(0).map((_, i) => (
+                    <Card key={i} className="impact-card overflow-hidden">
+                      <Skeleton className="w-full h-48" />
+                      <div className="p-4">
+                        <Skeleton className="h-4 w-20 mb-2" />
+                        <Skeleton className="h-6 w-full mb-2" />
+                        <Skeleton className="h-4 w-full mb-4" />
+                        <Skeleton className="h-10 w-full" />
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              ) : featuredRewards && featuredRewards.length > 0 ? (
+                <div className="flex justify-center">
+                  <ExpandableGallery
+                    images={rewardGalleryImages}
+                    taglines={rewardGalleryTaglines}
+                    className="w-full"
+                    icons={rewardGalleryIcons}
+                    logos={rewardGalleryLogos}
+                    onImageClick={() => {
+                      // Always navigate to rewards page
+                      navigate('/rewards');
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="text-center py-6 bg-white rounded-lg shadow-sm">
+                  <p className="text-neutral">No featured rewards available at the moment.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Impact Over Time - Graph with overlay placeholder for all users */}
+      <Card className="mb-12 relative">
+        <CardHeader className="relative z-10 bg-white">
+          <CardTitle>Your Impact Over Time</CardTitle>
+          <div className="flex items-center space-x-6 text-sm mt-2">
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-0.5 bg-primary"></div>
+              <span className="text-gray-600">Impact Points</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-0.5 bg-green-500" style={{ borderStyle: 'dashed', borderWidth: '1px 0', background: 'none', borderColor: '#10B981' }}></div>
+              <span className="text-gray-600">Impact Created</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-0.5 bg-purple-500" style={{ borderStyle: 'dashed', borderWidth: '1px 0', background: 'none', borderColor: '#8B5CF6' }}></div>
+              <span className="text-gray-600">Support amount</span>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="relative">
+          <div className="relative z-0">
+            <ImpactChart />
+          </div>
+          
+          {/* Overlay placeholder - 75% opacity */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/75 backdrop-blur-sm rounded-lg" style={{ top: 0, left: 0, right: 0, bottom: 0 }}>
+            <div className="flex flex-col items-center justify-center py-12 text-center max-w-md px-4">
+            <h3 className="text-lg font-semibold text-gray-700 mb-3">
+              Coming soon
+            </h3>
+            <p className="text-base text-gray-500 mb-6">
+              We are working on your Personal Impact Dashboard - fully transparent impact tracking with real data over time.
+            </p>
+            
+            {/* Newsletter Signup Section - Replaces "Keep me updated" button */}
+            <div className="w-full">
+              <p className="text-sm text-gray-500 mb-4">
+                Get notified when your Personal Impact Dashboard is ready
+              </p>
+              
+              {isNewsletterSubscribed ? (
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-sm text-green-700 font-medium">
+                    ✓ Thank you for subscribing! We'll keep you updated.
+                  </p>
+                </div>
+              ) : (
+                <form 
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    if (!newsletterEmail || !newsletterEmail.includes('@')) {
+                      return;
+                    }
+                    
+                    setIsNewsletterLoading(true);
+                    try {
+                      const response = await fetch('/api/newsletter/subscribe', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                          email: newsletterEmail,
+                          source: 'dashboard_impact_placeholder'
+                        }),
+                      });
+                      
+                      const data = await response.json();
+                      
+                      if (response.ok) {
+                        setIsNewsletterSubscribed(true);
+                        setNewsletterEmail("");
+                        toast({
+                          title: "Subscribed!",
+                          description: "We'll notify you when your Personal Impact Dashboard is ready.",
+                        });
+                      } else {
+                        toast({
+                          title: "Error",
+                          description: data.error || "Failed to subscribe. Please try again.",
+                          variant: "destructive",
+                        });
+                      }
+                    } catch (error) {
+                      console.error('Newsletter subscription error:', error);
+                      toast({
+                        title: "Error",
+                        description: "Failed to subscribe. Please try again.",
+                        variant: "destructive",
+                      });
+                    } finally {
+                      setIsNewsletterLoading(false);
+                    }
+                  }}
+                  className="flex gap-2"
+                >
+                  <input
+                    type="email"
+                    value={newsletterEmail}
+                    onChange={(e) => setNewsletterEmail(e.target.value)}
+                    placeholder="Enter your email"
+                    className="flex-1 px-4 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#f2662d] focus:border-transparent"
+                    required
+                    disabled={isNewsletterLoading}
+                  />
+                  <Button
+                    type="submit"
+                    disabled={isNewsletterLoading}
+                    className="px-6 py-2 bg-[#f2662d] hover:bg-[#d9551f] text-white text-sm font-medium"
+                  >
+                    {isNewsletterLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Keep me updated"
+                    )}
+                  </Button>
+                </form>
+              )}
+            </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
       
       <DonationSuccessModal 
         isOpen={showSuccessModal}
         onClose={() => setShowSuccessModal(false)}
         amount={donationAmount}
       />
+      
+      {/* Project Detail Modal (like homepage) */}
+      {selectedProject && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="relative w-full max-w-5xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl">
+            <button
+              onClick={() => { setSelectedProject(null); setShowDonationDropdown(false); initializedRef.current = null; }}
+              className="absolute top-6 right-6 z-10 p-2 rounded-full bg-white/90 hover:bg-white shadow-sm transition-colors"
+            >
+              ✕
+            </button>
+
+            <div className="p-6 lg:p-8 border-b border-gray-200">
+              <h3 className="text-xl lg:text-2xl font-bold mb-1 text-gray-900">
+                See the impact you can create
+              </h3>
+              <p className="text-base lg:text-lg text-gray-600">
+                with {selectedProject.title}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 p-6 lg:p-12">
+              <div className="space-y-8 order-2 lg:order-1">
+                <div>
+                  <div className="text-center lg:text-left">
+                    <p className="text-2xl lg:text-4xl font-semibold leading-[1.4] text-gray-900">
+                      Support <span className="font-bold text-gray-900">{selectedProject.title}</span> with{' '}
+                      <span className="relative inline-block">
+                        <button
+                          onClick={() => setShowDonationDropdown(!showDonationDropdown)}
+                          className="inline-flex items-center gap-1 border-b-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors min-h-[48px] px-2 font-bold text-[#f2662d]"
+                        >
+                          ${galleryDonationAmount}
+                          <ChevronDown className="h-5 w-5" />
+                        </button>
+                        {showDonationDropdown && (
+                          <div className="absolute top-full left-0 mt-2 bg-white border rounded-lg shadow-lg z-10 min-w-[140px] border-gray-200">
+                            {availableTiers.map((tier) => (
+                              <button key={tier.donation} onClick={() => { setGalleryDonationAmount(tier.donation); setShowDonationDropdown(false); }} className="w-full p-2 text-left hover:bg-gray-50 transition-colors min-h-[36px]">
+                                <span className="text-lg font-bold text-[#f2662d]">
+                                  ${tier.donation}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </span> and help{' '}
+                      <span className="font-bold text-gray-900">{impactVerb}</span>{' '}
+                      <span className="font-bold text-[#f2662d]">{impactAmount}</span>{' '}
+                      <span className="font-bold text-[#f2662d]">{impactNoun}</span>{' '}
+                      <span className="text-gray-600">— earn</span>{' '}
+                      <span className="font-bold text-gray-900">{galleryImpactPoints}</span>{' '}
+                      <span className="text-gray-600">Impact Points</span>.
+                    </p>
+                  </div>
+
+                  <div className="mt-8 lg:mt-10 text-center lg:text-left">
+                    <Button size="lg" className="text-white font-semibold px-6 lg:px-8 py-3 lg:py-4 text-base lg:text-lg min-h-[44px] lg:min-h-[48px] w-full sm:w-auto bg-[#f2662d] hover:bg-[#d9551f]" asChild>
+                      <Link href={`/project/${selectedProject.slug || selectedProject.id}`}>
+                        Support This Project
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-6 order-1 lg:order-2">
+                <div className="rounded-lg overflow-hidden relative border border-gray-200">
+                  {getProjectImageUrl(selectedProject) ? (
+                    <img src={getProjectImageUrl(selectedProject) || ''} alt={selectedProject.title} className="w-full h-72 lg:h-80 object-cover" />
+                  ) : (
+                    <div className="w-full h-72 lg:h-80 flex items-center justify-center bg-gray-100">
+                      <Target className="h-16 w-16 text-gray-400" />
+                    </div>
+                  )}
+                  <div className="absolute bottom-0 left-0 right-0">
+                    <div className="bg-white/50 backdrop-blur-sm p-3">
+                      <p className="text-sm lg:text-base leading-relaxed font-medium whitespace-pre-line text-gray-900">
+                        {selectedProject.missionStatement || selectedProject.description || "Supporting sustainable livelihoods and community development."}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Signup-only Mini Gamification (new user registration) */}
       {previewEnabled && (
