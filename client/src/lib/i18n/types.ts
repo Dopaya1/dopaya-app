@@ -140,6 +140,10 @@ export type TranslationKeys = {
     orEnterCustomAmount: string;
     visitBacker: string;
     yourSupport: string;
+    waitlistTitle: string;
+    waitlistDescription: string;
+    joinWaitlist: string;
+    close: string;
   };
   dashboard: {
     title: string;

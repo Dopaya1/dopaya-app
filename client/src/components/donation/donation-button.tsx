@@ -20,6 +20,7 @@ import { Project, UserImpact } from "@shared/schema";
 import { trackDonation, trackWaitlistSignup } from "@/lib/simple-analytics";
 import { isOnboardingPreviewEnabled } from "@/lib/feature-flags";
 import { useAuth } from "@/hooks/use-auth";
+import { useTranslation } from "@/lib/i18n/use-translation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
@@ -73,6 +74,7 @@ export function DonationButton({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [, navigate] = useLocation();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const previewEnabled = isOnboardingPreviewEnabled();
   const [waitingForAuth, setWaitingForAuth] = useState(false);
   
@@ -1020,7 +1022,7 @@ export function DonationButton({
                     onClick={() => setIsDialogOpen(false)}
                     className="w-full"
                   >
-                    Close
+                    {t("projectDetail.close")}
                   </Button>
                 </DialogFooter>
               )}
@@ -1028,9 +1030,9 @@ export function DonationButton({
           ) : (
             <>
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-center">We're Almost There Yet...</DialogTitle>
+            <DialogTitle className="text-2xl font-bold text-center">{t("projectDetail.waitlistTitle")}</DialogTitle>
             <DialogDescription className="text-center pt-4">
-              We are launching soon! Join our waitlist....
+              {t("projectDetail.waitlistDescription")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex flex-col sm:flex-col gap-3 pt-4">
@@ -1042,7 +1044,7 @@ export function DonationButton({
               className="w-full"
               data-testid="button-join-waitlist-dialog"
             >
-              Join Our Waitlist
+              {t("projectDetail.joinWaitlist")}
             </Button>
             <Button 
               variant="outline" 
@@ -1050,7 +1052,7 @@ export function DonationButton({
               className="w-full"
               data-testid="button-close-dialog"
             >
-              Close
+              {t("projectDetail.close")}
             </Button>
           </DialogFooter>
             </>

@@ -129,6 +129,10 @@ export const translations: Record<'en' | 'de', TranslationKeys> = {
       orEnterCustomAmount: 'Or enter a custom amount:',
       visitBacker: 'Visit {name}',
       yourSupport: 'Your support',
+      waitlistTitle: 'We\'re Almost There Yet...',
+      waitlistDescription: 'We are launching soon! Join our waitlist....',
+      joinWaitlist: 'Join Our Waitlist',
+      close: 'Close',
     },
     dashboard: {
       title: 'Dashboard',
@@ -947,6 +951,10 @@ export const translations: Record<'en' | 'de', TranslationKeys> = {
       orEnterCustomAmount: 'Oder gib einen individuellen Betrag ein:',
       visitBacker: '{name} besuchen',
       yourSupport: 'Deine Unterstützung',
+      waitlistTitle: 'Wir sind fast da...',
+      waitlistDescription: 'Wir starten bald! Tritt unserer Warteliste bei....',
+      joinWaitlist: 'Warteliste beitreten',
+      close: 'Schließen',
     },
     dashboard: {
       title: 'Dashboard',
