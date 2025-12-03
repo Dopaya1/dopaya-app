@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Reward } from "@shared/schema";
 import { Card, CardContent } from "@/components/ui/card";
+import { useI18n } from "@/lib/i18n/i18n-context";
+import { getRewardTitle } from "@/lib/i18n/project-content";
 
 interface RewardCardProps {
   reward: Reward;
@@ -8,6 +10,7 @@ interface RewardCardProps {
 }
 
 export function RewardCard({ reward, onRedeem }: RewardCardProps) {
+  const { language } = useI18n();
   // Use company name from database, fallback to category if not available
   const companyName = reward.companyName || reward.category || 'Partner';
   
@@ -22,7 +25,7 @@ export function RewardCard({ reward, onRedeem }: RewardCardProps) {
         <div className="w-full h-40 overflow-hidden bg-gray-100">
           <img 
             src={reward.imageUrl}
-            alt={reward.title}
+            alt={getRewardTitle(reward, language)}
             className="w-full h-full object-cover"
           />
         </div>
@@ -37,7 +40,7 @@ export function RewardCard({ reward, onRedeem }: RewardCardProps) {
           )}
         </div>
         
-        <h3 className="text-lg font-bold mb-2">{reward.title}</h3>
+        <h3 className="text-lg font-bold mb-2">{getRewardTitle(reward, language)}</h3>
         {reward.companyName && (
           <p className="text-sm text-gray-600 font-medium mb-3">{reward.companyName}</p>
         )}

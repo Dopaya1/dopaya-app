@@ -172,7 +172,7 @@ export function getProjectImageUrl(project: any): string | null {
  * @returns The logo URL to use, or null if no valid logo is found
  */
 export function getLogoUrl(logoPath: string | null | undefined, fallbackAsset?: string): string | null {
-  if (!logoPath) {
+  if (!logoPath || logoPath.trim() === '') {
     // Return fallback if provided
     return fallbackAsset || null;
   }
@@ -190,7 +190,8 @@ export function getLogoUrl(logoPath: string | null | undefined, fallbackAsset?: 
     // Extract Supabase URL from environment or use default
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     if (!supabaseUrl) {
-      throw new Error('VITE_SUPABASE_URL environment variable is not set');
+      console.warn('[getLogoUrl] VITE_SUPABASE_URL not set, returning fallback');
+      return fallbackAsset || null;
     }
     return `${supabaseUrl}/${trimmedPath}`;
   }
@@ -205,7 +206,8 @@ export function getLogoUrl(logoPath: string | null | undefined, fallbackAsset?: 
   // Common pattern: [bucket]/[path] or just [path]
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   if (!supabaseUrl) {
-    throw new Error('VITE_SUPABASE_URL environment variable is not set');
+    console.warn('[getLogoUrl] VITE_SUPABASE_URL not set, returning fallback');
+    return fallbackAsset || null;
   }
   
   // If path contains a slash, assume it's bucket/path
@@ -214,9 +216,17 @@ export function getLogoUrl(logoPath: string | null | undefined, fallbackAsset?: 
   }
 
   // If no slash, assume it's just a filename in a default bucket
-  // You might want to adjust this based on your storage structure
-  // For now, return fallback or the path as-is
-  return fallbackAsset || trimmedPath;
+  // Try to construct URL with a default bucket name (e.g., 'brand-logos')
+  // If that doesn't work, return fallback or the path as-is
+  if (trimmedPath.length > 0) {
+    // Try with default bucket 'brand-logos'
+    const defaultBucketUrl = `${supabaseUrl}/storage/v1/object/public/brand-logos/${trimmedPath}`;
+    // Return the constructed URL (client will handle 404 if image doesn't exist)
+    return defaultBucketUrl;
+  }
+
+  // Last resort: return fallback or null
+  return fallbackAsset || null;
 }
 
 

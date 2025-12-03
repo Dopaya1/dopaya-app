@@ -14,8 +14,8 @@ export interface ImpactRank {
 
 export const IMPACT_RANKS: ImpactRank[] = [
   {
-    id: "supporter",
-    name: "Supporter",
+    id: "changemaker",
+    name: "Changemaker",
     pointsRequired: 100,
     icon: Star,
     description: "Start making ripples.",
@@ -36,8 +36,8 @@ export const IMPACT_RANKS: ImpactRank[] = [
     bgColor: "bg-green-100",
   },
   {
-    id: "changemaker",
-    name: "Changemaker",
+    id: "advanced-changemaker",
+    name: "Advanced Changemaker",
     pointsRequired: 1000,
     icon: Trophy,
     description: "You shape what comes next.",

@@ -1,17 +1,22 @@
 import { useQuery } from "@tanstack/react-query";
 import { UserImpact } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTranslation } from "@/lib/i18n/use-translation";
+import { useI18n } from "@/lib/i18n/i18n-context";
+import { formatNumber } from "@/lib/i18n/formatters";
 
 export function ImpactStats() {
   const { data: impact, isLoading, error } = useQuery<UserImpact>({
     queryKey: ["/api/user/impact"],
   });
+  const { t } = useTranslation();
+  const { language } = useI18n();
 
   const statItems = [
     { 
-      title: "Impact Points", 
+      title: t("dashboard.impactPoints"), 
       value: impact?.impactPoints || 0, 
-      format: (val: number) => val.toLocaleString(),
+      format: (val: number) => formatNumber(val),
       change: impact?.impactPointsChange || 0,
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
@@ -20,9 +25,9 @@ export function ImpactStats() {
       )
     },
     { 
-      title: "Startups Supported", 
+      title: t("dashboard.startupsSupported"), 
       value: impact?.projectsSupported || 0, 
-      format: (val: number) => val.toString(),
+      format: (val: number) => formatNumber(val),
       change: impact?.projectsSupportedChange || 0,
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
@@ -31,9 +36,9 @@ export function ImpactStats() {
       )
     },
     { 
-      title: "Total Impact Created", 
+      title: t("dashboard.totalImpactCreated"), 
       value: (impact?.amountDonated || 0) * 2, // Impact created = 2x donation amount (not Impact Points)
-      format: (val: number) => val.toLocaleString(),
+      format: (val: number) => formatNumber(val),
       change: impact?.impactPointsChange || 0,
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
@@ -46,7 +51,7 @@ export function ImpactStats() {
   if (error) {
     return (
       <div className="text-red-500 text-center py-4">
-        Error loading impact data: {error.message}
+        {t("dashboard.errorLoadingData")} {error.message}
       </div>
     );
   }

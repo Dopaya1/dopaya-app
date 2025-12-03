@@ -1,4 +1,32 @@
-import 'dotenv/config';
+// Load .env file FIRST before any other imports
+import { config } from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
+
+// Get the directory of this file and resolve .env path
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const envPath = resolve(__dirname, '..', '.env');
+
+// Load .env synchronously before any other imports
+config({ path: envPath });
+
+// Log environment variable loading status IMMEDIATELY after config()
+// This runs before any other imports to verify env vars are loaded
+console.log('\n[server/index.ts] ========== ENV LOADING CHECK ==========');
+console.log('[server/index.ts] .env file path:', envPath);
+
+// Validate Supabase keys (show first 6 chars + length for verification without leaking)
+const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || '';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+
+console.log('[server/index.ts] VITE_SUPABASE_URL:', supabaseUrl ? `✅ Set (${supabaseUrl.substring(0, 6)}...${supabaseUrl.length} chars)` : '❌ MISSING');
+console.log('[server/index.ts] VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? `✅ Set (${supabaseAnonKey.substring(0, 6)}...${supabaseAnonKey.length} chars)` : '❌ MISSING');
+console.log('[server/index.ts] SUPABASE_SERVICE_ROLE_KEY:', supabaseServiceKey ? `✅ Set (${supabaseServiceKey.substring(0, 6)}...${supabaseServiceKey.length} chars)` : '❌ MISSING');
+console.log('[server/index.ts] DATABASE_URL:', process.env.DATABASE_URL ? '✅ Set' : '❌ MISSING');
+console.log('[server/index.ts] =========================================\n');
+
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
@@ -6,6 +34,17 @@ import { setupDatabase, createDatabaseHelperFunctions } from "./setup-db";
 import { createDatabaseSchema } from "./direct-schema-setup";
 
 const app = express();
+
+// CRITICAL: Add logging middleware FIRST, before any other middleware
+// Request logging middleware (can be removed in production if needed)
+app.use((req, res, next) => {
+  // Only log API routes to reduce noise
+  if (req.path.startsWith('/api')) {
+    console.log(`[index.ts:32] ${req.method} ${req.path}`);
+  }
+  next();
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -70,71 +109,41 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Make sure fix-db-connection has a chance to run
-  await new Promise(resolve => setTimeout(resolve, 100));
+  // ============================================
+  // DATABASE SCHEMA INITIALIZATION DISABLED
+  // ============================================
+  // Schema is managed in Supabase dashboard - do NOT initialize here
+  // Automatic schema initialization causes:
+  // - Failed migrations (Drizzle migration errors)
+  // - Missing function errors (exec_sql not found)
+  // - Server in broken state
+  // - Interference with donation operations
+  //
+  // If schema setup is needed, use:
+  // - Supabase dashboard (recommended)
+  // - POST /api/system/setup-db endpoint (manual, for emergencies only)
+  // ============================================
   
-  // Try to set up the database automatically
-  try {
-    console.log('Attempting to initialize database on startup...');
-    
-    // First create the helper functions
-    console.log('Creating database helper functions...');
-    const helperResult = await createDatabaseHelperFunctions();
-    
-    if (helperResult.success) {
-      console.log('Successfully created database helper functions');
-    } else {
-      console.warn('Helper function creation warning:', helperResult.message);
-    }
-    
-    // First try the traditional setup approach
-    console.log('Setting up database schema using traditional approach...');
-    const result = await setupDatabase();
-    
-    if (result.success) {
-      console.log('Successfully initialized database schema using traditional approach');
-    } else {
-      console.warn('Traditional database initialization warning:', result.message);
-      
-      // If that fails, try the direct schema setup approach
-      console.log('Attempting alternative direct schema creation approach...');
-      const directResult = await createDatabaseSchema();
-      
-      if (directResult.success) {
-        console.log('Successfully created database schema using direct approach');
-      } else {
-        console.warn('Direct schema creation warning:', directResult.message);
-        console.warn('Database will need to be set up manually via /api/system/setup-db');
-        
-        // Check the connection status to diagnose further
-        try {
-          const { testDatabaseConnection } = await import('./db-test');
-          const connResult = await testDatabaseConnection();
-          
-          if (connResult.success) {
-            console.log('Database connection is working, but schema initialization failed.');
-          } else {
-            console.warn('Database connection is NOT working. Please check your DATABASE_URL environment variable.');
-          }
-        } catch (connErr) {
-          console.error('Error checking database connection:', connErr);
-        }
-      }
-    }
-  } catch (error) {
-    console.error('Failed to initialize database on startup:', error);
-    console.warn('Database will need to be set up manually via /api/system/setup-db');
-  }
+  console.log('✅ Server starting - connecting to Supabase (schema managed externally)');
   
-  // Add social media bot handler EARLY (before routes and Vite)
+  // Register routes FIRST (API routes with auth)
+  const server = await registerRoutes(app);
+  
+  // Add social media bot handler AFTER routes but BEFORE Vite
+  // This ensures API routes are registered first, and social meta only processes non-API routes
   const { socialMetaMiddleware } = await import('./social-meta-middleware');
   app.use(socialMetaMiddleware);
-
-  const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
+    
+    // Log error details (but not full stack traces in production)
+    console.error('[ERROR HANDLER]', {
+      status,
+      message,
+      path: _req.path
+    });
     
     // Handle JSON parsing errors specifically
     if (err.type === 'entity.parse.failed' || err.message?.includes('JSON')) {
@@ -145,6 +154,7 @@ app.use((req, res, next) => {
       });
     }
 
+    // Never expose full error details in response - only log them
     res.status(status).json({ message });
     throw err;
   });

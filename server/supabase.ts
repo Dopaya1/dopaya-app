@@ -49,14 +49,25 @@ try {
 export { sql, db };
 
 // Supabase client for storage and other operations
-const supabaseUrl = SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || '';
-const supabaseAnonKey = SUPABASE_ANON_KEY;
+// LAZY INITIALIZATION: Client is created on first access, not at module load time
+// This ensures environment variables are loaded before client initialization
+let supabaseInstance: any = null;
+
+function getSupabaseClient() {
+  // Return cached instance if already initialized
+  if (supabaseInstance) {
+    return supabaseInstance;
+  }
+
+  // Get environment variables at call time (after .env is loaded)
+  const supabaseUrl = SUPABASE_URL || process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  const supabaseAnonKey = SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
 
 if (!supabaseUrl) {
   console.error('Missing Supabase URL in environment variables');
 } else {
-  console.log('Using Supabase URL:', supabaseUrl);
+    console.log('[supabase.ts] Using Supabase URL:', supabaseUrl);
 }
 
 if (!supabaseAnonKey) {
@@ -71,19 +82,18 @@ if (!supabaseServiceKey) {
 const supabaseKey = supabaseServiceKey || supabaseAnonKey;
 
 // Create Supabase client with error handling
-let supabase: any;
 try {
-  supabase = createClient(supabaseUrl, supabaseKey, {
+    supabaseInstance = createClient(supabaseUrl, supabaseKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false
     }
   });
-  console.log('Supabase client initialized');
+    console.log('[supabase.ts] ✅ Supabase client initialized (lazy)');
 } catch (error) {
-  console.error('Failed to initialize Supabase client:', error);
+    console.error('[supabase.ts] ❌ Failed to initialize Supabase client:', error);
   // Create a placeholder client that will report errors appropriately
-  supabase = {
+    supabaseInstance = {
     storage: {
       getBucket: async () => ({ data: null, error: new Error('Supabase client failed to initialize') }),
       createBucket: async () => ({ error: new Error('Supabase client failed to initialize') }),
@@ -97,7 +107,16 @@ try {
   };
 }
 
-export { supabase };
+  return supabaseInstance;
+}
+
+// Export a getter that lazily initializes the client
+export const supabase = new Proxy({} as any, {
+  get(_target, prop) {
+    const client = getSupabaseClient();
+    return client[prop];
+  }
+});
 
 // Define storage bucket names
 export const STORAGE_BUCKETS = {
@@ -121,12 +140,13 @@ export async function uploadFile(
   contentType: string
 ): Promise<string | null> {
   try {
+    const client = getSupabaseClient();
     // Ensure the bucket exists
-    const { data: bucketExists } = await supabase.storage.getBucket(bucketName);
+    const { data: bucketExists } = await client.storage.getBucket(bucketName);
     
     if (!bucketExists) {
       // Create bucket if it doesn't exist
-      const { error: createBucketError } = await supabase.storage.createBucket(bucketName, {
+      const { error: createBucketError } = await client.storage.createBucket(bucketName, {
         public: true, // Make files publicly accessible
       });
       
@@ -137,7 +157,7 @@ export async function uploadFile(
     }
 
     // Upload the file
-    const { data, error } = await supabase.storage
+    const { data, error } = await client.storage
       .from(bucketName)
       .upload(filePath, file, {
         contentType,
@@ -150,7 +170,7 @@ export async function uploadFile(
     }
 
     // Get the public URL
-    const { data: { publicUrl } } = supabase.storage
+    const { data: { publicUrl } } = client.storage
       .from(bucketName)
       .getPublicUrl(data.path);
 
@@ -169,7 +189,8 @@ export async function uploadFile(
  */
 export async function deleteFile(bucketName: string, filePath: string): Promise<boolean> {
   try {
-    const { error } = await supabase.storage
+    const client = getSupabaseClient();
+    const { error } = await client.storage
       .from(bucketName)
       .remove([filePath]);
 
@@ -193,7 +214,8 @@ export async function deleteFile(bucketName: string, filePath: string): Promise<
  */
 export async function listFiles(bucketName: string, prefix: string = '') {
   try {
-    const { data, error } = await supabase.storage
+    const client = getSupabaseClient();
+    const { data, error } = await client.storage
       .from(bucketName)
       .list(prefix);
 

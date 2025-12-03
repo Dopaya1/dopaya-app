@@ -12,7 +12,13 @@ interface TimelineEntry {
   content: React.ReactNode;
 }
 
-export const Timeline = ({ data }: { data: TimelineEntry[] }) => {
+interface TimelineProps {
+  data: TimelineEntry[];
+  title?: string;
+  subtitle?: string;
+}
+
+export const Timeline = ({ data, title, subtitle }: TimelineProps) => {
   const ref = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState(0);
@@ -38,12 +44,16 @@ export const Timeline = ({ data }: { data: TimelineEntry[] }) => {
       ref={containerRef}
     >
       <div className="max-w-6xl mx-auto py-12 px-4 md:px-8 lg:px-10">
-        <h2 className="text-2xl md:text-3xl mb-4 text-black dark:text-white max-w-4xl">
-          From Impact Rewards to Complete Funding Ecosystem
-        </h2>
-        <p className="text-neutral-700 dark:text-neutral-300 text-sm md:text-base max-w-2xl">
-          Transparent about where we are now and where we're heading. Building the future of impact funding, one step at a time.
-        </p>
+        {title && (
+          <h2 className="text-2xl md:text-3xl mb-4 text-black dark:text-white max-w-4xl">
+            {title}
+          </h2>
+        )}
+        {subtitle && (
+          <p className="text-neutral-700 dark:text-neutral-300 text-sm md:text-base max-w-2xl">
+            {subtitle}
+          </p>
+        )}
       </div>
 
       <div ref={ref} className="relative max-w-6xl mx-auto pb-12">

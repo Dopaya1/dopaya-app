@@ -24,9 +24,14 @@ import type { iTestimonial } from "@/components/ui/retro-testimonial";
 import { TYPOGRAPHY } from "@/constants/typography";
 import { BRAND_COLORS } from "@/constants/colors";
 import { MOBILE } from "@/constants/mobile";
+import { useTranslation } from "@/lib/i18n/use-translation";
+import { useI18n } from "@/lib/i18n/i18n-context";
+import { LanguageLink } from "@/components/ui/language-link";
 
 export default function SocialEnterprisesPage() {
   // Cache bust: 2025-01-27 11:22
+  const { t } = useTranslation();
+  const { language } = useI18n();
   const [isVisible, setIsVisible] = useState(false);
   const [showFreeTooltip, setShowFreeTooltip] = useState(false);
   const [showTimeTooltip, setShowTimeTooltip] = useState(false);
@@ -216,10 +221,14 @@ export default function SocialEnterprisesPage() {
   return (
     <>
       <SEOHead
-        title="For Social Enterprises | Get Funding & Support | Dopaya Platform"
-        description="Join Dopaya's social enterprise program. Get funding from supporters who understand your value, build a community of advocates, and access exclusive resources to scale your impact."
-        keywords="social enterprises, social enterprise funding, impact funding, social entrepreneurship, startup funding, social impact platform, community building, impact investors"
-        canonicalUrl="https://dopaya.com/social-enterprises"
+        title={t("socialEnterprises.seoTitle")}
+        description={t("socialEnterprises.seoDescription")}
+        keywords={t("socialEnterprises.seoKeywords")}
+        canonicalUrl={`https://dopaya.com${language === 'de' ? '/de/social-enterprises' : '/social-enterprises'}`}
+        alternateUrls={{
+          en: 'https://dopaya.com/social-enterprises',
+          de: 'https://dopaya.com/de/social-enterprises',
+        }}
         ogType="website"
         ogImage="https://dopaya.com/og-social-enterprises.jpg"
         structuredData={{
@@ -250,16 +259,30 @@ export default function SocialEnterprisesPage() {
           <div className="flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-12">
             <div className="lg:w-1/2 text-center lg:text-left">
               <h1 className="text-4xl md:text-5xl font-bold leading-tight mb-4" style={{ color: BRAND_COLORS.textPrimary }}>
-                Unlock{" "}
-                <TextRotate
-                  texts={["funding", "visibility", "support", "investors", "grants", "community"]}
-                  rotationInterval={2000}
-                  mainClassName="inline-block text-orange-500"
-                />
-                {" "}to scale your social enterprise.
+                {language === 'de' ? (
+                  <>
+                    Schalte{" "}
+                    <TextRotate
+                      texts={["Finanzierung", "Sichtbarkeit", "Support", "Investoren", "Zuschüsse", "Community"]}
+                      rotationInterval={2000}
+                      mainClassName="inline-block text-orange-500"
+                    />
+                    {" "}frei, um dein soziales Unternehmen zu skalieren.
+                  </>
+                ) : (
+                  <>
+                    Unlock{" "}
+                    <TextRotate
+                      texts={["funding", "visibility", "support", "investors", "grants", "community"]}
+                      rotationInterval={2000}
+                      mainClassName="inline-block text-orange-500"
+                    />
+                    {" "}to scale your social enterprise.
+                  </>
+                )}
               </h1>
               <p className="text-xl mb-8" style={{ color: BRAND_COLORS.textSecondary }}>
-                We build a community of supporters who keep coming back because they get rewarded for supporting you.
+                {t("socialEnterprises.heroSubtitle")}
               </p>
               
               <a href="https://tally.so/r/3EM0vA" target="_blank" rel="noopener noreferrer" className="block w-full sm:w-auto mx-auto lg:mx-0">
@@ -267,7 +290,7 @@ export default function SocialEnterprisesPage() {
                   className="text-white px-8 py-6 text-lg rounded-md font-semibold shadow-lg hover:shadow-xl transition-all duration-300 w-full sm:w-auto"
                   style={{ backgroundColor: BRAND_COLORS.primaryOrange }}
                 >
-                  Start Your Application (5 min)
+                  {t("socialEnterprises.startApplication")}
                 </Button>
               </a>
               
@@ -275,15 +298,15 @@ export default function SocialEnterprisesPage() {
               <div className="flex flex-wrap gap-4 mt-6 sm:mt-8 justify-center lg:justify-start">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-5 h-5 text-green-600" />
-                  <span className="text-sm font-medium text-gray-700">Free forever</span>
+                  <span className="text-sm font-medium text-gray-700">{t("socialEnterprises.freeForever")}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-5 h-5 text-green-600" />
-                  <span className="text-sm font-medium text-gray-700">Simple onboarding</span>
+                  <span className="text-sm font-medium text-gray-700">{t("socialEnterprises.simpleOnboarding")}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-5 h-5 text-green-600" />
-                  <span className="text-sm font-medium text-gray-700">Limited pilot access</span>
+                  <span className="text-sm font-medium text-gray-700">{t("socialEnterprises.limitedPilotAccess")}</span>
                 </div>
               </div>
             </div>
@@ -332,22 +355,22 @@ export default function SocialEnterprisesPage() {
                     <div className="rounded-full bg-gray-100 w-12 h-12 flex items-center justify-center mx-auto mb-3">
                       <Target className="h-6 w-6 text-gray-600" />
                     </div>
-                    <p className="text-sm font-medium text-gray-800 mb-1">Sector agnostic</p>
-                    <p className="text-xs text-gray-600">All causes welcome</p>
+                    <p className="text-sm font-medium text-gray-800 mb-1">{t("socialEnterprises.sectorAgnostic")}</p>
+                    <p className="text-xs text-gray-600">{t("socialEnterprises.allCausesWelcome")}</p>
                   </div>
                   <div className="bg-gray-50 p-4 rounded-lg text-center">
                     <div className="rounded-full bg-gray-100 w-12 h-12 flex items-center justify-center mx-auto mb-3">
                       <Zap className="h-6 w-6 text-gray-600" />
                     </div>
-                    <p className="text-sm font-medium text-gray-800 mb-1">Free of cost</p>
-                    <p className="text-xs text-gray-600">No platform fees</p>
+                    <p className="text-sm font-medium text-gray-800 mb-1">{t("socialEnterprises.freeOfCost")}</p>
+                    <p className="text-xs text-gray-600">{t("socialEnterprises.noPlatformFees")}</p>
                   </div>
                   <div className="bg-gray-50 p-4 rounded-lg text-center">
                     <div className="rounded-full bg-gray-100 w-12 h-12 flex items-center justify-center mx-auto mb-3">
                       <FileText className="h-6 w-6 text-gray-600" />
                     </div>
-                    <p className="text-sm font-medium text-gray-800 mb-1">Application only</p>
-                    <p className="text-xs text-gray-600">Simple process</p>
+                    <p className="text-sm font-medium text-gray-800 mb-1">{t("socialEnterprises.applicationOnly")}</p>
+                    <p className="text-xs text-gray-600">{t("socialEnterprises.simpleProcess")}</p>
                   </div>
                 </div>
                 
@@ -370,17 +393,17 @@ export default function SocialEnterprisesPage() {
                 viewport={{ once: true }}
               >
                 <h2 className={`${TYPOGRAPHY.section} mb-6`} style={{ color: BRAND_COLORS.textPrimary }}>
-                  The funding gap is real — and it's costing us impact.
+                  {t("socialEnterprises.problemTitle")}
                 </h2>
                 
                 <div className="mb-6">
                   <p className="text-lg mb-4" style={{ color: BRAND_COLORS.textSecondary }}>
-                    Social enterprises need patient capital, but most funding isn't designed for sustainable business models. While up to 70% of impact funding goes to NGOs, social entrepreneurs can't access it because they don't fit traditional "funding boxes." We've seen it many times: SEs chase funding instead of creating impact.
+                    {t("socialEnterprises.problemDescription")}
                   </p>
                 </div>
                 
                 <p className="text-lg font-medium" style={{ color: BRAND_COLORS.textSecondary }}>
-                  We are trying to connect impactful SEs with individual supporters. So you don't have to chase funding and visibility and can focus on what truly matters: impact.
+                  {language === 'de' ? 'Wir versuchen, wirkungsvolle SEs mit individuellen Unterstützern zu verbinden. Damit du nicht Finanzierung und Sichtbarkeit jagen musst und dich auf das konzentrieren kannst, was wirklich zählt: Impact.' : 'We are trying to connect impactful SEs with individual supporters. So you don\'t have to chase funding and visibility and can focus on what truly matters: impact.'}
                 </p>
               </motion.div>
             </div>
@@ -407,9 +430,9 @@ export default function SocialEnterprisesPage() {
       <section className="py-24 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className={`${TYPOGRAPHY.section} mb-4`}>Get funding from supporters who understand your value</h2>
+            <h2 className={`${TYPOGRAPHY.section} mb-4`}>{t("socialEnterprises.processSectionTitle")}</h2>
             <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-              We put you in front of an engaged audience that gets sustainable solutions, rewarding them for supporting you and creating a community that advocates for your mission.
+              {t("socialEnterprises.processSectionSubtitle")}
             </p>
           </div>
 
@@ -427,11 +450,11 @@ export default function SocialEnterprisesPage() {
                 </svg>
               </div>
               <div className="bg-orange-50 text-orange-600 text-xs font-medium px-2 py-1 rounded-full inline-block mb-3">
-                STEP 1
+                {language === 'de' ? 'SCHRITT 1' : 'STEP 1'}
               </div>
-              <h3 className="text-xl font-semibold mb-3 text-gray-900">Apply & Get Verified</h3>
+              <h3 className="text-xl font-semibold mb-3 text-gray-900">{t("socialEnterprises.processStep1")}</h3>
               <p className="text-gray-600 text-sm">
-                Simple application process. We verify your impact and onboard you to our platform
+                {t("socialEnterprises.step1Description")}
               </p>
             </motion.div>
 
@@ -448,11 +471,11 @@ export default function SocialEnterprisesPage() {
                 </svg>
               </div>
               <div className="bg-orange-50 text-orange-600 text-xs font-medium px-2 py-1 rounded-full inline-block mb-3">
-                STEP 2
+                {language === 'de' ? 'SCHRITT 2' : 'STEP 2'}
               </div>
-              <h3 className="text-xl font-semibold mb-3 text-gray-900">You Get Funding</h3>
+              <h3 className="text-xl font-semibold mb-3 text-gray-900">{t("socialEnterprises.processStep2")}</h3>
               <p className="text-gray-600 text-sm">
-                Supporters choose you and fund your cause, earning Impact Points for every contribution
+                {t("socialEnterprises.step2Description")}
               </p>
             </motion.div>
 
@@ -469,11 +492,11 @@ export default function SocialEnterprisesPage() {
                 </svg>
               </div>
               <div className="bg-orange-50 text-orange-600 text-xs font-medium px-2 py-1 rounded-full inline-block mb-3">
-                STEP 3
+                {language === 'de' ? 'SCHRITT 3' : 'STEP 3'}
               </div>
-              <h3 className="text-xl font-semibold mb-3 text-gray-900">They Get Rewarded</h3>
+              <h3 className="text-xl font-semibold mb-3 text-gray-900">{t("socialEnterprises.processStep3")}</h3>
               <p className="text-gray-600 text-sm">
-                Exclusive rewards from partner brands keep them coming back and supporting you again
+                {t("socialEnterprises.step3Description")}
               </p>
             </motion.div>
 
@@ -490,11 +513,11 @@ export default function SocialEnterprisesPage() {
                 </svg>
               </div>
               <div className="bg-orange-50 text-orange-600 text-xs font-medium px-2 py-1 rounded-full inline-block mb-3">
-                STEP 4
+                {language === 'de' ? 'SCHRITT 4' : 'STEP 4'}
               </div>
-              <h3 className="text-xl font-semibold mb-3 text-gray-900">You Get Advocates</h3>
+              <h3 className="text-xl font-semibold mb-3 text-gray-900">{t("socialEnterprises.processStep4")}</h3>
               <p className="text-gray-600 text-sm">
-                Supporters become advocates who bring more supporters, creating sustainable growth
+                {t("socialEnterprises.step4Description")}
               </p>
             </motion.div>
           </div>
@@ -508,8 +531,8 @@ export default function SocialEnterprisesPage() {
                 viewport={{ once: true }}
                 className="text-center"
               >
-                <h4 className="font-semibold text-gray-900 mb-2">100% of funding goes to SEs</h4>
-                <p className="text-gray-600 text-sm">No platform fees, ever. Your supporters' money goes directly to impact</p>
+                <h4 className="font-semibold text-gray-900 mb-2">{t("socialEnterprises.benefit1Title")}</h4>
+                <p className="text-gray-600 text-sm">{t("socialEnterprises.benefit1Description")}</p>
               </motion.div>
 
               <motion.div 
@@ -519,8 +542,8 @@ export default function SocialEnterprisesPage() {
                 viewport={{ once: true }}
                 className="text-center"
               >
-                <h4 className="font-semibold text-gray-900 mb-2">No signup fee forever</h4>
-                <p className="text-gray-600 text-sm">Join at no cost, always. We only succeed when you succeed</p>
+                <h4 className="font-semibold text-gray-900 mb-2">{t("socialEnterprises.benefit2Title")}</h4>
+                <p className="text-gray-600 text-sm">{t("socialEnterprises.benefit2Description")}</p>
               </motion.div>
 
               <motion.div 
@@ -530,8 +553,8 @@ export default function SocialEnterprisesPage() {
                 viewport={{ once: true }}
                 className="text-center"
               >
-                <h4 className="font-semibold text-gray-900 mb-2">Access to engaged community</h4>
-                <p className="text-gray-600 text-sm">Connect with supporters who understand sustainable solutions vs charity</p>
+                <h4 className="font-semibold text-gray-900 mb-2">{t("socialEnterprises.benefit3Title")}</h4>
+                <p className="text-gray-600 text-sm">{t("socialEnterprises.benefit3Description")}</p>
               </motion.div>
             </div>
           </div>
@@ -549,10 +572,10 @@ export default function SocialEnterprisesPage() {
           >
             <div className="rounded-xl p-8 shadow-lg" style={{ backgroundColor: BRAND_COLORS.primaryOrange }}>
               <h3 className="text-3xl font-bold text-white mb-4">
-                Join Our Pilot Program
+                {t("socialEnterprises.pilotProgramTitle")}
               </h3>
               <p className="text-orange-100 mb-8 text-xl max-w-2xl mx-auto">
-                We are launching with just a few selected social enterprises. Be part of the first cohort and help us prove this model works.
+                {t("socialEnterprises.pilotProgramDescription")}
               </p>
               <div className="flex flex-col items-center gap-6">
                 <a href="https://tally.so/r/3EM0vA" target="_blank" rel="noopener noreferrer">
@@ -560,17 +583,17 @@ export default function SocialEnterprisesPage() {
                     className="px-8 py-4 text-xl rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 bg-white hover:bg-gray-50"
                     style={{ color: BRAND_COLORS.primaryOrange }}
                   >
-                    Apply for Pilot Program
+                    {t("socialEnterprises.applyForPilotProgram")}
                   </Button>
                 </a>
-                <a
+                <LanguageLink
                   href="/eligibility" 
                   className="text-orange-100 hover:text-white transition-colors text-lg underline"
                 >
-                  Check if you are eligible
-                </a>
+                  {t("socialEnterprises.checkEligibility")}
+                </LanguageLink>
                 <div className="mt-4 text-orange-100 text-base">
-                  <p>Free forever • No long-term commitment • Cancel anytime</p>
+                  <p>{t("socialEnterprises.pilotProgramBenefits")}</p>
                 </div>
               </div>
             </div>
@@ -597,82 +620,74 @@ export default function SocialEnterprisesPage() {
               color: BRAND_COLORS.textPrimary, 
               fontFamily: "'Satoshi', 'Inter', system-ui, sans-serif" 
             }}>
-              Frequently Asked Questions
+              {t("socialEnterprises.faqTitle")}
             </h2>
             <p className="text-xl max-w-2xl mx-auto" style={{ color: BRAND_COLORS.textSecondary }}>
-              Answers to common questions about joining our platform
+              {t("socialEnterprises.faqSubtitle")}
             </p>
           </div>
           
           <Accordion type="multiple" className="w-full">
             <AccordionItem value="item-1" className="border-b" style={{ borderColor: BRAND_COLORS.borderSubtle }}>
               <AccordionTrigger className={`text-left font-medium py-6 hover:no-underline ${TYPOGRAPHY.subsection}`} style={{ color: BRAND_COLORS.textPrimary }}>
-                How does Dopaya make money if you don't charge SEs?
+                {t("socialEnterprises.faq1Question")}
               </AccordionTrigger>
               <AccordionContent className={`pb-6 ${TYPOGRAPHY.body}`} style={{ color: BRAND_COLORS.textSecondary }}>
-                We operate on optional platform tips from supporters and brand partnerships. SEs keep 100% of supporter funding. 
-                Our revenue comes from supporters who choose to tip us (like supporting Dopaya as a social enterprise too) and 
-                brands who pay for access to our engaged community.
+                {t("socialEnterprises.faq1Answer")}
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="item-2" className="border-b" style={{ borderColor: BRAND_COLORS.borderSubtle }}>
               <AccordionTrigger className={`text-left font-medium py-6 hover:no-underline ${TYPOGRAPHY.subsection}`} style={{ color: BRAND_COLORS.textPrimary }}>
-                What's the application and onboarding process like?
+                {t("socialEnterprises.faq2Question")}
               </AccordionTrigger>
               <AccordionContent className={`pb-6 ${TYPOGRAPHY.body}`} style={{ color: BRAND_COLORS.textSecondary }}>
-                Simple application form, impact verification call, and onboarding. Typically 1-2 weeks from application to going live. 
-                We handle most of the setup - you just need to provide basic information about your impact and business model.
+                {t("socialEnterprises.faq2Answer")}
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="item-3" className="border-b" style={{ borderColor: BRAND_COLORS.borderSubtle }}>
               <AccordionTrigger className={`text-left font-medium py-6 hover:no-underline ${TYPOGRAPHY.subsection}`} style={{ color: BRAND_COLORS.textPrimary }}>
-                How much time do I need to commit monthly?
+                {t("socialEnterprises.faq3Question")}
               </AccordionTrigger>
               <AccordionContent className={`pb-6 ${TYPOGRAPHY.body}`} style={{ color: BRAND_COLORS.textSecondary }}>
-                Minimal - just monthly impact updates (5 min) and quarterly check-ins (15 min). We handle the rest including 
-                supporter communication, platform management, and impact tracking.
+                {t("socialEnterprises.faq3Answer")}
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="item-4" className="border-b" style={{ borderColor: BRAND_COLORS.borderSubtle }}>
               <AccordionTrigger className={`text-left font-medium py-6 hover:no-underline ${TYPOGRAPHY.subsection}`} style={{ color: BRAND_COLORS.textPrimary }}>
-                What if my SE doesn't fit traditional funding models?
+                {t("socialEnterprises.faq4Question")}
               </AccordionTrigger>
               <AccordionContent className={`pb-6 ${TYPOGRAPHY.body}`} style={{ color: BRAND_COLORS.textSecondary }}>
-                Perfect! That's exactly who we're looking for. We understand sustainable business models that create impact. 
-                If you're "too social for investors, not understood by banks, too business for grant makers" - you're our ideal partner.
+                {t("socialEnterprises.faq4Answer")}
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="item-5" className="border-b" style={{ borderColor: BRAND_COLORS.borderSubtle }}>
               <AccordionTrigger className={`text-left font-medium py-6 hover:no-underline ${TYPOGRAPHY.subsection}`} style={{ color: BRAND_COLORS.textPrimary }}>
-                How is this different from GoFundMe or Patreon?
+                {t("socialEnterprises.faq5Question")}
               </AccordionTrigger>
               <AccordionContent className={`pb-6 ${TYPOGRAPHY.body}`} style={{ color: BRAND_COLORS.textSecondary }}>
-                Unlike GoFundMe/Patreon where supporters just donate, our supporters get tangible rewards for supporting you. 
-                This creates a sustainable community that keeps coming back and advocates for your mission, not just one-time donors.
+                {t("socialEnterprises.faq5Answer")}
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="item-6" className="border-b" style={{ borderColor: BRAND_COLORS.borderSubtle }}>
               <AccordionTrigger className={`text-left font-medium py-6 hover:no-underline ${TYPOGRAPHY.subsection}`} style={{ color: BRAND_COLORS.textPrimary }}>
-                What happens if I want to leave the platform?
+                {t("socialEnterprises.faq6Question")}
               </AccordionTrigger>
               <AccordionContent className={`pb-6 ${TYPOGRAPHY.body}`} style={{ color: BRAND_COLORS.textSecondary }}>
-                No long-term commitment required. You can leave anytime and keep all supporters and data. 
-                We believe in building genuine partnerships, not locking you in.
+                {t("socialEnterprises.faq6Answer")}
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="item-7" className="border-b" style={{ borderColor: BRAND_COLORS.borderSubtle }}>
               <AccordionTrigger className={`text-left font-medium py-6 hover:no-underline ${TYPOGRAPHY.subsection}`} style={{ color: BRAND_COLORS.textPrimary }}>
-                What kind of support do I get as a pilot partner?
+                {t("socialEnterprises.faq7Question")}
               </AccordionTrigger>
               <AccordionContent className={`pb-6 ${TYPOGRAPHY.body}`} style={{ color: BRAND_COLORS.textSecondary }}>
-                Direct founder access, personalized attention, platform shaping input, and featured case study opportunities. 
-                We're focused on you, not hundreds of SEs. You get to help build the future of impact funding.
+                {t("socialEnterprises.faq7Answer")}
               </AccordionContent>
             </AccordionItem>
           </Accordion>
@@ -694,17 +709,17 @@ export default function SocialEnterprisesPage() {
             style={{ backgroundColor: BRAND_COLORS.primaryOrange }}
           >
             <h2 className={`${TYPOGRAPHY.section} mb-4 text-white`}>
-              Want to co-build the ecosystem with us?
+              {t("socialEnterprises.finalCtaTitle")}
             </h2>
             <p className="text-orange-100 mb-8 text-lg max-w-2xl mx-auto">
-              Join the community of social enterprises making a meaningful impact.
+              {t("socialEnterprises.finalCtaSubtitle")}
             </p>
             <a href="https://tally.so/r/3EM0vA" target="_blank" rel="noopener noreferrer">
               <Button 
                 className="px-8 py-4 text-lg rounded-md font-semibold shadow-lg hover:shadow-xl transition-all duration-300 bg-white hover:bg-gray-50"
                 style={{ color: BRAND_COLORS.primaryOrange }}
               >
-                Join the Community
+                {t("socialEnterprises.joinCommunity")}
               </Button>
             </a>
           </motion.div>
@@ -714,10 +729,10 @@ export default function SocialEnterprisesPage() {
       {/* Sticky bottom CTA */}
       <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200 py-3 px-4 z-50 md:hidden">
         <div className="flex justify-between items-center">
-          <p className="font-medium text-gray-800">Ready to grow your impact?</p>
+          <p className="font-medium text-gray-800">{t("socialEnterprises.stickyCtaText")}</p>
           <a href="https://tally.so/r/3EM0vA" target="_blank" rel="noopener noreferrer">
             <Button size="sm" className="text-white px-4 py-2" style={{ backgroundColor: BRAND_COLORS.primaryOrange }}>
-              Apply Now
+              {t("socialEnterprises.applyNow")}
             </Button>
           </a>
         </div>

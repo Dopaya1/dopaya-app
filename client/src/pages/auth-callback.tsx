@@ -61,6 +61,46 @@ export default function AuthCallback() {
             await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
             await queryClient.invalidateQueries({ queryKey: ["/api/user/impact"] });
             
+            // Apply welcome bonus transaction if user is new (non-blocking, with fallback)
+            try {
+              // Get auth token for API calls
+              const { data: { session } } = await supabase.auth.getSession();
+              const token = session?.access_token;
+              
+              if (!token) {
+                console.warn('[auth-callback] No auth token available for welcome bonus check');
+              } else {
+                const impactRes = await fetch('/api/user/impact', { 
+                  credentials: 'include',
+                  headers: {
+                    'Authorization': `Bearer ${token}`
+                  }
+                });
+                if (impactRes.ok) {
+                  const impact = await impactRes.json();
+                  if (impact.impactPoints === 50) {
+                    // User has exactly 50 IP (from trigger), likely new user
+                    // Call welcome bonus endpoint (idempotent - safe to call multiple times)
+                    fetch('/api/user/welcome-bonus', { 
+                      method: 'POST', 
+                      credentials: 'include',
+                      headers: {
+                        'Authorization': `Bearer ${token}`
+                      }
+                    }).catch(err => {
+                      // Non-critical - log but don't block user flow
+                      console.warn('[auth-callback] Welcome bonus call failed:', err);
+                    });
+                  }
+                } else {
+                  console.warn('[auth-callback] Failed to fetch impact data:', impactRes.status, impactRes.statusText);
+                }
+              }
+            } catch (e) {
+              // Non-critical - welcome bonus is optional, user can continue
+              console.warn('[auth-callback] Failed to check/apply welcome bonus:', e);
+            }
+            
             // Check if preview mode is enabled
             const previewEnabled = isOnboardingPreviewEnabled();
             
@@ -119,6 +159,46 @@ export default function AuthCallback() {
           await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
           await queryClient.invalidateQueries({ queryKey: ["/api/user/impact"] });
           
+          // Apply welcome bonus transaction if user is new (non-blocking, with fallback)
+          try {
+            // Get auth token for API calls
+            const { data: { session } } = await supabase.auth.getSession();
+            const token = session?.access_token;
+            
+            if (!token) {
+              console.warn('[auth-callback] No auth token available for welcome bonus check');
+            } else {
+              const impactRes = await fetch('/api/user/impact', { 
+                credentials: 'include',
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                }
+              });
+              if (impactRes.ok) {
+                const impact = await impactRes.json();
+                if (impact.impactPoints === 50) {
+                  // User has exactly 50 IP (from trigger), likely new user
+                  // Call welcome bonus endpoint (idempotent - safe to call multiple times)
+                  fetch('/api/user/welcome-bonus', { 
+                    method: 'POST', 
+                    credentials: 'include',
+                    headers: {
+                      'Authorization': `Bearer ${token}`
+                    }
+                  }).catch(err => {
+                    // Non-critical - log but don't block user flow
+                    console.warn('[auth-callback] Welcome bonus call failed:', err);
+                  });
+                }
+              } else {
+                console.warn('[auth-callback] Failed to fetch impact data:', impactRes.status, impactRes.statusText);
+              }
+            }
+          } catch (e) {
+            // Non-critical - welcome bonus is optional, user can continue
+            console.warn('[auth-callback] Failed to check/apply welcome bonus:', e);
+          }
+          
           // Check if preview mode is enabled
           const previewEnabled = isOnboardingPreviewEnabled();
           
@@ -168,6 +248,46 @@ export default function AuthCallback() {
             // Invalidate queries to refresh navbar and dashboard
             await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
             await queryClient.invalidateQueries({ queryKey: ["/api/user/impact"] });
+            
+            // Apply welcome bonus transaction if user is new (non-blocking, with fallback)
+            try {
+              // Get auth token for API calls
+              const { data: { session } } = await supabase.auth.getSession();
+              const token = session?.access_token;
+              
+              if (!token) {
+                console.warn('[auth-callback] No auth token available for welcome bonus check');
+              } else {
+                const impactRes = await fetch('/api/user/impact', { 
+                  credentials: 'include',
+                  headers: {
+                    'Authorization': `Bearer ${token}`
+                  }
+                });
+                if (impactRes.ok) {
+                  const impact = await impactRes.json();
+                  if (impact.impactPoints === 50) {
+                    // User has exactly 50 IP (from trigger), likely new user
+                    // Call welcome bonus endpoint (idempotent - safe to call multiple times)
+                    fetch('/api/user/welcome-bonus', { 
+                      method: 'POST', 
+                      credentials: 'include',
+                      headers: {
+                        'Authorization': `Bearer ${token}`
+                      }
+                    }).catch(err => {
+                      // Non-critical - log but don't block user flow
+                      console.warn('[auth-callback] Welcome bonus call failed:', err);
+                    });
+                  }
+                } else {
+                  console.warn('[auth-callback] Failed to fetch impact data:', impactRes.status, impactRes.statusText);
+                }
+              }
+            } catch (e) {
+              // Non-critical - welcome bonus is optional, user can continue
+              console.warn('[auth-callback] Failed to check/apply welcome bonus:', e);
+            }
             
             // Check if preview mode is enabled
             const previewEnabled = isOnboardingPreviewEnabled();

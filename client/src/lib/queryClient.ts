@@ -41,6 +41,7 @@ export async function apiRequest(
 
   // Get auth token for Supabase
   const token = await getAuthToken();
+  console.log('[apiRequest] Token retrieved:', token ? 'Yes (length: ' + token.length + ')' : 'No');
   
   const headers: Record<string, string> = {};
   if (data) {
@@ -48,6 +49,9 @@ export async function apiRequest(
   }
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
+    console.log('[apiRequest] Authorization header added');
+  } else {
+    console.warn('[apiRequest] No token available - request may fail if auth is required');
   }
 
   const res = await fetch(url, {

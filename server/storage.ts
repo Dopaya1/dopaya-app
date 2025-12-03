@@ -16,7 +16,9 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByAuthId?(authUserId: string): Promise<User | undefined>; // Optional: for Supabase auth users
   createUser(user: InsertUser): Promise<User>;
+  createUserMinimal?(params: { username: string; email: string; firstName?: string; lastName?: string; auth_user_id?: string | null }): Promise<User>; // Optional: for on-the-fly user creation
   updateUserDonationStats(userId: number, stats: { impactPointsToAdd: number; donationAmountToAdd: number }): Promise<void>;
   
   // Project operations
@@ -289,9 +291,9 @@ export class MemStorage implements IStorage {
     
     // Simple two-status system:
     // - "aspirer": New user with 50 welcome points, no support yet
-    // - "supporter": Has supported at least one project ($10+)
+    // - "changemaker": Has supported at least one project ($10+)
     // Determine user status based on impactPoints >= 100 (not amountDonated)
-    const userStatus: "aspirer" | "supporter" = impactPoints >= 100 ? "supporter" : "aspirer";
+    const userStatus: "aspirer" | "changemaker" = impactPoints >= 100 ? "changemaker" : "aspirer";
     
     // Calculate percentage changes (mocked for now)
     // In a real application, these would be calculated based on historical data
@@ -534,26 +536,56 @@ export class MemStorage implements IStorage {
 
 import { SupabaseStorage } from './supabase-storage-new';
 
-// Determine which storage implementation to use
-// Use Supabase if SUPABASE_URL is present (SupabaseStorage uses Supabase client, not direct PostgreSQL)
-// DATABASE_URL is only needed for direct PostgreSQL connections (Drizzle ORM), not for Supabase REST API client
-const useSupabase = !!(process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL);
+// Lazy storage initialization - only create instance when first accessed
+// This ensures environment variables are loaded before checking
+let storageInstance: IStorage | null = null;
 
-// Try to use Supabase storage, but fall back to in-memory storage if there's an error
-let storageInstance: IStorage;
-try {
-  if (useSupabase) {
-    storageInstance = new SupabaseStorage();
-    console.log('Using Supabase storage implementation with updated client');
-  } else {
-    storageInstance = new MemStorage();
-    console.log('Using in-memory storage implementation');
+function getStorageInstance(): IStorage {
+  if (storageInstance) {
+    return storageInstance;
   }
-} catch (error) {
-  console.error('Error initializing Supabase storage, falling back to in-memory storage:', error);
-  storageInstance = new MemStorage();
+  
+  // Check environment variables at call time (after .env is loaded)
+  const useSupabase = !!(process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL);
+  
+  console.log('[storage.ts] ========== STORAGE INITIALIZATION (LAZY) ==========');
+  console.log('[storage.ts] Environment variables:', {
+    VITE_SUPABASE_URL: process.env.VITE_SUPABASE_URL ? `✅ Set (${process.env.VITE_SUPABASE_URL.substring(0, 30)}...)` : '❌ MISSING',
+    SUPABASE_URL: process.env.SUPABASE_URL ? `✅ Set (${process.env.SUPABASE_URL.substring(0, 30)}...)` : '❌ MISSING',
+    useSupabase: useSupabase
+  });
+  
+  try {
+    if (useSupabase) {
+      storageInstance = new SupabaseStorage();
+      console.log('[storage.ts] ✅ Using Supabase storage implementation with updated client');
+      console.log('[storage.ts] ✅ Storage instance type:', storageInstance.constructor?.name);
+      console.log('[storage.ts] ✅ Has getUserByAuthId:', typeof (storageInstance as any).getUserByAuthId === 'function');
+      console.log('[storage.ts] ✅ Has createUserMinimal:', typeof (storageInstance as any).createUserMinimal === 'function');
+    } else {
+      storageInstance = new MemStorage();
+      console.log('[storage.ts] ⚠️ Using in-memory storage implementation (Supabase not available)');
+      console.log('[storage.ts] ⚠️ MemStorage does NOT have getUserByAuthId or createUserMinimal methods');
+    }
+  } catch (error) {
+    console.error('[storage.ts] ❌ Error initializing Supabase storage, falling back to in-memory storage:', error);
+    storageInstance = new MemStorage();
+  }
+  
+  console.log(`[storage.ts] Final: Using ${useSupabase ? 'Supabase' : 'Memory'} storage implementation`);
+  console.log('[storage.ts] ========================================================');
+  
+  return storageInstance;
 }
 
-export const storage = storageInstance;
-
-console.log(`Using ${useSupabase ? 'Supabase' : 'Memory'} storage implementation`);
+// Create a proxy object that lazily initializes storage on first access
+export const storage = new Proxy({} as IStorage, {
+  get(target, prop) {
+    const instance = getStorageInstance();
+    const value = (instance as any)[prop];
+    if (typeof value === 'function') {
+      return value.bind(instance);
+    }
+    return value;
+  }
+});

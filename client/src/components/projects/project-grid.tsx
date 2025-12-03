@@ -3,7 +3,8 @@ import { Project } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Link } from "wouter";
+import { LanguageLink } from "@/components/ui/language-link";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 interface ProjectGridProps {
   projects: Project[] | undefined;
@@ -13,6 +14,8 @@ interface ProjectGridProps {
 }
 
 export function ProjectGrid({ projects, isLoading, error, showTourTarget }: ProjectGridProps) {
+  const { t } = useTranslation();
+  
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -44,7 +47,7 @@ export function ProjectGrid({ projects, isLoading, error, showTourTarget }: Proj
       <div className="text-center py-10 bg-white rounded-lg shadow-sm p-8 max-w-3xl mx-auto">
         <div className="mb-6">
           <p className="text-lg font-medium text-gray-700 mb-4">
-            We haven't found any outstanding social project in this sector yet.. If you are an outstanding social startup or want to nominate one, please reach out to us.
+            {t("projects.noProjectsFound")} {t("projects.noProjectsFoundDescription")}
           </p>
         </div>
         
@@ -56,15 +59,15 @@ export function ProjectGrid({ projects, isLoading, error, showTourTarget }: Proj
             className="inline-block"
           >
             <Button className="text-white min-w-[200px]" style={{ backgroundColor: '#f2662d' }}>
-              Apply with my project
+              {t("projects.applyWithMyProject")}
             </Button>
           </a>
           
-          <Link href="/contact">
+          <LanguageLink href="/contact">
             <Button variant="outline" className="bg-white border-[#f2662d] text-[#f2662d] hover:bg-[#fff8f7] min-w-[200px]">
-              Nominate a project
+              {t("projects.nominateProject")}
             </Button>
-          </Link>
+          </LanguageLink>
         </div>
       </div>
     );

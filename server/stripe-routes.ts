@@ -1,6 +1,7 @@
 import type { Express, Request, Response } from "express";
 import express from "express";
 import Stripe from "stripe";
+import { storage } from "./storage";
 
 let stripe: Stripe | null = null;
 
@@ -113,22 +114,133 @@ export function setupStripeRoutes(app: Express) {
         const { userId, projectId, amount } = session.metadata || {};
         
         if (userId && amount) {
-          // Here you would typically:
-          // 1. Record the donation in your database
-          // 2. Update user's impact points
-          // 3. Send confirmation email
-          // 4. Update project funding totals
+          console.log(`[Stripe Webhook] Processing donation: User ${userId}, Amount $${amount}, Project ${projectId || 'General'}`);
           
-          console.log(`Processing donation: User ${userId}, Amount $${amount}, Project ${projectId || 'General'}`);
+          // ============================================
+          // DONATION CREATION (Step 3 Integration)
+          // ============================================
+          // This creates the donation record and automatically creates a transaction
+          // via createDonation() -> applyPointsChange()
+          //
+          // TO REVERT: Comment out the donation creation block below and uncomment
+          // the simple logging block at the end of this section
+          // ============================================
           
-          // For now, we'll just log the successful payment
-          // In a real implementation, you'd use your storage layer to:
-          // - Create a donation record
-          // - Update user impact points 
-          // - Update project funding if applicable
+          // Convert userId from metadata (might be UUID string or numeric string)
+          let numericUserId: number;
+          
+          if (typeof userId === 'string') {
+            // Try to parse as number first (if it's already numeric ID)
+            const parsed = parseInt(userId, 10);
+            if (!isNaN(parsed)) {
+              numericUserId = parsed;
+            } else {
+              // userId is UUID from Supabase Auth - need to get numeric ID from users table
+              const userEmail = session.customer_email;
+              if (userEmail) {
+                const dbUser = await storage.getUserByEmail(userEmail);
+                if (dbUser) {
+                  numericUserId = dbUser.id;
+                  console.log(`[Stripe Webhook] Converted UUID ${userId} to numeric ID ${numericUserId} via email ${userEmail}`);
+                } else {
+                  console.error(`[Stripe Webhook] User not found in database for email: ${userEmail}`);
+                  throw new Error(`User not found for email: ${userEmail}`);
+                }
+              } else {
+                throw new Error('Cannot determine user ID: userId is UUID and no email available');
+              }
+            }
+          } else {
+            numericUserId = userId as number;
+          }
+          
+          // Parse projectId and amount
+          const parsedProjectId = projectId ? parseInt(projectId, 10) : null;
+          const parsedAmount = parseFloat(amount);
+          
+          if (isNaN(parsedAmount) || parsedAmount <= 0) {
+            throw new Error(`Invalid donation amount: ${amount}`);
+          }
+          
+          // Convert amount to integer (dollars, rounded to nearest dollar)
+          // Schema expects integer for amount field
+          const amountInDollars = Math.round(parsedAmount);
+          
+          // Get project to calculate impact points (need multiplier)
+          let impactPoints = 0;
+          let finalProjectId: number;
+          
+          if (parsedProjectId && !isNaN(parsedProjectId)) {
+            finalProjectId = parsedProjectId;
+            const project = await storage.getProject(parsedProjectId);
+            if (project) {
+              impactPoints = Math.floor(amountInDollars * (project.impactPointsMultiplier || 10));
+            } else {
+              console.warn(`[Stripe Webhook] Project ${parsedProjectId} not found, using default multiplier`);
+              impactPoints = Math.floor(amountInDollars * 10); // Default multiplier
+            }
+          } else {
+            // General donation - need a project ID (schema requires it)
+            // For now, use projectId = 0 or find a default project
+            // TODO: Handle general donations properly (may need schema change)
+            console.warn('[Stripe Webhook] No projectId provided - general donations not fully supported yet');
+            // Use default multiplier for general donations
+            impactPoints = Math.floor(amountInDollars * 10);
+            // Try to find first project as fallback (temporary solution)
+            const projects = await storage.getProjects();
+            if (projects.length > 0) {
+              finalProjectId = projects[0].id;
+              console.log(`[Stripe Webhook] Using first project (${finalProjectId}) as fallback for general donation`);
+            } else {
+              throw new Error('Cannot create general donation: no projects available and projectId is required');
+            }
+          }
+          
+          // Create donation record
+          // This automatically creates a transaction via createDonation() -> applyPointsChange()
+          const donation = await storage.createDonation({
+            userId: numericUserId,
+            projectId: finalProjectId, // Required by schema
+            amount: amountInDollars, // Integer (dollars)
+            impactPoints: impactPoints,
+            status: 'completed' // Payment succeeded via Stripe
+            // stripeSessionId removed - column doesn't exist in database
+          });
+          
+          console.log(`[Stripe Webhook] ✅ Donation created: ID ${donation.id}, User ${numericUserId}, +${impactPoints} Impact Points`);
+          // Transaction is automatically created by createDonation() method (Step 3)
+          
+          // ============================================
+          // FUTURE STRIPE INTEGRATION NOTES:
+          // ============================================
+          // When implementing full Stripe integration, you may want to:
+          // 1. Verify payment_status: session.payment_status === 'paid'
+          // 2. Handle refunds: event.type === 'charge.refunded'
+          // 3. Add retry logic for failed donation creation
+          // 4. Send confirmation emails
+          // 5. Update project funding totals (already done in createDonation)
+          // 6. Handle partial payments or subscriptions
+          // ============================================
+          
+          // ============================================
+          // ROLLBACK: Simple logging (uncomment to revert)
+          // ============================================
+          // console.log(`Processing donation: User ${userId}, Amount $${amount}, Project ${projectId || 'General'}`);
+          // // For now, we'll just log the successful payment
+          // // In a real implementation, you'd use your storage layer to:
+          // // - Create a donation record
+          // // - Update user impact points 
+          // // - Update project funding if applicable
+          // ============================================
+          
+        } else {
+          console.warn('[Stripe Webhook] Missing required metadata: userId or amount');
         }
       } catch (error) {
-        console.error('Error processing successful payment:', error);
+        console.error('[Stripe Webhook] Error processing successful payment:', error);
+        // Don't throw - return success to Stripe to prevent retries
+        // Log error for manual investigation
+        // TODO: Consider adding error tracking/alerting for production
       }
     }
 

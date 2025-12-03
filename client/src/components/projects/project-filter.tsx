@@ -12,6 +12,9 @@ import { Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Project } from "@shared/schema";
 import { supabase } from "@/lib/supabase";
+import { useTranslation } from "@/lib/i18n/use-translation";
+import { useI18n } from "@/lib/i18n/i18n-context";
+import { getProjectCountry } from "@/lib/i18n/project-content";
 
 interface ProjectFilterProps {
   onFilterChange: (filters: FilterValues) => void;
@@ -24,10 +27,13 @@ export interface FilterValues {
 }
 
 export function ProjectFilter({ onFilterChange }: ProjectFilterProps) {
+  const { t } = useTranslation();
+  const { language } = useI18n();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [country, setCountry] = useState("all");
   const [availableCountries, setAvailableCountries] = useState<string[]>([]);
+  const [availableCountriesDisplay, setAvailableCountriesDisplay] = useState<Map<string, string>>(new Map());
 
   // Fetch active projects to extract available countries
   const { data: projects } = useQuery<Project[]>({
@@ -44,18 +50,27 @@ export function ProjectFilter({ onFilterChange }: ProjectFilterProps) {
     },
   });
 
-  // Extract unique countries from projects
+  // Extract unique countries from projects with language-specific display names
   useEffect(() => {
     if (projects) {
+      const countryMap = new Map<string, string>();
       const countries = projects
-        .map(project => project.country)
+        .map(project => {
+          const countryValue = project.country || '';
+          const countryDisplay = getProjectCountry(project, language) || countryValue;
+          if (countryValue) {
+            countryMap.set(countryValue, countryDisplay);
+          }
+          return countryValue;
+        })
         .filter((country): country is string => Boolean(country)) // Filter out null/undefined
         .filter((value, index, self) => self.indexOf(value) === index) // Get unique values
         .sort(); // Sort alphabetically
       
       setAvailableCountries(countries);
+      setAvailableCountriesDisplay(countryMap);
     }
-  }, [projects]);
+  }, [projects, language]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,7 +93,7 @@ export function ProjectFilter({ onFilterChange }: ProjectFilterProps) {
         <div className="relative md:flex-1 md:max-w-sm">
           <Input
             type="text"
-            placeholder="Search projects..."
+            placeholder={t("projects.searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-10 bg-white border-gray-200"
@@ -92,11 +107,11 @@ export function ProjectFilter({ onFilterChange }: ProjectFilterProps) {
         >
           <SelectTrigger className="w-full md:w-52 bg-white border-gray-200">
             <SelectValue>
-              {category === "all" ? "All Categories" : category}
+              {category === "all" ? t("projects.allCategories") : category}
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
+            <SelectItem value="all">{t("projects.allCategories")}</SelectItem>
             <SelectItem value="Agriculture">Agriculture</SelectItem>
             <SelectItem value="Conservation">Conservation</SelectItem>
             <SelectItem value="Education">Education</SelectItem>
@@ -119,23 +134,23 @@ export function ProjectFilter({ onFilterChange }: ProjectFilterProps) {
         >
           <SelectTrigger className="w-full md:w-52 bg-white border-gray-200">
             <SelectValue>
-              {country === "all" ? "All Countries" : country}
+              {country === "all" ? t("projects.allCountries") : (availableCountriesDisplay.get(country) || country)}
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Countries</SelectItem>
+            <SelectItem value="all">{t("projects.allCountries")}</SelectItem>
             {availableCountries.map((countryName) => (
               <SelectItem key={countryName} value={countryName}>
-                {countryName}
+                {availableCountriesDisplay.get(countryName) || countryName}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
         <div className="flex gap-2 w-full md:w-auto md:flex-shrink-0">
-          <Button type="submit" className="text-white flex-1 md:flex-none md:px-6" style={{ backgroundColor: '#f2662d' }}>Filter</Button>
+          <Button type="submit" className="text-white flex-1 md:flex-none md:px-6" style={{ backgroundColor: '#f2662d' }}>{t("projects.filterButton")}</Button>
           <Button type="button" variant="outline" onClick={handleReset} className="bg-white flex-1 md:flex-none md:px-6">
-            Reset
+            {t("projects.resetButton")}
           </Button>
         </div>
       </div>

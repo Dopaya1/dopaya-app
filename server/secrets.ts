@@ -46,15 +46,32 @@ export const DATABASE_URL = (() => {
 export const SESSION_SECRET = process.env.SESSION_SECRET || 'dopaya-super-secret-key-change-in-prod';
 
 // Validate required secrets
-if (!DATABASE_URL) {
-  console.error('Missing DATABASE_URL environment variable');
-}
+console.log('\n========== SECRETS VALIDATION ==========');
 if (!SUPABASE_URL) {
-  console.error('Missing SUPABASE_URL environment variable (check VITE_SUPABASE_URL or SUPABASE_URL)');
+  console.error('❌ Missing SUPABASE_URL environment variable (check VITE_SUPABASE_URL or SUPABASE_URL)');
+} else {
+  console.log('✅ SUPABASE_URL:', SUPABASE_URL ? `✅ Set (${SUPABASE_URL.substring(0, 30)}...)` : '❌ MISSING');
 }
+
 if (!SUPABASE_ANON_KEY) {
-  console.error('Missing SUPABASE_ANON_KEY environment variable (check VITE_SUPABASE_ANON_KEY or SUPABASE_ANON_KEY)');
+  console.error('❌ Missing SUPABASE_ANON_KEY environment variable (check VITE_SUPABASE_ANON_KEY or SUPABASE_ANON_KEY)');
+} else {
+  console.log('✅ SUPABASE_ANON_KEY: Set (length:', SUPABASE_ANON_KEY.length, ')');
 }
+
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || '';
+if (!SUPABASE_SERVICE_ROLE_KEY) {
+  console.warn('⚠️  Missing SUPABASE_SERVICE_ROLE_KEY - RLS policies may block inserts');
+} else {
+  console.log('✅ SUPABASE_SERVICE_ROLE_KEY: Set (length:', SUPABASE_SERVICE_ROLE_KEY.length, ')');
+}
+
+if (!DATABASE_URL) {
+  console.error('❌ Missing DATABASE_URL environment variable');
+} else {
+  console.log('✅ DATABASE_URL: Set');
+}
+console.log('========================================\n');
 
 // Stripe secrets (if needed later)
 export const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;

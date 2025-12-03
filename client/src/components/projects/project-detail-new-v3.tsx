@@ -2,7 +2,11 @@ import { useEffect, useState, useRef } from "react";
 import { Project } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
+import { LanguageLink } from "@/components/ui/language-link";
+import { useTranslation } from "@/lib/i18n/use-translation";
+import { useI18n } from "@/lib/i18n/i18n-context";
+import { getProjectTitle, getProjectDescription, getProjectSummary, getProjectMissionStatement, getProjectKeyImpact, getProjectAboutUs, getProjectImpactAchievements, getProjectFundUsage, getProjectSelectionReasoning, getProjectCountry, getProjectImpactUnit, getProjectImpactNoun, getProjectImpactVerb, hasGermanContent, getBackerShortDescription, getProjectFounderBio } from "@/lib/i18n/project-content";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -49,6 +53,62 @@ export function ProjectDetailNewV3({ project }: ProjectDetailProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [_, navigate] = useLocation();
+  const { t } = useTranslation();
+  const { language } = useI18n();
+  
+  // Get language-specific content
+  const projectTitle = getProjectTitle(project, language);
+  const projectDescription = getProjectDescription(project, language);
+  const projectSummary = getProjectSummary(project, language);
+  const projectMissionStatement = getProjectMissionStatement(project, language);
+  const projectKeyImpact = getProjectKeyImpact(project, language);
+  const projectAboutUs = getProjectAboutUs(project, language);
+  const projectImpactAchievements = getProjectImpactAchievements(project, language);
+  const projectFundUsage = getProjectFundUsage(project, language);
+  const projectSelectionReasoning = getProjectSelectionReasoning(project, language);
+  const projectCountry = getProjectCountry(project, language);
+  const projectImpactUnit = getProjectImpactUnit(project, language);
+  const projectImpactNoun = getProjectImpactNoun(project, language);
+  const projectImpactVerb = getProjectImpactVerb(project, language);
+  const projectFounderBio = getProjectFounderBio(project, language);
+  const hasGerman = hasGermanContent(project);
+  
+  // Debug: Log language and project data
+  useEffect(() => {
+    console.log('[ProjectDetailV3] Language:', language);
+    console.log('[ProjectDetailV3] Project ID:', project?.id);
+    console.log('[ProjectDetailV3] Has missionStatementDe (camelCase):', !!project?.missionStatementDe);
+    console.log('[ProjectDetailV3] Has mission_statement_de (snake_case):', !!(project as any)?.mission_statement_de);
+    console.log('[ProjectDetailV3] missionStatementDe value:', project?.missionStatementDe || (project as any)?.mission_statement_de);
+    console.log('[ProjectDetailV3] Has keyImpactDe (camelCase):', !!project?.keyImpactDe);
+    console.log('[ProjectDetailV3] Has key_impact_de (snake_case):', !!(project as any)?.key_impact_de);
+    console.log('[ProjectDetailV3] keyImpactDe value:', project?.keyImpactDe || (project as any)?.key_impact_de);
+    console.log('[ProjectDetailV3] Has countryDe (camelCase):', !!project?.countryDe);
+    console.log('[ProjectDetailV3] Has country_de (snake_case):', !!(project as any)?.country_de);
+    console.log('[ProjectDetailV3] countryDe value:', project?.countryDe || (project as any)?.country_de);
+    console.log('[ProjectDetailV3] Has founderBioDe (camelCase):', !!project?.founderBioDe);
+    console.log('[ProjectDetailV3] Has founder_bio_de (snake_case):', !!(project as any)?.founder_bio_de);
+    console.log('[ProjectDetailV3] Has founderBio_de (Supabase camelCase):', !!(project as any)?.founderBio_de);
+    console.log('[ProjectDetailV3] founderBioDe value:', project?.founderBioDe || (project as any)?.founder_bio_de || (project as any)?.founderBio_de);
+    console.log('[ProjectDetailV3] Has founderBio (camelCase):', !!project?.founderBio);
+    console.log('[ProjectDetailV3] Has founder_bio (snake_case):', !!(project as any)?.founder_bio);
+    console.log('[ProjectDetailV3] founderBio value:', project?.founderBio || (project as any)?.founder_bio);
+    // Debug: Log all keys that contain "founder" or "bio"
+    const founderKeys = Object.keys(project || {}).filter(key => 
+      key.toLowerCase().includes('founder') || key.toLowerCase().includes('bio')
+    );
+    console.log('[ProjectDetailV3] All founder/bio related keys:', founderKeys);
+    console.log('[ProjectDetailV3] Raw project data (founder related):', 
+      founderKeys.reduce((acc, key) => {
+        acc[key] = (project as any)?.[key];
+        return acc;
+      }, {} as Record<string, any>)
+    );
+    console.log('[ProjectDetailV3] Resolved missionStatement:', projectMissionStatement);
+    console.log('[ProjectDetailV3] Resolved keyImpact:', projectKeyImpact);
+    console.log('[ProjectDetailV3] Resolved country:', projectCountry);
+    console.log('[ProjectDetailV3] Resolved founderBio:', projectFounderBio);
+  }, [language, project, projectMissionStatement, projectKeyImpact, projectCountry, projectFounderBio]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [donationAmount, setDonationAmount] = useState(25);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -206,36 +266,48 @@ export function ProjectDetailNewV3({ project }: ProjectDetailProps) {
   
   // Intersection Observer to track active section
   useEffect(() => {
-    const observerOptions = {
-      root: null,
-      rootMargin: '-20% 0px -60% 0px',
-      threshold: 0,
-    };
-
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          const sectionId = entry.target.id as TabId;
-          if (sectionId && ['story', 'impact', 'changemakers', 'ourview', 'impactbox'].includes(sectionId)) {
-            setActiveTab(sectionId);
+    const handleScroll = () => {
+      const offset = 200; // Offset for sticky nav
+      
+      // Find which section is currently at the top of the viewport
+      const sections: Array<{ id: TabId; ref: React.RefObject<HTMLDivElement> }> = [
+        { id: 'story', ref: storyRef },
+        { id: 'impact', ref: impactRef },
+        { id: 'changemakers', ref: changemakersRef },
+        { id: 'ourview', ref: ourviewRef },
+        { id: 'impactbox', ref: impactBoxRef },
+      ];
+      
+      // Find the section that is currently closest to the top of the viewport
+      let activeSection: TabId = 'story';
+      let minDistance = Infinity;
+      
+      sections.forEach(({ id, ref }) => {
+        if (ref.current) {
+          const rect = ref.current.getBoundingClientRect();
+          const sectionTop = rect.top + window.scrollY;
+          const currentScroll = window.scrollY + offset;
+          
+          // If we've scrolled past the start of this section
+          if (currentScroll >= sectionTop - 50) {
+            const distance = currentScroll - sectionTop;
+            // Prefer sections we've scrolled past but are closest to
+            if (distance >= -50 && distance < minDistance) {
+              minDistance = distance;
+              activeSection = id;
+            }
           }
         }
       });
-    }, observerOptions);
+      
+      setActiveTab(activeSection);
+    };
 
-    const refsToObserve = [storyRef, impactRef, changemakersRef, ourviewRef, impactBoxRef];
-    refsToObserve.forEach((ref) => {
-      if (ref.current) {
-        observer.observe(ref.current);
-      }
-    });
-
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // Call once to set initial state
+    
     return () => {
-      refsToObserve.forEach((ref) => {
-        if (ref.current) {
-          observer.unobserve(ref.current);
-        }
-      });
+      window.removeEventListener('scroll', handleScroll);
     };
   }, []);
   
@@ -246,7 +318,7 @@ export function ProjectDetailNewV3({ project }: ProjectDetailProps) {
     for (let i = 1; i <= 7; i++) {
       const donation = project[`donation_${i}` as keyof Project] as unknown as number;
       const impact = project[`impact_${i}` as keyof Project] as unknown as string;
-      const impactUnit = project.impactUnit as string;
+      const impactUnit = getProjectImpactUnit(project, language) || 'impact created';
       if (donation && impact) {
         tiers.push({
           donation,
@@ -393,8 +465,8 @@ export function ProjectDetailNewV3({ project }: ProjectDetailProps) {
   const impactAmount = currentTier?.impact || '0';
   const impactUnit = currentTier?.unit || 'impact created';
   const impactPoints = currentTier?.points || 0;
-  const impactVerb = project?.impact_verb || 'help';
-  const impactNoun = project?.impact_noun || 'people';
+  const impactVerb = projectImpactVerb || 'help';
+  const impactNoun = projectImpactNoun || 'people';
   
   // Fallback function for copying to clipboard on older browsers
   const copyToClipboardFallback = (text: string) => {
@@ -430,9 +502,9 @@ export function ProjectDetailNewV3({ project }: ProjectDetailProps) {
   // Function to handle social media sharing with proper text, link, and image
   const handleShare = async (platform: string) => {
     const url = window.location.href;
-    const title = project.title;
+    const title = projectTitle;
     const shareMessage = `I am supporting ${title} to make a difference! 🌟`;
-    const description = project.description?.substring(0, 150) || 'Check out this amazing social impact project';
+    const description = projectDescription?.substring(0, 150) || 'Check out this amazing social impact project';
     const imageUrl = project.imageUrl || project.coverImage || '/src/assets/Dopaya Logo.png';
     
     // Try native Web Share API first (works great on mobile!)
@@ -596,17 +668,17 @@ ${url}
   return (
     <>
       <SEOHead
-        title={project.title}
-        description={project.description || project.summary || `Support ${project.title} on Dopaya - Make a real social impact and earn rewards`}
-        keywords={`${project.title}, social impact, ${project.category}, Dopaya, social enterprise, impact investing, rewards`}
+        title={projectTitle}
+        description={projectDescription || projectSummary || `${t("projectDetail.supportProject")} ${projectTitle} auf Dopaya - Echten sozialen Impact schaffen und Belohnungen verdienen`}
+        keywords={`${projectTitle}, social impact, ${project.category}, Dopaya, social enterprise, impact investing, rewards`}
         ogImage={project.coverImage ? `${window.location.origin}${project.coverImage}` : `${window.location.origin}/src/assets/Dopaya Logo.png`}
         ogType="article"
         canonicalUrl={`${window.location.origin}/project/${project.slug || project.id}`}
         structuredData={{
           "@context": "https://schema.org",
           "@type": "Organization",
-          "name": project.title,
-          "description": project.description || project.summary,
+          "name": projectTitle,
+          "description": projectDescription || projectSummary,
           "url": `${window.location.origin}/project/${project.slug || project.id}`,
           "image": project.coverImage ? `${window.location.origin}${project.coverImage}` : `${window.location.origin}/src/assets/Dopaya Logo.png`,
           "category": project.category
@@ -617,12 +689,12 @@ ${url}
       <div ref={heroSectionRef} className={BRAND_COLORS.bgBeige}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-12">
           {/* Back Button */}
-          <Link href="/projects" className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-4">
+          <LanguageLink href="/projects" className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-4">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
             </svg>
-            Back to Projects
-          </Link>
+            {t("projectDetail.backToProjects")}
+          </LanguageLink>
 
           {/* Draft Banner */}
           {project.status === 'draft' && (
@@ -647,14 +719,14 @@ ${url}
 
           {/* Headline */}
           <div className="mb-4">
-            <h1 className="text-4xl md:text-5xl font-bold text-dark font-heading">{project.title}</h1>
+            <h1 className="text-4xl md:text-5xl font-bold text-dark font-heading">{projectTitle}</h1>
           </div>
 
           {/* Mission Statement - Below headline, above image slider */}
-          {project.missionStatement && (
+          {projectMissionStatement && (
             <div className="mb-8">
               <p className="text-xl text-neutral leading-relaxed whitespace-pre-line">
-                {project.missionStatement}
+                {projectMissionStatement}
               </p>
             </div>
           )}
@@ -676,12 +748,12 @@ ${url}
                         className={`text-left max-w-2xl w-full ${storySlideVisible ? 'opacity-100' : 'opacity-0'} transition-opacity duration-500`}
                         style={{ color: '#FFFFFF' }}
                       >
-                        <h2 className="text-2xl md:text-3xl font-bold mb-4">Story</h2>
+                        <h2 className="text-2xl md:text-3xl font-bold mb-4">{t("projectDetail.story")}</h2>
                         <p className="text-base md:text-lg mb-6 leading-relaxed">
-                          {project.aboutUs ? (
-                            project.aboutUs.length > 200 ? `${project.aboutUs.substring(0, 200)}...` : project.aboutUs
+                          {projectAboutUs ? (
+                            projectAboutUs.length > 200 ? `${projectAboutUs.substring(0, 200)}...` : projectAboutUs
                           ) : (
-                            project.description?.length > 200 ? `${project.description.substring(0, 200)}...` : project.description || 'Learn more about this inspiring social enterprise and the impact they are creating.'
+                            projectDescription?.length > 200 ? `${projectDescription.substring(0, 200)}...` : projectDescription || 'Learn more about this inspiring social enterprise and the impact they are creating.'
                           )}
                         </p>
                         <button
@@ -691,7 +763,7 @@ ${url}
                           className="inline-flex items-center gap-2 px-5 py-2.5 text-sm border-2 border-white rounded-lg font-semibold text-white hover:bg-white hover:text-[#DC582A] transition-all duration-300"
                           aria-label="Read full story"
                         >
-                          Read Full Story <ChevronDown className="h-4 w-4" />
+                          {t("projectDetail.readFullStory")} <ChevronDown className="h-4 w-4" />
                         </button>
                       </div>
                     </div>
@@ -727,7 +799,7 @@ ${url}
                             frameBorder="0"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                             allowFullScreen
-                            title={`${project.title} - Video`}
+                            title={`${projectTitle} - Video`}
                           />
                         ) : (
                           <video
@@ -754,7 +826,7 @@ ${url}
                             frameBorder="0"
                             allow="autoplay; fullscreen; picture-in-picture"
                             allowFullScreen
-                            title={`${project.title} - Video`}
+                            title={`${projectTitle} - Video`}
                           />
                         ) : (
                           <video
@@ -788,7 +860,7 @@ ${url}
                       return (
                         <EagerOptimizedImage
                           src={currentMedia.url}
-                          alt={`${project.title} - Image ${selectedImageIndex < STORY_SLIDE_INDEX ? selectedImageIndex + 1 : selectedImageIndex}`} 
+                          alt={`${projectTitle} - Image ${selectedImageIndex < STORY_SLIDE_INDEX ? selectedImageIndex + 1 : selectedImageIndex}`} 
                           width={800}
                           height={600}
                           quality={90}
@@ -847,12 +919,12 @@ ${url}
             {/* Right: Project Snapshot (1/4) */}
             <div className="lg:col-span-4">
               <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 sticky top-8">
-                <h3 className="font-bold text-dark mb-4">Project Snapshot</h3>
+                <h3 className="font-bold text-dark mb-4">{t("projectDetail.projectSnapshot")}</h3>
                 <div className="space-y-2">
-                  {project.keyImpact && (
+                  {projectKeyImpact && (
                     <div className="p-3 bg-green-50 rounded-lg">
                       <div className="text-sm text-neutral">
-                        {project.keyImpact}
+                        {projectKeyImpact}
                       </div>
                     </div>
                   )}
@@ -922,9 +994,9 @@ ${url}
                       return (
                         <div className="p-3 bg-gray-50 rounded-lg">
                           <div className="text-sm text-neutral">
-                            <span className="font-medium">Backed by: </span>
+                            <span className="font-medium">{t("projectDetail.backedBy")} </span>
                             {partners.join(' • ')}
-                            {hasMore && <span className="text-gray-500"> & more...</span>}
+                            {hasMore && <span className="text-gray-500"> {t("projectDetail.andMore")}</span>}
                           </div>
                         </div>
                       );
@@ -935,36 +1007,36 @@ ${url}
                   
                   {project.category && (
                     <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg mt-4">
-                      <span className="text-sm font-medium text-neutral">Category:</span>
+                      <span className="text-sm font-medium text-neutral">{t("projectDetail.category")}</span>
                       <span className={`px-2 py-1 ${getCategoryColors(project.category).badge} rounded-full text-xs`}>
                         {project.category}
                       </span>
                     </div>
                   )}
                   
-                  {project.country && (
+                  {projectCountry && (
                     <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <span className="text-sm font-medium text-neutral">Location:</span>
-                      <span className="text-sm text-neutral">{project.country}</span>
+                      <span className="text-sm font-medium text-neutral">{t("projectDetail.location")}</span>
+                      <span className="text-sm text-neutral">{projectCountry}</span>
                     </div>
                   )}
                   
                   {project.founderName && (
                     <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <span className="text-sm font-medium text-neutral">Founder:</span>
+                      <span className="text-sm font-medium text-neutral">{t("projectDetail.founder")}</span>
                       <span className="text-sm text-neutral">{project.founderName}</span>
                     </div>
                   )}
                   
                   {project.impactPointsMultiplier && (
                     <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <span className="text-sm font-medium text-neutral">Impact Multiplier:</span>
+                      <span className="text-sm font-medium text-neutral">{t("projectDetail.impactMultiplier")}:</span>
                       <div className="flex items-center">
                         <span className="text-sm text-neutral">{project.impactPointsMultiplier}x</span>
                         <button 
                           className="ml-2 text-gray-400 hover:text-gray-600 transition-colors"
                           onClick={() => setShowImpactInfo(true)}
-                          title="Learn more about Impact Multiplier"
+                          title={t("projectDetail.learnAboutImpactMultiplier")}
                         >
                           <FaInfoCircle className="h-3 w-3" />
                         </button>
@@ -979,7 +1051,7 @@ ${url}
                     project={project}
                     className="w-full py-3 text-lg font-bold"
                   >
-                    Support This Project
+                    {t("projectDetail.supportThisProject")}
                   </DonationButton>
                 </div>
               </div>
@@ -995,15 +1067,15 @@ ${url}
           <div className="hidden md:grid md:grid-cols-3 gap-0 items-center">
             <div className="flex items-center gap-3 md:border-r md:border-white md:pr-8 py-2">
               <ShieldCheck className="h-6 w-6 flex-shrink-0 text-white" strokeWidth={2} />
-              <span className="text-sm text-gray-700">Every social enterprise is carefully vetted for measurable, lasting change.</span>
+              <span className="text-sm text-gray-700">{t("projectDetail.carefullyVetted")}</span>
             </div>
             <div className="flex items-center gap-3 md:border-r md:border-white md:px-8 py-2">
               <ArrowRightLeft className="h-6 w-6 flex-shrink-0 text-white" strokeWidth={2} />
-              <span className="text-sm text-gray-700">100% of your support goes straight to the initiative — minus standard transaction fees.</span>
+              <span className="text-sm text-gray-700">{t("projectDetail.supportGoesToInitiative")}</span>
             </div>
             <div className="flex items-center gap-3 md:pl-8 py-2">
               <Gift className="h-6 w-6 flex-shrink-0 text-white" strokeWidth={2} />
-              <span className="text-sm text-gray-700">Earn points redeemable with sustainable brands — fueling a cycle of impact.</span>
+              <span className="text-sm text-gray-700">{t("projectDetail.earnPointsRedeemable")}</span>
             </div>
           </div>
           
@@ -1015,15 +1087,15 @@ ${url}
             >
               <div className="w-full flex-shrink-0 flex items-center justify-center gap-3 px-4">
                 <ShieldCheck className="h-6 w-6 flex-shrink-0 text-white" strokeWidth={2} />
-                <span className="text-sm text-gray-700">Every social enterprise is carefully vetted for measurable, lasting change.</span>
+                <span className="text-sm text-gray-700">{t("projectDetail.carefullyVetted")}</span>
               </div>
               <div className="w-full flex-shrink-0 flex items-center justify-center gap-3 px-4">
                 <ArrowRightLeft className="h-6 w-6 flex-shrink-0 text-white" strokeWidth={2} />
-                <span className="text-sm text-gray-700">100% of your support goes straight to the initiative — minus standard transaction fees.</span>
+                <span className="text-sm text-gray-700">{t("projectDetail.supportGoesToInitiative")}</span>
               </div>
               <div className="w-full flex-shrink-0 flex items-center justify-center gap-3 px-4">
                 <Gift className="h-6 w-6 flex-shrink-0 text-white" strokeWidth={2} />
-                <span className="text-sm text-gray-700">Earn points redeemable with sustainable brands — fueling a cycle of impact.</span>
+                <span className="text-sm text-gray-700">{t("projectDetail.earnPointsRedeemable")}</span>
               </div>
             </div>
           </div>
@@ -1035,11 +1107,11 @@ ${url}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex gap-6 overflow-x-auto">
             {[
-              { id: 'story', label: 'Story' },
-              { id: 'changemakers', label: 'The Changemaker' },
-              { id: 'impact', label: 'Impact' },
-              { id: 'ourview', label: 'Why We Back Them' },
-              { id: 'impactbox', label: 'Make an impact' }
+              { id: 'story', label: t("projectDetail.story") },
+              { id: 'changemakers', label: t("projectDetail.theChangemaker") },
+              { id: 'impact', label: t("projectDetail.impact") },
+              { id: 'ourview', label: t("projectDetail.whyWeBackThem") },
+              { id: 'impactbox', label: t("projectDetail.makeAnImpact") }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -1065,19 +1137,19 @@ ${url}
 
             {/* Story Section */}
             <div id="story" ref={storyRef} className="scroll-mt-36 mb-16 w-full">
-              <span className="inline-block text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full bg-orange-100 text-orange-800 mb-3">About</span>
-              <h2 className="text-xl font-bold text-dark font-heading mb-4 w-full">About this Social Enterprise</h2>
+              <span className="inline-block text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full bg-orange-100 text-orange-800 mb-3">{t("projectDetail.about")}</span>
+              <h2 className="text-xl font-bold text-dark font-heading mb-4 w-full">{t("projectDetail.aboutSocialEnterprise")}</h2>
               <div className="text-neutral mb-4 leading-relaxed whitespace-pre-line w-full block text-left">
-                {project.description}
+                {projectDescription}
               </div>
-              {project.aboutUs && (
-                <div className="text-neutral mb-4 leading-relaxed whitespace-pre-line w-full block text-left">{project.aboutUs}</div>
+              {projectAboutUs && (
+                <div className="text-neutral mb-4 leading-relaxed whitespace-pre-line w-full block text-left">{projectAboutUs}</div>
               )}
             </div>
 
             {/* Changemakers Section */}
             <div id="changemakers" ref={changemakersRef} className="scroll-mt-36 mb-16 w-full">
-              <span className="inline-block text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full bg-orange-100 text-orange-800 mb-3">The Changemaker</span>
+              <span className="inline-block text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full bg-orange-100 text-orange-800 mb-3">{t("projectDetail.theChangemaker")}</span>
               <div className="w-full">
                 {project.founderName ? (
                   <div className="flex flex-col md:flex-row gap-6 w-full">
@@ -1088,18 +1160,18 @@ ${url}
                       <div className="relative md:relative md:w-auto" style={{ width: '136px', minHeight: '128px' }}>
                         {/* First Founder Image */}
                         <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden md:mx-0 relative z-10" style={{ marginLeft: 0 }}>
-                          {project.founderImage ? (
-                            <OptimizedImage
-                              src={project.founderImage}
-                              alt={project.founderName || 'Founder'}
-                              width={128}
-                              height={128}
-                              className="w-full h-full object-cover"
-                              fallbackSrc="/placeholder-founder.png"
-                            />
-                          ) : (
-                            <FaUser className="h-16 w-16 text-gray-400" />
-                          )}
+                        {project.founderImage ? (
+                          <OptimizedImage
+                            src={project.founderImage}
+                            alt={project.founderName || t("images.founder")}
+                            width={128}
+                            height={128}
+                            className="w-full h-full object-cover"
+                            fallbackSrc="/placeholder-founder.png"
+                          />
+                        ) : (
+                          <FaUser className="h-16 w-16 text-gray-400" />
+                        )}
                         </div>
                         
                         {/* Second Founder Image (if founderImage2 exists) */}
@@ -1116,7 +1188,7 @@ ${url}
                               >
                                 <OptimizedImage
                                   src={founderImage2}
-                                  alt="Co-Founder"
+                                  alt={t("projectDetail.coFounder")}
                                   width={128}
                                   height={128}
                                   className="w-full h-full object-cover"
@@ -1135,16 +1207,20 @@ ${url}
                       <h3 className="text-2xl font-bold text-dark mb-2 w-full">{project.founderName}</h3>
                       <div className="mb-4">
                         <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
-                          Co-Founder
+                          {t("projectDetail.coFounder")}
                         </span>
                       </div>
-                      {project.founderBio && project.founderBio.trim() ? (
+                      {projectFounderBio && projectFounderBio.trim() ? (
                         <div className="text-neutral leading-relaxed whitespace-pre-line w-full block text-left">
-                          {project.founderBio}
+                          {projectFounderBio}
                         </div>
                       ) : (
                         <div className="text-neutral leading-relaxed mb-4 w-full block text-left">
-                          {project.founderName} is a visionary leader and social entrepreneur recognized for the pioneering work in the {project.category?.toLowerCase()} sector with {project.title}. With years of experience creating sustainable social change, they have dedicated their career to building solutions that fundamentally improve the communities they serve.
+                          {t("projectDetail.founderBioFallback", { 
+                            founderName: project.founderName || '', 
+                            category: project.category?.toLowerCase() || '', 
+                            projectTitle: projectTitle 
+                          })}
                         </div>
                       )}
                     </div>
@@ -1152,13 +1228,16 @@ ${url}
                 ) : (
                   <div className="space-y-4 text-neutral leading-relaxed w-full">
                     <div className="w-full block text-left">
-                      The team behind {project.title} is driven by a shared vision of creating meaningful social impact. With years of experience in {project.category?.toLowerCase()}, our founders recognized a critical need in the community and set out to build a solution.
+                      {t("projectDetail.teamBehindFallback1", { 
+                        projectTitle: projectTitle, 
+                        category: project.category?.toLowerCase() || '' 
+                      })}
                     </div>
                     <div className="w-full block text-left">
-                      What started as a small initiative has grown into a thriving social enterprise, thanks to the dedication and passion of everyone involved. Our team combines expertise in business, social impact, and community engagement to create programs that truly make a difference.
+                      {t("projectDetail.teamBehindFallback2")}
                     </div>
                     <div className="w-full block text-left">
-                      We believe that sustainable change comes from listening to communities, understanding their needs, and co-creating solutions together. This collaborative approach has been at the heart of {project.title}'s success and continues to guide our work every day.
+                      {t("projectDetail.teamBehindFallback3", { projectTitle: projectTitle })}
                     </div>
                   </div>
                 )}
@@ -1167,12 +1246,12 @@ ${url}
 
             {/* Impact Section */}
             <div id="impact" ref={impactRef} className="scroll-mt-36 mb-16 w-full">
-          {project.impactAchievements && (
+          {projectImpactAchievements && (
             <div className="w-full">
-              <span className="inline-block text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full bg-orange-100 text-orange-800 mb-3">Impact</span>
-              <h2 className="text-xl font-bold text-dark font-heading mb-4 w-full">Impact Created So Far</h2>
+              <span className="inline-block text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full bg-orange-100 text-orange-800 mb-3">{t("projectDetail.impact")}</span>
+              <h2 className="text-xl font-bold text-dark font-heading mb-4 w-full">{t("projectDetail.impactCreatedSoFar")}</h2>
               <div className="space-y-3 w-full">
-                {project.impactAchievements
+                {projectImpactAchievements
                   .split(/\s*•\s*/)
                   .filter(point => point.trim().length > 0)
                   .map((point, idx) => {
@@ -1191,21 +1270,16 @@ ${url}
 
             {/* Why We Back Them Section - Merged Backers and Why We Chose Them */}
             <div id="ourview" ref={ourviewRef} className="scroll-mt-36 mb-16 w-full">
-              <span className="inline-block text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full bg-orange-100 text-orange-800 mb-3">Why We Back Them</span>
+              <span className="inline-block text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full bg-orange-100 text-orange-800 mb-3">{t("projectDetail.whyWeBackThem")}</span>
               
               {/* Why We Selected Content - First part of merged section */}
               <div className={`${BRAND_COLORS.bgBeige} rounded-lg pb-6 px-0 pt-0 w-full`}>
-                <h2 className="text-xl font-bold text-dark font-heading mb-4 w-full">Why We Selected {project.slug === 'ignis-careers' ? 'Ignis Careers' : project.title}</h2>
+                <h2 className="text-xl font-bold text-dark font-heading mb-4 w-full">{t("projectDetail.whyWeSelected")} {projectTitle} {language === 'de' ? 'ausgewählt haben' : 'Selected'}</h2>
                 <div className="space-y-4 text-neutral leading-relaxed w-full">
                     {(() => {
                       // Check all possible field name variations (Supabase may return different casing)
-                      const projectAny = project as any;
-                      const reasoningText = 
-                        projectAny.SelectionReasoning ||      // Capitalized as shown in Supabase UI
-                        projectAny.selectionReasoning ||      // camelCase from schema
-                        projectAny.selection_reasoning ||      // snake_case
-                        projectAny.selectionreasoning ||      // all lowercase
-                        null;
+                      // Use language-specific selection reasoning
+                      const reasoningText = projectSelectionReasoning;
                       
                       if (reasoningText && typeof reasoningText === 'string' && reasoningText.trim()) {
                         // Use project-specific text from database
@@ -1214,7 +1288,10 @@ ${url}
                         // Fallback to generic text if no selectionReasoning is provided
                         return (
                           <div className="w-full block text-left">
-                            At Dopaya, we carefully select social enterprises that demonstrate genuine commitment to measurable impact, sustainable growth, and community-driven solutions. {project.title} stood out to us for several compelling reasons.
+                            {language === 'de' 
+                              ? `Bei Dopaya wählen wir sorgfältig soziale Unternehmen aus, die echtes Engagement für messbaren Impact, nachhaltiges Wachstum und gemeinschaftsgetriebene Lösungen zeigen. ${projectTitle} hat uns aus mehreren überzeugenden Gründen überzeugt.`
+                              : `At Dopaya, we carefully select social enterprises that demonstrate genuine commitment to measurable impact, sustainable growth, and community-driven solutions. ${projectTitle} stood out to us for several compelling reasons.`
+                            }
                           </div>
                         );
                       }
@@ -1224,14 +1301,14 @@ ${url}
 
               {/* Trusted by Leading Organizations - Show if there are backers OR press mentions */}
               {(backers.length > 0 || pressMentions.length > 0) && (
-                <h2 className="text-xl font-bold text-dark font-heading mb-4 mt-8 w-full block">Trusted by Leading Organizations</h2>
+                <h2 className="text-xl font-bold text-dark font-heading mb-4 mt-8 w-full block">{t("projectDetail.trustedByLeadingOrganizations")}</h2>
               )}
 
               {/* Backers Content - Second part of merged section */}
               {backers.length > 0 && (
                 <>
                   <div className="text-base text-neutral mb-6 w-full block">
-                    This social enterprise is trusted and supported by the following leading institutions, among others:
+                    {t("projectDetail.trustedByDescription")}
                   </div>
                   
                   {/* Backer Logos Grid - 2 on mobile, 3 on md, 4 on lg with infinite carousel */}
@@ -1293,7 +1370,7 @@ ${url}
                               {backer.name}
                             </h3>
                             <div className="text-xs mt-0.5 font-medium" style={{ color: BRAND_COLORS.textSecondary }}>
-                              Tap to learn more
+                              {t("projectDetail.tapToLearnMore")}
                             </div>
                           </div>
                         </div>
@@ -1359,7 +1436,7 @@ ${url}
                               {backer.name}
                             </h3>
                             <div className="text-xs mt-0.5 font-medium" style={{ color: BRAND_COLORS.textSecondary }}>
-                              Tap to learn more
+                              {t("projectDetail.tapToLearnMore")}
                             </div>
                           </div>
                         </div>
@@ -1442,7 +1519,7 @@ ${url}
                     // Try multiple possible field names
                     const logoPath = (backer as any).logoPath || (backer as any).logo_path || '';
                     const logoUrl = getLogoUrl(logoPath);
-                    const shortDescription = (backer as any).shortDescription || (backer as any).short_description || (backer as any).Shortdescription || '';
+                    const shortDescription = getBackerShortDescription(backer, language);
                     const websiteUrl = (backer as any).websiteUrl || (backer as any).website_url || (backer as any).website || '';
                     
                     
@@ -1485,7 +1562,7 @@ ${url}
                             </svg>
                           </button>
                           <p className="text-neutral leading-relaxed mb-4">
-                            {shortDescription || 'No description available.'}
+                            {shortDescription || (language === 'de' ? 'Keine Beschreibung verfügbar.' : 'No description available.')}
                           </p>
                           {websiteUrl && (
                             <a 
@@ -1495,7 +1572,7 @@ ${url}
                               className="inline-flex items-center gap-2 text-sm font-medium hover:underline"
                               style={{ color: BRAND_COLORS.primaryOrange }}
                             >
-                              Visit {backer.name}
+                              {t("projectDetail.visitBacker", { name: backer.name })}
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                               </svg>
@@ -1512,7 +1589,7 @@ ${url}
               {pressMentions.length > 0 && (
                 <div className="mt-4 w-full">
                   <div className="text-base text-neutral mb-4 w-full block">
-                    This social enterprise has been recognized and featured in the following press and media:
+                    {t("projectDetail.recognizedInPress")}
                   </div>
                   
                   {/* Press Mentions Carousel */}
@@ -1619,9 +1696,9 @@ ${url}
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
                     {/* Left: Text Content (2/3) */}
                     <div className="lg:col-span-2 flex flex-col">
-                      <h2 className="text-xl font-bold font-heading mb-3" style={{ color: BRAND_COLORS.textPrimary }}>Ready to make a difference?</h2>
+                      <h2 className="text-xl font-bold font-heading mb-3" style={{ color: BRAND_COLORS.textPrimary }}>{t("projectDetail.readyToMakeDifference")}</h2>
                       <div className="text-2xl lg:text-3xl font-semibold leading-relaxed" style={{ color: BRAND_COLORS.textPrimary }}>
-                        Support <span className="font-bold" style={{ color: BRAND_COLORS.textPrimary }}>{project.title}</span> with{' '}
+                        {t("projectDetail.supportProject")} <span className="font-bold" style={{ color: BRAND_COLORS.textPrimary }}>{projectTitle}</span> {language === 'de' ? 'mit' : 'with'}{' '}
                         <span className="relative inline-block donation-dropdown-container">
                           <button
                             onClick={(e) => {
@@ -1654,13 +1731,23 @@ ${url}
                             </div>
                           )}
                         </span>
-                        {' '}and help{' '}
-                        <span className="font-bold" style={{ color: BRAND_COLORS.textPrimary }}>{impactVerb}</span>{' '}
-                        <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>{impactAmount}</span>{' '}
-                        <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>{impactNoun}</span>
-                        {' '}— <span style={{ color: BRAND_COLORS.textSecondary }}>earn</span>{' '}
-                        <span className="font-bold" style={{ color: BRAND_COLORS.textPrimary }}>{impactPoints}</span>{' '}
-                        <span style={{ color: BRAND_COLORS.textSecondary }}>Impact Points</span>
+                        {' '}{language === 'de' ? 'und hilf' : 'and help'}{' '}
+                        {language === 'de' ? (
+                          <>
+                            <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>{impactAmount}</span>{' '}
+                            <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>{impactNoun}</span>{' '}
+                            <span className="font-bold" style={{ color: BRAND_COLORS.textPrimary }}>{impactVerb}</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="font-bold" style={{ color: BRAND_COLORS.textPrimary }}>{impactVerb}</span>{' '}
+                            <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>{impactAmount}</span>{' '}
+                            <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>{impactNoun}</span>
+                          </>
+                        )}
+                        {' '}<span style={{ color: BRAND_COLORS.textSecondary }}>—</span> <span style={{ color: BRAND_COLORS.textSecondary }}>{language === 'de' ? 'verdiene' : 'earn'}</span>{' '}
+                        <span className="font-bold" style={{ color: BRAND_COLORS.textSecondary }}>{impactPoints}</span>{' '}
+                        <span style={{ color: BRAND_COLORS.textSecondary }}>{t("projectDetail.impactPoints")}</span>
                       </div>
 
                       <div className="mt-4">
@@ -1669,7 +1756,7 @@ ${url}
                           className="text-white font-semibold px-6 lg:px-8 py-3 lg:py-4 text-base lg:text-lg min-h-[44px] lg:min-h-[48px] w-full sm:w-auto rounded-lg"
                           style={{ backgroundColor: BRAND_COLORS.primaryOrange }}
                         >
-                          Support This Project
+                          {t("projectDetail.supportThisProject")}
                         </DonationButton>
                         
                         {/* Clickable info icon below button */}
@@ -1678,7 +1765,7 @@ ${url}
                           className="mt-3 flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors mx-auto lg:mx-0"
                         >
                           <FaInfoCircle className="h-4 w-4" />
-                          <span>Learn about Impact Points</span>
+                          <span>{t("projectDetail.learnAboutImpactPoints")}</span>
                         </button>
                       </div>
                     </div>
@@ -1691,7 +1778,7 @@ ${url}
                           return projectImageUrl ? (
                             <OptimizedImage
                               src={projectImageUrl}
-                              alt={project.title}
+                              alt={projectTitle}
                               width={400}
                               height={320}
                               className="w-full h-full object-cover rounded-lg"
@@ -1699,7 +1786,7 @@ ${url}
                             />
                           ) : (
                             <div className="w-full h-full bg-gradient-to-br from-blue-100 to-green-100 flex items-center justify-center rounded-lg">
-                              <span className="text-4xl font-bold text-gray-400">{project.title.charAt(0)}</span>
+                              <span className="text-4xl font-bold text-gray-400">{projectTitle.charAt(0)}</span>
                             </div>
                           );
                         })()}
@@ -1719,7 +1806,7 @@ ${url}
             className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-100 p-6 self-start cursor-pointer hover:shadow-md transition-shadow"
             onClick={() => scrollToSection('changemakers')}
           >
-            <h3 className="font-bold text-dark mb-4">About the Changemaker</h3>
+            <h3 className="font-bold text-dark mb-4">{t("projectDetail.aboutChangemaker")}</h3>
             <div className="flex items-center gap-4">
               {/* Founder Image */}
               <div className="flex-shrink-0">
@@ -1727,7 +1814,7 @@ ${url}
                   {project.founderImage ? (
                     <OptimizedImage
                       src={project.founderImage}
-                      alt={project.founderName || 'Founder'}
+                      alt={project.founderName || t("images.founder")}
                       width={80}
                       height={80}
                       className="w-full h-full object-cover"
@@ -1741,14 +1828,18 @@ ${url}
               
               {/* Founder Info */}
               <div className="flex-1">
-                <h4 className="font-bold text-dark text-lg mb-1">{project.founderName || 'Founder'}</h4>
-                <p className="text-sm text-gray-600 mb-2">Co-Founder</p>
+                <h4 className="font-bold text-dark text-lg mb-1">{project.founderName || t("images.founder")}</h4>
+                <p className="text-sm text-gray-600 mb-2">{t("projectDetail.coFounder")}</p>
                 <p className="text-sm text-neutral line-clamp-2">
-                  {project.founderBio && project.founderBio.trim() 
-                    ? (project.founderBio.length > 150 
-                        ? `${project.founderBio.substring(0, 150)}...` 
-                        : project.founderBio)
-                    : `${project.founderName || 'Founder'} is a visionary leader and social entrepreneur recognized for the pioneering work in the ${project.category?.toLowerCase() || 'impact'} sector with ${project.title}. With years of experience creating sustainable social change, they have dedicated their career to building solutions that fundamentally improve the communities they serve.`
+                  {projectFounderBio && projectFounderBio.trim() 
+                    ? (projectFounderBio.length > 150 
+                        ? `${projectFounderBio.substring(0, 150)}...` 
+                        : projectFounderBio)
+                    : t("projectDetail.founderBioFallback", { 
+                        founderName: project.founderName || t("images.founder"), 
+                        category: project.category?.toLowerCase() || 'Impact', 
+                        projectTitle: projectTitle 
+                      })
                   }
                 </p>
               </div>
@@ -1757,7 +1848,7 @@ ${url}
             {/* Click to learn more */}
             <div className="mt-4 pt-4 border-t border-gray-100">
               <button className="text-sm text-primary hover:text-primary/80 font-medium flex items-center gap-2">
-                Learn more about the team
+                {t("projectDetail.learnMoreAboutTeam")}
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                 </svg>
@@ -1883,7 +1974,7 @@ ${url}
                 title="Share"
               >
                 <FaShareAlt className="h-4 w-4" />
-                <span className="font-semibold">Share</span>
+                <span className="font-semibold">{t("projectDetail.share")}</span>
               </button>
             )}
             
@@ -1892,14 +1983,14 @@ ${url}
               project={project}
               className="flex-1 bg-primary hover:bg-primary/90 text-white font-semibold h-12"
             >
-              Support This Project
+              {t("projectDetail.supportThisProject")}
             </DonationButton>
           </div>
 
           {/* Desktop: Share icons + Support button */}
           <div className="hidden md:flex justify-between items-center">
             <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium text-gray-900">Share this project</span>
+              <span className="text-sm font-medium text-gray-900">{t("projectDetail.shareThisProject")}</span>
               
               <button
                 onClick={() => handleShare('email')}
@@ -1928,7 +2019,7 @@ ${url}
               project={project}
               className="bg-primary hover:bg-primary/90 text-white font-bold px-6 py-2"
             >
-              Support This Project
+              {t("projectDetail.supportThisProject")}
             </DonationButton>
           </div>
         </div>
@@ -1938,14 +2029,17 @@ ${url}
       <Dialog open={showImpactInfo} onOpenChange={setShowImpactInfo}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Impact Multiplier</DialogTitle>
+            <DialogTitle>{t("projectDetail.impactMultiplier")}</DialogTitle>
             <DialogDescription>
-              Your $10 contribution earns 100 Impact Points — based on Dopaya's verified impact system.
+              {language === 'de' 
+                ? 'Dein Beitrag von $10 bringt dir 100 Impact Points – basierend auf Dopayas verifiziertem Impact-System.'
+                : 'Your $10 contribution earns 100 Impact Points — based on Dopaya\'s verified impact system.'
+              }
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button onClick={() => setShowImpactInfo(false)}>
-              Got it!
+              {language === 'de' ? 'Verstanden!' : 'Got it!'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1955,9 +2049,9 @@ ${url}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Support {project.title}</DialogTitle>
+            <DialogTitle>{t("projectDetail.supportProject")} {projectTitle}</DialogTitle>
             <DialogDescription>
-              Choose an amount to donate. You'll earn {project.impactPointsMultiplier || 10}x impact points for every dollar!
+              {t("projectDetail.chooseAmountDonate", { multiplier: project.impactPointsMultiplier || 10 })}
             </DialogDescription>
           </DialogHeader>
           
@@ -1990,7 +2084,7 @@ ${url}
           
           <div className="bg-orange-50 p-3 rounded-md mt-4">
             <p className="text-sm">
-              <span className="font-bold">Impact points you'll earn: </span> 
+              <span className="font-bold">{t("projectDetail.impactPointsYoullEarn")} </span> 
               <span className="text-primary font-bold">
                 {donationAmount * (project.impactPointsMultiplier || 10)}
               </span>
@@ -2003,37 +2097,35 @@ ${url}
 
       {/* Impact Points Info Dialog */}
       <Dialog open={showImpactPointsDialog} onOpenChange={setShowImpactPointsDialog}>
-        <DialogContent className="max-w-2xl bg-white">
+        <DialogContent className="max-w-xl bg-white">
           <DialogHeader>
-            <DialogTitle>Support change & earn Impact points</DialogTitle>
+            <DialogTitle>{t("projectDetail.supportChangeEarnPoints")}</DialogTitle>
           </DialogHeader>
           
           <div className="mt-4">
             {/* Impact points info - same content as right sidebar */}
             <div style={{ backgroundColor: '#F9FAFB' }} className="rounded-lg p-4 mb-6">
-              <h3 className="font-bold text-dark mb-3">Impact Points are redeemable for exclusive offers from verified sustainable brands.</h3>
+              <h3 className="font-bold text-dark mb-3">{t("projectDetail.impactPointsRedeemable")}</h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-gray-200">
-                      <th className="text-left py-2 text-gray-600 font-medium">Your support</th>
-                      <th className="text-left py-2 text-gray-600 font-medium">Impact points</th>
-                      <th className="text-left py-2 text-gray-600 font-medium">Bonus Points</th>
+                      <th className="text-left py-2 text-gray-600 font-medium">{t("projectDetail.yourSupport")}</th>
+                      <th className="text-left py-2 text-gray-600 font-medium">{t("projectDetail.impactPointsTableHeader")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {[
-                      { donation: 10, points: (project.impactPointsMultiplier || 10) * 10, bonus: 10, level: "Supporter" },
-                      { donation: 50, points: (project.impactPointsMultiplier || 10) * 50, bonus: 50, level: "Advocate" },
-                      { donation: 100, points: (project.impactPointsMultiplier || 10) * 100, bonus: 100, level: "Changemaker" },
-                      { donation: 250, points: (project.impactPointsMultiplier || 10) * 250, bonus: 250, level: "Impact Hero" },
-                      { donation: 500, points: (project.impactPointsMultiplier || 10) * 500, bonus: 500, level: "Impact Legend" },
-                      { donation: 1000, points: (project.impactPointsMultiplier || 10) * 1000, bonus: 1000, level: "Hall of Fame" }
+                      { donation: 10, points: (project.impactPointsMultiplier || 10) * 10, level: "Supporter" },
+                      { donation: 50, points: (project.impactPointsMultiplier || 10) * 50, level: "Advocate" },
+                      { donation: 100, points: (project.impactPointsMultiplier || 10) * 100, level: "Changemaker" },
+                      { donation: 250, points: (project.impactPointsMultiplier || 10) * 250, level: "Impact Hero" },
+                      { donation: 500, points: (project.impactPointsMultiplier || 10) * 500, level: "Impact Legend" },
+                      { donation: 1000, points: (project.impactPointsMultiplier || 10) * 1000, level: "Hall of Fame" }
                     ].map((tier, idx) => (
                       <tr key={idx} className="border-b border-gray-100">
                         <td className="py-2">${tier.donation.toLocaleString()}</td>
                         <td className="py-2 font-medium text-primary">{tier.points.toLocaleString()}</td>
-                        <td className="py-2 font-medium text-orange-600">+{tier.bonus}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -2044,7 +2136,7 @@ ${url}
 
           <DialogFooter>
             <Button onClick={() => setShowImpactPointsDialog(false)}>
-              Close
+              {language === 'de' ? 'Schließen' : 'Close'}
             </Button>
           </DialogFooter>
         </DialogContent>

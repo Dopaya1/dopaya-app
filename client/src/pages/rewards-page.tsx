@@ -6,12 +6,16 @@ import { UserImpact } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, Search, X, Gift, XCircle, Lock, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, Search, X, Gift, XCircle, Lock, Sparkles, ChevronLeft, ChevronRight, AlertCircle, Copy, Check } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { BRAND_COLORS } from "@/constants/colors";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { isOnboardingPreviewEnabled } from "@/lib/feature-flags";
+import { useTranslation } from "@/lib/i18n/use-translation";
+import { useI18n } from "@/lib/i18n/i18n-context";
+import { getBrandDescription, getRewardTitle } from "@/lib/i18n/project-content";
 import {
   Select,
   SelectContent,
@@ -45,6 +49,7 @@ interface Brand {
   featured: boolean | null;
   display_order?: number | null;
   displayOrder?: number | null;
+  country?: string | null;
 }
 
 interface ProductHighlight {
@@ -73,6 +78,8 @@ interface Reward {
 }
 
 export default function RewardsPage() {
+  const { t } = useTranslation();
+  const { language } = useI18n();
   const [location, navigate] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [showUnlockBanner, setShowUnlockBanner] = useState(false);
@@ -85,6 +92,7 @@ export default function RewardsPage() {
   const [selectedBrandId, setSelectedBrandId] = useState<number | null>(null);
   const [confirmReward, setConfirmReward] = useState<Reward | null>(null);
   const [unlockedReward, setUnlockedReward] = useState<Reward | null>(null);
+  const [codeCopied, setCodeCopied] = useState<boolean>(false);
   const brandSliderRef = useRef<HTMLDivElement>(null);
   const brandSliderRefV2 = useRef<HTMLDivElement>(null);
   const rewardsSectionRef = useRef<HTMLElement>(null);
@@ -230,7 +238,7 @@ export default function RewardsPage() {
           brandId: brandId !== null && brandId !== undefined ? Number(brandId) : null, // Ensure numeric
           pointsCost: reward.pointsCost || reward.points_cost,
           imageUrl: reward.imageUrl || reward.image_url,
-          title: reward.title || reward.name || 'Untitled Reward', // Ensure title is always present
+          title: reward.title || reward.name || 'Untitled Reward', // Ensure title is always present (will be translated later)
           category: reward.category || null,
           description: reward.description || null, // Ensure description is included
           retailValue: reward.retailValue || reward.retail_value,
@@ -307,6 +315,29 @@ export default function RewardsPage() {
       return isFeatured;
     });
   }, [brands]);
+
+  // Helper function to render brand name with country flag if applicable (Switzerland)
+  // MICROSTEP 1: Add renderBrandName function (same logic as homepage)
+  const renderBrandName = (brand: Brand) => {
+    const raw = brand as any;
+    const countryValue = raw.country || raw.Country; // Check both cases
+    const countryLower = countryValue?.toLowerCase()?.trim();
+    // Check for various Switzerland spellings
+    const isSwitzerland = countryLower === 'switzerland' || 
+                          countryLower === 'schweiz' || 
+                          countryLower === 'ch' ||
+                          countryLower === 'suisse' ||
+                          countryLower === 'svizzera';
+    
+    return (
+      <span className="flex items-center justify-center gap-1.5">
+        <span>{brand.name}</span>
+        {isSwitzerland && (
+          <span className="text-base" title="Switzerland" aria-label="Switzerland">🇨🇭</span>
+        )}
+      </span>
+    );
+  };
 
   // Get unique categories from rewards (for category filter)
   const availableCategories = useMemo(() => {
@@ -474,7 +505,7 @@ export default function RewardsPage() {
     console.log('confirmReward state should now be set to:', reward);
   };
 
-  const handleConfirmUnlock = () => {
+  const handleConfirmUnlock = async () => {
     console.log('handleConfirmUnlock called, confirmReward:', confirmReward);
     
     if (!confirmReward) {
@@ -488,15 +519,39 @@ export default function RewardsPage() {
 
     // Close confirmation dialog first
     setConfirmReward(null);
-    console.log('handleConfirmUnlock: closed confirmation dialog, opening success dialog in 150ms');
-    
-    // Open success dialog after a short delay to ensure first dialog closes
-    // Note: Auth check will happen when actually processing redemption (TODO)
-    setTimeout(() => {
-      console.log('Opening success dialog with reward:', rewardToUnlock);
-      setUnlockedReward(rewardToUnlock);
-      console.log('setUnlockedReward called with:', rewardToUnlock);
-    }, 150);
+
+    try {
+      // Call API to redeem reward
+      console.log(`[handleConfirmUnlock] Calling API: POST /api/rewards/${rewardToUnlock.id}/redeem`);
+      const response = await apiRequest("POST", `/api/rewards/${rewardToUnlock.id}/redeem`);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        throw new Error(errorData.message || `Server error: ${response.status}`);
+      }
+      
+      const redemption = await response.json();
+      console.log('[handleConfirmUnlock] ✅ Redemption successful:', redemption);
+      
+      // MICROSTEP 1.1: Invalidate impact query to update navbar immediately
+      queryClient.invalidateQueries({ queryKey: ["/api/user/impact"] });
+      console.log('[handleConfirmUnlock] ✅ Invalidated impact query - navbar will update');
+      
+      // Open success dialog after successful redemption
+      setTimeout(() => {
+        console.log('Opening success dialog with reward:', rewardToUnlock);
+        setUnlockedReward(rewardToUnlock);
+      }, 150);
+      
+    } catch (error: any) {
+      console.error('[handleConfirmUnlock] ❌ Redemption failed:', error);
+      toast({
+        title: "Redemption Failed",
+        description: error.message || "Failed to redeem reward. Please try again.",
+        variant: "destructive",
+      });
+      // Don't open success dialog on error
+    }
   };
 
   const handleCancelUnlock = () => {
@@ -569,9 +624,9 @@ export default function RewardsPage() {
   return (
     <>
       <SEOHead
-        title="Impact Rewards | Redeem Points for Exclusive Sustainable Products | Dopaya"
-        description="Redeem your impact points for exclusive rewards from sustainable brands. Earn rewards by supporting social enterprises and making a real difference in the world."
-        keywords="impact rewards, sustainability rewards, social impact points, brand partnerships, sustainable products, eco-friendly rewards, social enterprise rewards, impact points redemption"
+        title={t("rewardsPage.seoTitle")}
+        description={t("rewardsPage.seoDescription")}
+        keywords={t("rewardsPage.seoKeywords")}
         canonicalUrl="https://dopaya.com/rewards"
         ogType="website"
         ogImage="https://dopaya.com/og-rewards.jpg"
@@ -586,9 +641,9 @@ export default function RewardsPage() {
               <Gift className="h-5 w-5 text-yellow-600" />
               <AlertDescription className="flex items-center justify-between">
                 <div className="flex-1">
-                  <h4 className="font-semibold text-gray-900 mb-1">Unlock your first reward!</h4>
+                  <h4 className="font-semibold text-gray-900 mb-1">{t("rewardsPage.unlockBannerTitle")}</h4>
                   <p className="text-sm text-gray-700">
-                    Showing rewards you can unlock with your current Impact Points (≤{maxPointsFilter} Impact Points).
+                    {t("rewardsPage.unlockBannerDescription", { maxPoints: maxPointsFilter })}
                   </p>
                 </div>
                 <Button
@@ -614,10 +669,10 @@ export default function RewardsPage() {
                 </div>
                 <div className="space-y-2">
                   <h2 className="text-2xl font-bold text-gray-900">
-                    Unlock Your First Reward
+                    {t("rewardsPage.lockedStateTitle")}
                   </h2>
                   <p className="text-lg text-gray-700 max-w-2xl mx-auto">
-                    Our Rewards start from 100 Impact Points
+                    {t("rewardsPage.lockedStateDescription")}
                   </p>
                 </div>
                 <Button
@@ -625,7 +680,7 @@ export default function RewardsPage() {
                   className="bg-[#f2662d] hover:bg-[#d9551f] text-white font-semibold px-8 py-6 text-lg"
                   style={{ backgroundColor: '#f2662d' }}
                 >
-                  Support any social enterprise to unlock first reward
+                  {t("rewardsPage.lockedStateButton")}
                 </Button>
               </div>
 
@@ -633,7 +688,7 @@ export default function RewardsPage() {
               {sampleRewards.length > 0 && (
                 <div className="space-y-4">
                   <h3 className="text-xl font-semibold text-gray-900 text-center">
-                    Sample Rewards You Can Unlock
+                    {t("rewardsPage.sampleRewardsTitle")}
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {sampleRewards.map((reward) => (
@@ -645,16 +700,16 @@ export default function RewardsPage() {
                           <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden mb-3">
                             <img
                               src={reward.imageUrl}
-                              alt={reward.title}
+                              alt={getRewardTitle(reward, language)}
                               className="w-full h-full object-cover"
                             />
                           </div>
                         )}
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <h4 className="font-semibold text-gray-900">{reward.title}</h4>
+                            <h4 className="font-semibold text-gray-900">{getRewardTitle(reward, language)}</h4>
                             <span className="text-sm font-medium text-[#f2662d]">
-                              {reward.pointsCost} Impact Points
+                              {reward.pointsCost} {t("rewardsPage.impactPoints")}
                             </span>
                           </div>
                           <p className="text-sm text-gray-600 line-clamp-2">
@@ -663,11 +718,11 @@ export default function RewardsPage() {
                           <div className="pt-2">
                             {reward.available ? (
                               <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                Available now
+                                {t("rewardsPage.availableNow")}
                               </span>
                             ) : (
                               <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                                Coming soon
+                                {t("rewardsPage.comingSoon")}
                               </span>
                             )}
                           </div>
@@ -692,15 +747,15 @@ export default function RewardsPage() {
                   {/* TOP HERO: Featured Brand Slider */}
                   <section>
                     <div className="text-center mb-8">
-                      <h2 className="text-3xl font-bold mb-3">Featured Sustainable Brands</h2>
+                      <h2 className="text-3xl font-bold mb-3">{t("rewardsPage.featuredBrandsTitle")}</h2>
                       <p className="text-muted-foreground max-w-2xl mx-auto">
-                        Discover amazing brands making a positive impact on the world
+                        {t("rewardsPage.featuredBrandsSubtitle")}
                       </p>
                     </div>
 
                     {featuredBrands.length === 0 ? (
                       <div className="text-center py-12 bg-gray-50 rounded-lg">
-                        <p className="text-xl font-semibold mb-2">No featured brands found</p>
+                        <p className="text-xl font-semibold mb-2">{t("rewardsPage.noBrandsFound")}</p>
                       </div>
                     ) : (
                       <div className="relative">
@@ -777,7 +832,7 @@ export default function RewardsPage() {
 
                                 {/* Brand Name */}
                                 <div className="text-center mb-2">
-                                  <h3 className="font-bold text-lg">{brand.name}</h3>
+                                  <h3 className="font-bold text-lg">{renderBrandName(brand)}</h3>
                                 </div>
 
                                 {/* Category Tag */}
@@ -790,30 +845,33 @@ export default function RewardsPage() {
                                 )}
 
                                 {/* 2-line Brand Story Snippet with View More */}
-                                {(brand.description || brand.longDescription) && (
-                                  <div className="my-3 text-center">
-                                    <p className="text-sm text-gray-600 leading-relaxed inline">
-                                      {(brand.description || brand.longDescription || '').substring(0, 100)}
-                                      {' '}
-                                      <button
-                                        onClick={() => handleViewBrand(brand.id)}
-                                        className="text-sm text-orange-600 hover:text-orange-700 font-medium inline"
-                                        aria-label={`View more about ${brand.name}`}
-                                      >
-                                        View more...
-                                      </button>
-                                    </p>
-                                  </div>
-                                )}
+                                {(() => {
+                                  const brandDescription = getBrandDescription(brand, language) || brand.longDescription;
+                                  return brandDescription ? (
+                                    <div className="my-3 text-center">
+                                      <p className="text-sm text-gray-600 leading-relaxed inline">
+                                        {brandDescription.substring(0, 100)}
+                                        {' '}
+                                        <button
+                                          onClick={() => handleViewBrand(brand.id)}
+                                          className="text-sm text-orange-600 hover:text-orange-700 font-medium inline"
+                                          aria-label={t("rewardsPage.viewMore")}
+                                        >
+                                          {t("rewardsPage.viewMore")}
+                                        </button>
+                                      </p>
+                                    </div>
+                                  ) : null;
+                                })()}
 
                                 {/* View Brand Rewards Button - Sticks to bottom */}
                                 <Button
                                   variant="outline"
                                   className="w-full mt-auto"
                                   onClick={() => handleViewBrandRewards(brand.id)}
-                                  aria-label={`View rewards from ${brand.name}`}
+                                  aria-label={t("rewardsPage.viewBrandRewards")}
                                 >
-                                  View brand rewards
+                                  {t("rewardsPage.viewBrandRewards")}
                                 </Button>
                               </div>
                             </div>
@@ -827,9 +885,9 @@ export default function RewardsPage() {
                   {/* Available Rewards Header */}
                   <section ref={rewardsSectionRef}>
                     <div className="text-center mb-8">
-                      <h2 className="text-3xl font-bold mb-3">Available Rewards</h2>
+                      <h2 className="text-3xl font-bold mb-3">{t("rewardsPage.availableRewardsTitle")}</h2>
                       <p className="text-muted-foreground max-w-2xl mx-auto">
-                        Unlock exclusive rewards with your Impact Points
+                        {t("rewardsPage.availableRewardsSubtitle")}
                       </p>
                     </div>
                   </section>
@@ -843,7 +901,7 @@ export default function RewardsPage() {
                           {/* Search Bar */}
                           <div className="relative flex-1 max-w-md w-full">
                             <Input
-                              placeholder="Search for sustainable brands or products"
+                              placeholder={t("rewardsPage.searchPlaceholder")}
                               value={searchQuery}
                               onChange={handleSearch}
                               className="pl-10 pr-10 h-12 text-base bg-white"
@@ -864,10 +922,10 @@ export default function RewardsPage() {
                         {/* Brand Filter */}
                         <Select value={brandFilter} onValueChange={setBrandFilter}>
                           <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Brand" />
+                            <SelectValue placeholder={t("rewardsPage.brand")} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="all">All Brands</SelectItem>
+                            <SelectItem value="all">{t("rewardsPage.allBrands")}</SelectItem>
                             {availableBrands.map((brand) => (
                               <SelectItem key={brand.id} value={brand.id.toString()}>
                                 {brand.name}
@@ -879,10 +937,10 @@ export default function RewardsPage() {
                         {/* Category Filter */}
                         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                           <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Category" />
+                            <SelectValue placeholder={t("rewardsPage.category")} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="all">All Categories</SelectItem>
+                            <SelectItem value="all">{t("rewardsPage.allCategories")}</SelectItem>
                             {availableCategories.map((category) => (
                               <SelectItem key={category} value={category}>
                                 {category}
@@ -894,27 +952,136 @@ export default function RewardsPage() {
                         {/* Impact Points Filter */}
                         <Select value={pointsFilter} onValueChange={setPointsFilter}>
                           <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Impact Points" />
+                            <SelectValue placeholder={t("rewardsPage.impactPoints")} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="all">All Points</SelectItem>
-                            <SelectItem value="100-249">100 - 249 Points</SelectItem>
-                            <SelectItem value="250-499">250 - 499 Points</SelectItem>
-                            <SelectItem value="500-999">500 - 999 Points</SelectItem>
-                            <SelectItem value="1000+">1.000+ Points</SelectItem>
+                            <SelectItem value="all">{t("rewardsPage.allPoints")}</SelectItem>
+                            <SelectItem value="100-249">100 - 249 {t("rewardsPage.points")}</SelectItem>
+                            <SelectItem value="250-499">250 - 499 {t("rewardsPage.points")}</SelectItem>
+                            <SelectItem value="500-999">500 - 999 {t("rewardsPage.points")}</SelectItem>
+                            <SelectItem value="1000+">1.000+ {t("rewardsPage.points")}</SelectItem>
                           </SelectContent>
                         </Select>
 
-                        {/* Highlighted Only Filter - Toggle Button */}
+                        {/* Dopaya's Pick Filter - Toggle Button */}
                         <Button
                           variant={highlightedFilter ? "default" : "outline"}
                           onClick={() => setHighlightedFilter(!highlightedFilter)}
                           className={`w-[180px] ${highlightedFilter ? 'bg-orange-600 hover:bg-orange-700 text-white' : ''}`}
-                          aria-label="Filter highlighted rewards only"
+                          aria-label="Filter Dopaya's Pick rewards only"
                         >
-                          {highlightedFilter ? '✓ Highlighted Only' : 'Highlighted Only'}
+                          {highlightedFilter ? t("rewardsPage.dopayasPickActive") : t("rewardsPage.dopayasPick")}
                         </Button>
                         </div>
+
+                        {/* Active Filters Display - Show below filters when any filter is active */}
+                        {(searchQuery || brandFilter !== "all" || categoryFilter !== "all" || pointsFilter !== "all" || highlightedFilter || maxPointsFilter) && (
+                          <div className="mt-4 pt-4 border-t border-gray-200">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-sm font-medium text-gray-600 mr-2">{t("rewardsPage.activeFilters")}</span>
+                              
+                              {/* Search Query Filter */}
+                              {searchQuery && (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm bg-blue-100 text-blue-800 border border-blue-200">
+                                  <span>{t("rewardsPage.searchFilter", { query: searchQuery })}</span>
+                                  <button
+                                    onClick={() => setSearchQuery("")}
+                                    className="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
+                                    aria-label="Remove search filter"
+                                  >
+                                    <X className="h-3.5 w-3.5" />
+                                  </button>
+                                </span>
+                              )}
+
+                              {/* Brand Filter */}
+                              {brandFilter !== "all" && (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm bg-blue-100 text-blue-800 border border-blue-200">
+                                  <span>{t("rewardsPage.brandFilter", { name: availableBrands.find(b => b.id.toString() === brandFilter)?.name || brandFilter })}</span>
+                                  <button
+                                    onClick={() => setBrandFilter("all")}
+                                    className="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
+                                    aria-label="Remove brand filter"
+                                  >
+                                    <X className="h-3.5 w-3.5" />
+                                  </button>
+                                </span>
+                              )}
+
+                              {/* Category Filter */}
+                              {categoryFilter !== "all" && (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm bg-blue-100 text-blue-800 border border-blue-200">
+                                  <span>{t("rewardsPage.categoryFilter", { name: categoryFilter })}</span>
+                                  <button
+                                    onClick={() => setCategoryFilter("all")}
+                                    className="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
+                                    aria-label="Remove category filter"
+                                  >
+                                    <X className="h-3.5 w-3.5" />
+                                  </button>
+                                </span>
+                              )}
+
+                              {/* Points Filter */}
+                              {pointsFilter !== "all" && (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm bg-blue-100 text-blue-800 border border-blue-200">
+                                  <span>{t("rewardsPage.pointsFilter", { range: pointsFilter === "100-249" ? "100 - 249" : pointsFilter === "250-499" ? "250 - 499" : pointsFilter === "500-999" ? "500 - 999" : "1.000+" })}</span>
+                                  <button
+                                    onClick={() => setPointsFilter("all")}
+                                    className="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
+                                    aria-label="Remove points filter"
+                                  >
+                                    <X className="h-3.5 w-3.5" />
+                                  </button>
+                                </span>
+                              )}
+
+                              {/* Max Points Filter (from unlock banner) */}
+                              {maxPointsFilter && (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm bg-blue-100 text-blue-800 border border-blue-200">
+                                  <span>Max Points: ≤{maxPointsFilter}</span>
+                                  <button
+                                    onClick={() => setMaxPointsFilter(null)}
+                                    className="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
+                                    aria-label="Remove max points filter"
+                                  >
+                                    <X className="h-3.5 w-3.5" />
+                                  </button>
+                                </span>
+                              )}
+
+                              {/* Dopaya's Pick Filter */}
+                              {highlightedFilter && (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm bg-orange-100 text-orange-800 border border-orange-200">
+                                  <span>{t("rewardsPage.dopayasPick")}</span>
+                                  <button
+                                    onClick={() => setHighlightedFilter(false)}
+                                    className="hover:bg-orange-200 rounded-full p-0.5 transition-colors"
+                                    aria-label="Remove Dopaya's Pick filter"
+                                  >
+                                    <X className="h-3.5 w-3.5" />
+                                  </button>
+                                </span>
+                              )}
+
+                              {/* Clear All Button */}
+                              <button
+                                onClick={() => {
+                                  setSearchQuery("");
+                                  setBrandFilter("all");
+                                  setCategoryFilter("all");
+                                  setPointsFilter("all");
+                                  setHighlightedFilter(false);
+                                  setMaxPointsFilter(null);
+                                }}
+                                className="ml-2 text-sm text-gray-600 hover:text-gray-800 underline"
+                                aria-label="Clear all filters"
+                              >
+                                {t("rewardsPage.clearSearch")}
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </section>
@@ -965,7 +1132,7 @@ export default function RewardsPage() {
                             if (!brandLogo) {
                               const allKeys = Object.keys(rawBrand);
                               const logoKeys = allKeys.filter(k => k.toLowerCase().includes('logo'));
-                              console.warn(`[Rewards] ⚠️ Brand "${brand.name}" (ID: ${brand.id}) found but no logo for reward ${reward.id} (${reward.title})`, {
+                              console.warn(`[Rewards] ⚠️ Brand "${brand.name}" (ID: ${brand.id}) found but no logo for reward ${reward.id} (${getRewardTitle(reward, language)})`, {
                                 allKeys: allKeys,
                                 logoKeys: logoKeys,
                                 rawBrand: rawBrand
@@ -975,9 +1142,9 @@ export default function RewardsPage() {
                           
                           // Debug logging for brand lookup
                           if (!brand && rewardBrandId) {
-                            console.warn(`[Rewards] ⚠️ Brand not found for reward ${reward.id} (${reward.title}), brandId: ${rewardBrandId}, available brands:`, brands.map(b => ({ id: b.id, name: b.name })));
+                            console.warn(`[Rewards] ⚠️ Brand not found for reward ${reward.id} (${getRewardTitle(reward, language)}), brandId: ${rewardBrandId}, available brands:`, brands.map(b => ({ id: b.id, name: b.name })));
                           } else if (brand && brandLogo) {
-                            console.log(`[Rewards] ✅ Logo found for reward ${reward.id} (${reward.title}):`, {
+                            console.log(`[Rewards] ✅ Logo found for reward ${reward.id} (${getRewardTitle(reward, language)}):`, {
                               brandName: brand.name,
                               brandId: brand.id,
                               logoUrl: brandLogo
@@ -991,29 +1158,29 @@ export default function RewardsPage() {
                               key={reward.id}
                               className="bg-white border-2 border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 hover:border-orange-300 flex flex-col"
                               role="article"
-                              aria-label={`Reward: ${reward.title}`}
+                              aria-label={`Reward: ${getRewardTitle(reward, language)}`}
                             >
                               {/* Product Image */}
                               {productImage ? (
                                 <div className="relative aspect-[3/2] bg-gray-100 overflow-hidden">
                                   <img
                                     src={productImage}
-                                    alt={`Product for ${reward.title || 'Reward'}`}
+                                    alt={`Product for ${getRewardTitle(reward, language) || 'Reward'}`}
                                     className="w-full h-full object-cover object-center"
                                   />
-                                  {/* Highlighted Badge - Top Right - Show if featured */}
+                                  {/* Dopaya's Pick Badge - Top Right - Show if featured */}
                                   {(reward.featured === true || reward.featured === 'true' || (reward as any).featured === 1) && (
                                     <div className="absolute top-3 right-3 bg-orange-600 text-white rounded-full px-3 py-1 text-xs font-medium shadow-lg">
-                                      Highlighted
+                                      {t("rewardsPage.dopayasPick")}
                                     </div>
                                   )}
                                 </div>
                               ) : (
                                 <div className="relative aspect-[3/2] bg-gray-100">
-                                  {/* Highlighted Badge - Top Right - Show if featured */}
+                                  {/* Dopaya's Pick Badge - Top Right - Show if featured */}
                                   {(reward.featured === true || reward.featured === 'true' || (reward as any).featured === 1) && (
                                     <div className="absolute top-3 right-3 bg-orange-600 text-white rounded-full px-3 py-1 text-xs font-medium shadow-lg">
-                                      Highlighted
+                                      {t("rewardsPage.dopayasPick")}
                                     </div>
                                   )}
                                 </div>
@@ -1053,7 +1220,7 @@ export default function RewardsPage() {
 
                                 {/* Reward Name - Always shown */}
                                 <h3 className="font-bold text-lg mb-2 text-center">
-                                  {reward.title || 'Reward'}
+                                  {getRewardTitle(reward, language) || 'Reward'}
                                 </h3>
 
                                 {/* Description - Only shown if available */}
@@ -1066,7 +1233,7 @@ export default function RewardsPage() {
                                 {/* Impact Points Badge */}
                                 <div className="flex justify-center mb-3">
                                   <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-amber-50 text-black border border-amber-200">
-                                    {reward.pointsCost} Impact Points
+                                    {reward.pointsCost} {t("rewardsPage.impactPoints")}
                                   </span>
                                 </div>
 
@@ -1075,9 +1242,9 @@ export default function RewardsPage() {
                                   variant="outline"
                                   className="w-full mt-auto bg-gray-100 hover:bg-orange-600 hover:text-white hover:border-orange-600 transition-colors"
                                   onClick={() => handleRedeemReward(reward)}
-                                  aria-label={`Unlock reward: ${reward.title}`}
+                                  aria-label={`Unlock reward: ${getRewardTitle(reward, language)}`}
                                 >
-                                  Unlock Reward
+                                  {t("rewardsPage.unlockRewardButton")}
                                 </Button>
                               </div>
                             </div>
@@ -1086,10 +1253,10 @@ export default function RewardsPage() {
                       </div>
                     ) : (
                       <div className="text-center py-12">
-                        <p className="text-xl font-semibold">No rewards match your search</p>
-                        <p className="text-muted-foreground mt-2">Try adjusting your search</p>
+                        <p className="text-xl font-semibold">{t("rewardsPage.noRewardsMatch")}</p>
+                        <p className="text-muted-foreground mt-2">{t("rewardsPage.tryAdjustingSearch")}</p>
                         <Button className="mt-4" onClick={clearSearch}>
-                          Clear Search
+                          {t("rewardsPage.clearSearch")}
                         </Button>
                       </div>
                     )}
@@ -1123,9 +1290,9 @@ export default function RewardsPage() {
             <div className="space-y-6">
               {/* Brand Mission */}
               <div>
-                <h3 className="font-semibold mb-2">About {selectedBrand.name}</h3>
+                <h3 className="font-semibold mb-2">{t("rewardsPage.aboutBrand", { name: selectedBrand.name })}</h3>
                 <p className="text-base text-gray-600">
-                  {selectedBrand.longDescription || selectedBrand.description || "Sustainable brand making a positive impact."}
+                  {getBrandDescription(selectedBrand, language) || selectedBrand.longDescription || t("rewardsPage.sustainableBrandDescription")}
                 </p>
                 {/* Website Link */}
                 {(selectedBrand.websiteUrl || selectedBrand.website_url) && (
@@ -1136,7 +1303,7 @@ export default function RewardsPage() {
                       rel="noopener noreferrer"
                       className="text-sm text-orange-600 hover:text-orange-700 underline"
                     >
-                      Visit {selectedBrand.name}'s website →
+                      {t("rewardsPage.visitWebsite")} →
                     </a>
                   </div>
                 )}
@@ -1146,7 +1313,7 @@ export default function RewardsPage() {
               {selectedBrand.category && (
                 <div className="flex gap-2">
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    Sustainable Brand
+                    {t("rewardsPage.sustainableBrand")}
                   </span>
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                     {selectedBrand.category}
@@ -1172,39 +1339,93 @@ export default function RewardsPage() {
       >
         <DialogContent className="bg-white">
           <DialogHeader>
-            <DialogTitle>Confirm Unlock Reward</DialogTitle>
+            <DialogTitle>{t("rewardsPage.confirmRedeem")}</DialogTitle>
             <DialogDescription>
-              Please confirm that you want to unlock this reward.
+              {t("rewardsPage.confirmRedeemDescription")}
             </DialogDescription>
           </DialogHeader>
-          {confirmReward ? (
-            <div className="space-y-4">
-              <p className="text-sm text-gray-600">
-                Are you sure you want to unlock this reward? It will cost you{" "}
-                <span className="font-bold text-orange-600">{confirmReward.pointsCost}</span> Impact Points.
-              </p>
-              <div className="flex gap-3 justify-end">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    console.log('Cancel button clicked');
-                    handleCancelUnlock();
-                  }}
-                >
-                  No
-                </Button>
-                <Button
-                  onClick={() => {
-                    console.log('Yes button clicked');
-                    handleConfirmUnlock();
-                  }}
-                  style={{ backgroundColor: BRAND_COLORS.primaryOrange }}
-                >
-                  Yes
-                </Button>
+          {confirmReward ? (() => {
+            // MICROSTEP 2.1.2: Check if user has enough points
+            const userPoints = impact?.impactPoints || 0;
+            const requiredPoints = confirmReward.pointsCost || 0;
+            const hasEnoughPoints = userPoints >= requiredPoints;
+            const pointsShortage = requiredPoints - userPoints;
+
+            if (!hasEnoughPoints) {
+              // Show insufficient points message with action links
+              return (
+                <div className="space-y-4">
+                  {/* Error/Warning Message */}
+                  <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <XCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="font-semibold text-red-900 mb-1">
+                        {t("rewardsPage.insufficientPoints")}
+                      </p>
+                      <p className="text-sm text-red-700">
+                        {t("rewardsPage.insufficientPointsDescription", { required: requiredPoints, current: userPoints, shortage: pointsShortage })}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Action Links */}
+                  <div className="space-y-2">
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => {
+                        console.log('[Confirmation Dialog] User clicked "View Other Rewards"');
+                        setConfirmReward(null);
+                        navigate('/rewards');
+                      }}
+                    >
+                      {t("rewardsPage.viewOtherRewards")}
+                    </Button>
+                    <Button
+                      className="w-full"
+                      style={{ backgroundColor: BRAND_COLORS.primaryOrange }}
+                      onClick={() => {
+                        console.log('[Confirmation Dialog] User clicked "Generate Impact"');
+                        setConfirmReward(null);
+                        navigate('/projects');
+                      }}
+                    >
+                      {t("rewardsPage.generateImpactEarnMore")}
+                    </Button>
+                  </div>
+                </div>
+              );
+            }
+
+            // Normal confirmation if user has enough points
+            return (
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600">
+                  {t("rewardsPage.confirmUnlockDescription", { points: requiredPoints })}
+                </p>
+                <div className="flex gap-3 justify-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      console.log('Cancel button clicked');
+                      handleCancelUnlock();
+                    }}
+                  >
+                    {t("rewardsPage.no")}
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      console.log('Yes button clicked');
+                      handleConfirmUnlock();
+                    }}
+                    style={{ backgroundColor: BRAND_COLORS.primaryOrange }}
+                  >
+                    {t("rewardsPage.yes")}
+                  </Button>
+                </div>
               </div>
-            </div>
-          ) : (
+            );
+          })() : (
             <div className="space-y-4">
               <p className="text-sm text-gray-600">Loading...</p>
             </div>
@@ -1220,14 +1441,15 @@ export default function RewardsPage() {
           if (!open) {
             console.log('Closing success dialog');
             setUnlockedReward(null);
+            setCodeCopied(false); // Reset copied state when dialog closes
           }
         }}
       >
         <DialogContent className="max-w-md bg-white" onPointerDownOutside={(e) => e.preventDefault()}>
           <DialogHeader>
-            <DialogTitle className="text-center">Reward Unlocked! 🎉</DialogTitle>
+            <DialogTitle className="text-center">{t("rewardsPage.rewardUnlockedTitle")}</DialogTitle>
             <DialogDescription className="text-center">
-              Your promo code is ready to use
+              {t("rewardsPage.promoCodeReady")}
             </DialogDescription>
           </DialogHeader>
           {unlockedReward ? (() => {
@@ -1255,15 +1477,78 @@ export default function RewardsPage() {
                 {/* Promo Code - Big and Prominent */}
                 {unlockedReward.promoCode && (
                   <div className="text-center space-y-2">
-                    <p className="text-sm text-gray-600 font-medium">Your Promo Code:</p>
-                    <div className="bg-orange-50 border-2 border-orange-300 rounded-lg p-6">
+                    <p className="text-sm text-gray-600 font-medium">{t("rewardsPage.yourPromoCode")}</p>
+                    <div className="bg-orange-50 border-2 border-orange-300 rounded-lg p-6 relative">
                       <p className="text-4xl font-bold text-orange-600 tracking-wider">
                         {unlockedReward.promoCode}
                       </p>
+                      {/* Copy Button */}
+                      <button
+                        onClick={async () => {
+                          try {
+                            if (navigator.clipboard && navigator.clipboard.writeText) {
+                              await navigator.clipboard.writeText(unlockedReward.promoCode || '');
+                              setCodeCopied(true);
+                              toast({
+                                title: t("rewardsPage.codeCopiedTitle"),
+                                description: t("rewardsPage.codeCopiedDescription"),
+                              });
+                              // Reset after 3 seconds
+                              setTimeout(() => setCodeCopied(false), 3000);
+                            } else {
+                              // Fallback for older browsers
+                              const textArea = document.createElement('textarea');
+                              textArea.value = unlockedReward.promoCode || '';
+                              textArea.style.position = 'fixed';
+                              textArea.style.opacity = '0';
+                              document.body.appendChild(textArea);
+                              textArea.select();
+                              try {
+                                document.execCommand('copy');
+                                setCodeCopied(true);
+                                toast({
+                                  title: "Code copied!",
+                                  description: "Promo code has been copied to your clipboard",
+                                });
+                                setTimeout(() => setCodeCopied(false), 3000);
+                              } catch (err) {
+                                toast({
+                                  title: t("rewardsPage.copyFailed"),
+                                  description: t("rewardsPage.copyFailedDescription"),
+                                  variant: "destructive",
+                                });
+                              }
+                              document.body.removeChild(textArea);
+                            }
+                          } catch (error) {
+                            console.error('Failed to copy code:', error);
+                            toast({
+                              title: "Copy failed",
+                              description: "Please manually copy the code",
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                        className="absolute top-3 right-3 p-2 rounded-md hover:bg-orange-100 transition-colors"
+                        aria-label="Copy promo code to clipboard"
+                        title="Copy code to clipboard"
+                      >
+                        {codeCopied ? (
+                          <Check className="h-5 w-5 text-green-600" />
+                        ) : (
+                          <Copy className="h-5 w-5 text-orange-600" />
+                        )}
+                      </button>
                     </div>
                     <p className="text-sm font-semibold text-black mt-3">
-                      ⚠️ IMPORTANT: Please note your reward code down before leaving this page
+                      {t("rewardsPage.importantNote")}
                     </p>
+                    {codeCopied && (
+                      <p className="text-sm text-green-600 font-medium flex items-center justify-center gap-1">
+                        <Check className="h-4 w-4" />
+                        {t("rewardsPage.codeCopiedToClipboard")}
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -1281,7 +1566,7 @@ export default function RewardsPage() {
                         rel="noopener noreferrer"
                         className="flex items-center justify-center gap-2"
                       >
-                        Shop Now
+                        {t("rewardsPage.shopNow")}
                         <svg
                           className="w-4 h-4"
                           fill="none"
@@ -1307,14 +1592,14 @@ export default function RewardsPage() {
                     onClick={() => setUnlockedReward(null)}
                     className="w-full"
                   >
-                    Close
+                    {t("rewardsPage.close")}
                   </Button>
                 </div>
               </div>
             );
           })() : (
             <div className="space-y-4">
-              <p className="text-sm text-gray-600">Loading reward details...</p>
+              <p className="text-sm text-gray-600">{t("rewardsPage.loadingRewardDetails")}</p>
             </div>
           )}
         </DialogContent>

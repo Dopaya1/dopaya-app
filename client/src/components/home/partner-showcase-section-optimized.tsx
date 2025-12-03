@@ -14,6 +14,9 @@ import aaparLogo from '@assets/Brand_backers/Aapar sustainable brand - logo.png'
 import syangsLogo from '@assets/Syangs logo_1750646598029.png';
 import sankalpaArtVillageLogo from '@assets/Brand_backers/sankalpa-art-village sustainable brand - logo.png';
 import milletarianLogo from '@assets/Brand_backers/milletarian sustainable brand - logo.png';
+import { useTranslation } from "@/lib/i18n/use-translation";
+import { useI18n } from "@/lib/i18n/i18n-context";
+import { getBrandDescription, getRewardTitle } from "@/lib/i18n/project-content";
 
 // Fallback brand data (used if no brands in database)
 const fallbackBrands = [
@@ -86,6 +89,8 @@ const fallbackLogos: Record<string, string> = {
 };
 
 export function PartnerShowcaseSection() {
+  const { t } = useTranslation();
+  const { language } = useI18n();
   const [selectedBrand, setSelectedBrand] = useState<number | null>(null);
   // Page-based slider (4 items per page on lg, 3 on md, 2 on sm)
   const [page, setPage] = useState(0);
@@ -204,7 +209,7 @@ export function PartnerShowcaseSection() {
           const raw = brand as any;
           const logoPath = raw.logo_path || raw.logoPath || raw.logo_url || raw.logoUrl || '';
           const websiteUrl = raw.website_url || raw.websiteUrl || '';
-          const description = brand.description || '';
+          const description = getBrandDescription(brand, language) || brand.description || '';
           const category = brand.category || '';
           // Check both Country (capital C) and country (lowercase c) - Supabase may preserve case
           const country = raw.Country || raw.country || '';
@@ -213,7 +218,7 @@ export function PartnerShowcaseSection() {
           if (country) {
             console.log(`[PartnerShowcase] Brand "${brand.name}" (ID: ${brand.id}): country="${country}" (from Country=${raw.Country}, country=${raw.country})`);
           }
-          
+        
           // Get logo URL with fallback - check fallbackLogos first, then try getLogoUrl
           const fallbackLogo = fallbackLogos[brand.name] || fallbackLogos[brand.name.trim()];
           const logoUrl = logoPath ? getLogoUrl(logoPath, fallbackLogo) : null;
@@ -226,18 +231,18 @@ export function PartnerShowcaseSection() {
           
           // Properly handle featured boolean - ensure it's a true boolean
           const isFeatured = Boolean((brand as any).featured) === true;
-          
-          return {
-            id: brand.id,
-            name: brand.name,
-            fullName: brand.name, // Use name as fullName, or you can add a separate fullName field later
-            logo: finalLogo,
-            hoverDescription: description,
-            category: category,
-            website: websiteUrl || '#',
+        
+        return {
+          id: brand.id,
+          name: brand.name,
+          fullName: brand.name, // Use name as fullName, or you can add a separate fullName field later
+          logo: finalLogo,
+          hoverDescription: description,
+          category: category,
+          website: websiteUrl || '#',
             featured: isFeatured,
             country: country, // Add country field
-          };
+        };
         })
         .filter(b => {
           // Filter brands with logos and log which ones are removed
@@ -372,11 +377,11 @@ export function PartnerShowcaseSection() {
           <h2 className={`${TYPOGRAPHY.section} mb-4`} style={{ 
             color: BRAND_COLORS.textPrimary, 
             fontFamily: "'Satoshi', 'Inter', system-ui, sans-serif" 
-          }}>
-            <em>Thank you</em> rewards from impact brands you'll love
-          </h2>
+          }}
+          dangerouslySetInnerHTML={{ __html: t("homeSections.partnerShowcase.title") }}
+          />
           <p className={`${TYPOGRAPHY.bodyLarge} max-w-3xl mx-auto`} style={{ color: BRAND_COLORS.textSecondary }}>
-            We believe in "Doing good deserves more". Unlock exclusive thank you rewards for your support - from brands creating positive change in the world
+            {t("homeSections.partnerShowcase.subtitle")}
           </p>
         </div>
 
@@ -521,10 +526,10 @@ export function PartnerShowcaseSection() {
               color: BRAND_COLORS.textPrimary,
               fontFamily: "'Satoshi', 'Inter', system-ui, sans-serif"
             }}>
-              Popular Rewards
+              {t("homeSections.partnerShowcase.popularRewards")}
             </h3>
             <p className="text-xl max-w-2xl mx-auto" style={{ color: BRAND_COLORS.textSecondary }}>
-              Redeem your impact points for exclusive products and experiences
+              {t("homeSections.partnerShowcase.popularRewardsSubtitle")}
             </p>
           </div>
 
@@ -555,18 +560,18 @@ export function PartnerShowcaseSection() {
                   const brandInfo = brandId ? brandMap.get(Number(brandId)) : null;
                   
                   return (
-                    <div
-                      key={reward.id}
-                      className="rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group cursor-pointer"
-                      style={{ backgroundColor: BRAND_COLORS.bgWhite, border: `1px solid ${BRAND_COLORS.borderSubtle}` }}
-                    >
-                      {/* Reward Image - Smaller Height */}
+                  <div
+                    key={reward.id}
+                    className="rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group cursor-pointer"
+                    style={{ backgroundColor: BRAND_COLORS.bgWhite, border: `1px solid ${BRAND_COLORS.borderSubtle}` }}
+                  >
+                    {/* Reward Image - Smaller Height */}
                       <div className="aspect-[16/9] bg-gray-100 overflow-hidden relative">
-                        <img
-                          src={reward.imageUrl}
-                          alt={reward.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
+                      <img
+                        src={reward.imageUrl}
+                        alt={getRewardTitle(reward, language)}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
                         {/* Brand Logo - Small badge in top-right corner */}
                         {brandInfo?.logoUrl && (
                           <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-md p-1.5 shadow-sm">
@@ -577,6 +582,62 @@ export function PartnerShowcaseSection() {
                             />
                           </div>
                         )}
+                    </div>
+
+                    {/* Reward Info */}
+                    <div className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-medium px-2 py-1 rounded" 
+                              style={{ backgroundColor: BRAND_COLORS.bgCool, color: BRAND_COLORS.textMuted }}>
+                          {reward.category}
+                        </span>
+                        {reward.discount && (
+                          <span className="text-xs font-medium" style={{ color: BRAND_COLORS.primaryOrange }}>
+                            {reward.discount}
+                          </span>
+                        )}
+                      </div>
+                      
+                        <h4 className="font-semibold line-clamp-3 mb-5" style={{ color: BRAND_COLORS.textPrimary }}>
+                        {getRewardTitle(reward, language)}
+                      </h4>
+                    </div>
+                  </div>
+                  );
+                })}
+              </div>
+
+              {/* Mobile: Slider */}
+              <div className="lg:hidden">
+                <MobileSlider
+                  items={rewards}
+                  renderItem={(reward) => {
+                    const brandId = (reward as any).brandId || (reward as any).brand_id;
+                    const brandInfo = brandId ? brandMap.get(Number(brandId)) : null;
+                    
+                    return (
+                    <div
+                      key={reward.id}
+                      className="rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group cursor-pointer"
+                      style={{ backgroundColor: BRAND_COLORS.bgWhite, border: `1px solid ${BRAND_COLORS.borderSubtle}` }}
+                    >
+                      {/* Reward Image - Smaller Height */}
+                        <div className="aspect-[16/9] bg-gray-100 overflow-hidden relative">
+                        <img
+                          src={reward.imageUrl}
+                          alt={getRewardTitle(reward, language)}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                          {/* Brand Logo - Small badge in top-right corner */}
+                          {brandInfo?.logoUrl && (
+                            <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-md p-1.5 shadow-sm">
+                              <img
+                                src={brandInfo.logoUrl}
+                                alt={brandInfo.name}
+                                className="h-6 w-auto object-contain"
+                              />
+                            </div>
+                          )}
                       </div>
 
                       {/* Reward Info */}
@@ -593,67 +654,11 @@ export function PartnerShowcaseSection() {
                           )}
                         </div>
                         
-                        <h4 className="font-semibold line-clamp-3 mb-5" style={{ color: BRAND_COLORS.textPrimary }}>
-                          {reward.title}
+                          <h4 className="font-semibold line-clamp-2 mb-5" style={{ color: BRAND_COLORS.textPrimary }}>
+                          {getRewardTitle(reward, language)}
                         </h4>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-
-              {/* Mobile: Slider */}
-              <div className="lg:hidden">
-                <MobileSlider
-                  items={rewards}
-                  renderItem={(reward) => {
-                    const brandId = (reward as any).brandId || (reward as any).brand_id;
-                    const brandInfo = brandId ? brandMap.get(Number(brandId)) : null;
-                    
-                    return (
-                      <div
-                        key={reward.id}
-                        className="rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group cursor-pointer"
-                        style={{ backgroundColor: BRAND_COLORS.bgWhite, border: `1px solid ${BRAND_COLORS.borderSubtle}` }}
-                      >
-                        {/* Reward Image - Smaller Height */}
-                        <div className="aspect-[16/9] bg-gray-100 overflow-hidden relative">
-                          <img
-                            src={reward.imageUrl}
-                            alt={reward.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          />
-                          {/* Brand Logo - Small badge in top-right corner */}
-                          {brandInfo?.logoUrl && (
-                            <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-md p-1.5 shadow-sm">
-                              <img
-                                src={brandInfo.logoUrl}
-                                alt={brandInfo.name}
-                                className="h-6 w-auto object-contain"
-                              />
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Reward Info */}
-                        <div className="p-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-medium px-2 py-1 rounded" 
-                                  style={{ backgroundColor: BRAND_COLORS.bgCool, color: BRAND_COLORS.textMuted }}>
-                              {reward.category}
-                            </span>
-                            {reward.discount && (
-                              <span className="text-xs font-medium" style={{ color: BRAND_COLORS.primaryOrange }}>
-                                {reward.discount}
-                              </span>
-                            )}
-                          </div>
-                          
-                          <h4 className="font-semibold line-clamp-2 mb-5" style={{ color: BRAND_COLORS.textPrimary }}>
-                            {reward.title}
-                          </h4>
-                        </div>
-                      </div>
                     );
                   }}
                   gap="gap-6"

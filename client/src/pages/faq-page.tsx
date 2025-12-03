@@ -8,88 +8,92 @@ import { SEOHead } from "@/components/seo/seo-head";
 import { SPACING } from "@/constants/spacing";
 import { TYPOGRAPHY } from "@/constants/typography";
 import { Link } from "wouter";
+import { useTranslation } from "@/lib/i18n/use-translation";
+import { LanguageLink } from "@/components/ui/language-link";
 
 export default function FAQPage() {
+  const { t } = useTranslation();
+  
   // FAQ data for structured data (must match FAQContent)
   const faqStructuredData = [
     {
       "@type": "Question",
-      "name": "Why should I support social enterprises instead of NGOs?",
+      "name": t("faq.questions.whySupportSocialEnterprises.question"),
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Social enterprises use sustainable business models to create long-term impact. Unlike NGOs that often rely on recurring donations, social enterprises reinvest earnings into their mission — making your contribution go further. Some even deliver a measurable social return on investment (SROI) of 2×, 3× or more."
+        "text": t("faq.questions.whySupportSocialEnterprises.answer")
       }
     },
     {
       "@type": "Question",
-      "name": "How much does Dopaya take from contributions?",
+      "name": t("faq.questions.howMuchDoesDopayaTake.question"),
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Currently, 100% of your contribution goes directly to social enterprises. We're supported by small community contributions and brand partnership fees. Our goal is to keep platform costs minimal while maximizing impact."
+        "text": t("faq.questions.howMuchDoesDopayaTake.answer")
       }
     },
     {
       "@type": "Question",
-      "name": "How does Dopaya ensure contributions are used correctly?",
+      "name": t("faq.questions.howDoesDopayaEnsure.question"),
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Every social enterprise on Dopaya goes through a careful vetting process. We assess their impact model, financials, and governance to ensure credibility. We also track how funds are used and offer supporters clear visibility through updates and dashboards."
+        "text": t("faq.questions.howDoesDopayaEnsure.answer")
       }
     },
     {
       "@type": "Question",
-      "name": "How can my social enterprise join Dopaya?",
+      "name": t("faq.questions.howCanSocialEnterpriseJoin.question"),
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Social enterprises can apply through our simple onboarding form. We review each application carefully based on impact potential and alignment. If selected, you'll get access to our platform and tools to grow your funding and visibility. Apply here: https://tally.so/r/3EM0vA"
+        "text": `${t("faq.questions.howCanSocialEnterpriseJoin.answer")} ${t("faq.questions.howCanSocialEnterpriseJoin.applyHere")}: https://tally.so/r/3EM0vA`
       }
     },
     {
       "@type": "Question",
-      "name": "How do brands collaborate with Dopaya?",
+      "name": t("faq.questions.howDoBrandsCollaborate.question"),
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Brands can offer rewards, product experiences, or exclusive perks for our supporter community. They simply submit a form, and we'll get in touch to co-create impact campaigns. It's a unique way to connect with socially conscious, Gen Z and Millennial audiences. Partner with us: https://tally.so/r/3lvVg5"
+        "text": `${t("faq.questions.howDoBrandsCollaborate.answer")} ${t("faq.questions.howDoBrandsCollaborate.partnerWithUs")}: https://tally.so/r/3lvVg5`
       }
     },
     {
       "@type": "Question",
-      "name": "Is there any cost for brands?",
+      "name": t("faq.questions.isThereCostForBrands.question"),
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "No, it's completely free. Dopaya helps purpose-driven brands reach a values-aligned audience — at no cost. You gain access to marketing exposure and impact storytelling while contributing to real change."
+        "text": t("faq.questions.isThereCostForBrands.answer")
       }
     },
     {
       "@type": "Question",
-      "name": "Is there any cost for social enterprises?",
+      "name": t("faq.questions.isThereCostForSocialEnterprises.question"),
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Never. We exist to support social enterprises and help them access funding streams without lifting a finger. There are no platform fees — just more reach, more supporters, and more time to focus on your mission."
+        "text": t("faq.questions.isThereCostForSocialEnterprises.answer")
       }
     },
     {
       "@type": "Question",
-      "name": "Can I choose where my contribution goes?",
+      "name": t("faq.questions.canIChooseContribution.question"),
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Yes. You can explore our list of vetted social enterprises and choose who to support — or let Dopaya recommend an initiative based on your interests. Either way, your impact is real, transparent, and trackable."
+        "text": t("faq.questions.canIChooseContribution.answer")
       }
     },
     {
       "@type": "Question",
-      "name": "What kind of rewards do supporters receive?",
+      "name": t("faq.questions.whatKindOfRewards.question"),
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Every contribution earns you Impact Points — which unlock badges, perks, and access to curated brand experiences. The more you give or refer, the more rewarding your journey becomes."
+        "text": t("faq.questions.whatKindOfRewards.answer")
       }
     },
     {
       "@type": "Question",
-      "name": "Are contributions tax-deductible?",
+      "name": t("faq.questions.areContributionsTaxDeductible.question"),
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "In many cases, yes. We're working to expand this and provide tax-friendly options for more users globally."
+        "text": t("faq.questions.areContributionsTaxDeductible.answer")
       }
     }
   ];
@@ -97,8 +101,8 @@ export default function FAQPage() {
   return (
     <>
       <SEOHead
-        title="FAQ | Frequently Asked Questions About Dopaya | Social Impact Platform"
-        description="Get answers to common questions about Dopaya, social enterprise contributions, platform fees, impact points, and how to join our community of changemakers."
+        title={t("faq.seoTitle")}
+        description={t("faq.seoDescription")}
         keywords="FAQ, frequently asked questions, social enterprise contributions, platform fees, NGO vs social enterprise, supporter questions, impact points, social impact platform, how does dopaya work"
         canonicalUrl="https://dopaya.com/faq"
         ogType="website"
@@ -115,70 +119,72 @@ export default function FAQPage() {
 }
 
 function FAQContent() {
+  const { t } = useTranslation();
+  
   const faqs = [
     {
-      question: "Why should I support social enterprises instead of NGOs?",
-      answer: "Social enterprises use sustainable business models to create long-term impact. Unlike NGOs that often rely on recurring donations, social enterprises reinvest earnings into their mission — making your contribution go further. Some even deliver a measurable social return on investment (SROI) of 2×, 3× or more."
+      question: t("faq.questions.whySupportSocialEnterprises.question"),
+      answer: t("faq.questions.whySupportSocialEnterprises.answer"),
     },
     {
-      question: "How much does Dopaya take from contributions?",
-      answer: "Currently, 100% of your contribution goes directly to social enterprises. We're supported by small community contributions and brand partnership fees. Our goal is to keep platform costs minimal while maximizing impact."
+      question: t("faq.questions.howMuchDoesDopayaTake.question"),
+      answer: t("faq.questions.howMuchDoesDopayaTake.answer"),
     },
     {
-      question: "How does Dopaya ensure contributions are used correctly?",
-      answer: "Every social enterprise on Dopaya goes through a careful vetting process. We assess their impact model, financials, and governance to ensure credibility. We also track how funds are used and offer supporters clear visibility through updates and dashboards."
+      question: t("faq.questions.howDoesDopayaEnsure.question"),
+      answer: t("faq.questions.howDoesDopayaEnsure.answer"),
     },
     {
-      question: "How can my social enterprise join Dopaya?",
+      question: t("faq.questions.howCanSocialEnterpriseJoin.question"),
       answer: (
         <span>
-          Social enterprises can apply through our simple onboarding form. We review each application carefully based on impact potential and alignment. If selected, you'll get access to our platform and tools to grow your funding and visibility.{" "}
+          {t("faq.questions.howCanSocialEnterpriseJoin.answer")}{" "}
           <a 
             href="https://tally.so/r/3EM0vA" 
             target="_blank" 
             rel="noopener noreferrer"
             className="text-orange-600 hover:text-orange-700 underline"
           >
-            Apply here
+            {t("faq.questions.howCanSocialEnterpriseJoin.applyHere")}
           </a>
         </span>
       )
     },
     {
-      question: "How do brands collaborate with Dopaya?",
+      question: t("faq.questions.howDoBrandsCollaborate.question"),
       answer: (
         <span>
-          Brands can offer rewards, product experiences, or exclusive perks for our supporter community. They simply submit a form, and we'll get in touch to co-create impact campaigns. It's a unique way to connect with socially conscious, Gen Z and Millennial audiences.{" "}
+          {t("faq.questions.howDoBrandsCollaborate.answer")}{" "}
           <a 
             href="https://tally.so/r/3lvVg5" 
             target="_blank" 
             rel="noopener noreferrer"
             className="text-orange-600 hover:text-orange-700 underline"
           >
-            Partner with us
+            {t("faq.questions.howDoBrandsCollaborate.partnerWithUs")}
           </a>
         </span>
       )
     },
     {
-      question: "Is there any cost for brands?",
-      answer: "No, it's completely free. Dopaya helps purpose-driven brands reach a values-aligned audience — at no cost. You gain access to marketing exposure and impact storytelling while contributing to real change."
+      question: t("faq.questions.isThereCostForBrands.question"),
+      answer: t("faq.questions.isThereCostForBrands.answer"),
     },
     {
-      question: "Is there any cost for social enterprises?",
-      answer: "Never. We exist to support social enterprises and help them access funding streams without lifting a finger. There are no platform fees — just more reach, more supporters, and more time to focus on your mission."
+      question: t("faq.questions.isThereCostForSocialEnterprises.question"),
+      answer: t("faq.questions.isThereCostForSocialEnterprises.answer"),
     },
     {
-      question: "Can I choose where my contribution goes?",
-      answer: "Yes. You can explore our list of vetted social enterprises and choose who to support — or let Dopaya recommend an initiative based on your interests. Either way, your impact is real, transparent, and trackable."
+      question: t("faq.questions.canIChooseContribution.question"),
+      answer: t("faq.questions.canIChooseContribution.answer"),
     },
     {
-      question: "What kind of rewards do supporters receive?",
-      answer: "Every contribution earns you Impact Points — which unlock badges, perks, and access to curated brand experiences. The more you give or refer, the more rewarding your journey becomes."
+      question: t("faq.questions.whatKindOfRewards.question"),
+      answer: t("faq.questions.whatKindOfRewards.answer"),
     },
     {
-      question: "Are contributions tax-deductible?",
-      answer: "In many cases, yes. We're working to expand this and provide tax-friendly options for more users globally."
+      question: t("faq.questions.areContributionsTaxDeductible.question"),
+      answer: t("faq.questions.areContributionsTaxDeductible.answer"),
     }
   ];
 
@@ -188,10 +194,10 @@ function FAQContent() {
         <section className="bg-gradient-to-r from-orange-50 to-orange-100 py-16">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 font-heading">
-              Frequently Asked Questions
+              {t("faq.title")}
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Everything you need to know about our platform, social enterprises, and making an impact
+              {t("faq.subtitle")}
             </p>
           </div>
         </section>
@@ -218,17 +224,17 @@ function FAQContent() {
         <section className="py-16 bg-gray-50">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 className="text-2xl font-bold text-gray-900 mb-4 font-heading">
-              Still have questions?
+              {t("faq.stillHaveQuestions")}
             </h2>
             <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
-              We're here to help! Reach out to our team for personalized assistance with your impact journey.
+              {t("faq.contactSupportText")}
             </p>
-            <Link 
+            <LanguageLink 
               href="/contact"
               className="inline-flex items-center px-6 py-3 bg-orange-600 text-white font-medium rounded-lg hover:bg-orange-700 transition-colors"
             >
-              Contact Support
-            </Link>
+              {t("faq.contactSupport")}
+            </LanguageLink>
           </div>
         </section>
       </div>

@@ -1,13 +1,22 @@
 import { SEOHead } from "@/components/seo/seo-head";
+import { useTranslation } from "@/lib/i18n/use-translation";
+import { useI18n } from "@/lib/i18n/i18n-context";
 
 export default function CookiePolicy() {
+  const { t } = useTranslation();
+  const { language } = useI18n();
+  
   return (
     <>
       <SEOHead
-        title="Cookie Policy"
-        description="Understand how Dopaya uses cookies and similar technologies. Learn about cookie types, purposes, and how to manage your cookie preferences."
-        keywords="cookie policy, cookies, web tracking, browser storage, user preferences, website analytics"
-        canonicalUrl="https://dopaya.com/cookies"
+        title={language === 'de' ? 'Cookie-Richtlinie | Cookie Policy | Dopaya' : 'Cookie Policy'}
+        description={language === 'de' ? 'Verstehe, wie Dopaya Cookies und ähnliche Technologien verwendet. Erfahre mehr über Cookie-Typen, Zwecke und wie du deine Cookie-Einstellungen verwaltest.' : 'Understand how Dopaya uses cookies and similar technologies. Learn about cookie types, purposes, and how to manage your cookie preferences.'}
+        keywords={language === 'de' ? 'Cookie-Richtlinie, Cookies, Web-Tracking, Browser-Speicher, Benutzereinstellungen, Website-Analyse' : 'cookie policy, cookies, web tracking, browser storage, user preferences, website analytics'}
+        canonicalUrl={`https://dopaya.com${language === 'de' ? '/de/cookies' : '/cookies'}`}
+        alternateUrls={{
+          en: 'https://dopaya.com/cookies',
+          de: 'https://dopaya.com/de/cookies',
+        }}
       />
       <div className="min-h-screen bg-white py-16">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">

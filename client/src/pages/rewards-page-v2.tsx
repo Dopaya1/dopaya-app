@@ -12,6 +12,7 @@ import { supabase } from "@/lib/supabase";
 import { BRAND_COLORS } from "@/constants/colors";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { isOnboardingPreviewEnabled } from "@/lib/feature-flags";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 // Types for our data structure
 interface Brand {
@@ -57,7 +58,14 @@ interface Reward {
 }
 
 export default function RewardsPageV2() {
+  const { t, language } = useTranslation();
   const [location, navigate] = useLocation();
+  
+  // Debug: Log current language
+  useEffect(() => {
+    console.log('🌍 Rewards Page - Current language:', language);
+    console.log('🌍 Rewards Page - Current pathname:', window.location.pathname);
+  }, [language]);
   const [searchQuery, setSearchQuery] = useState("");
   const [showUnlockBanner, setShowUnlockBanner] = useState(false);
   const [maxPointsFilter, setMaxPointsFilter] = useState<number | null>(null);
@@ -247,8 +255,8 @@ export default function RewardsPageV2() {
   const handleRedeemReward = (reward: Reward) => {
     if (!user) {
       toast({
-        title: "Authentication required",
-        description: "Please log in to redeem rewards",
+        title: t("rewardsPage.authenticationRequired"),
+        description: t("rewardsPage.pleaseLogIn"),
         variant: "destructive",
       });
       return;
@@ -256,8 +264,8 @@ export default function RewardsPageV2() {
 
     // Mock redemption for now
     toast({
-      title: "Reward Redeemed!",
-      description: `You've successfully redeemed ${reward.title}`,
+      title: t("rewardsPage.rewardRedeemed"),
+      description: t("rewardsPage.successfullyRedeemed", { title: reward.title }),
     });
   };
 
@@ -266,9 +274,9 @@ export default function RewardsPageV2() {
   return (
     <>
       <SEOHead
-        title="Impact Rewards | Redeem Points for Exclusive Sustainable Products | Dopaya"
-        description="Redeem your impact points for exclusive rewards from sustainable brands. Earn rewards by supporting social enterprises and making a real difference in the world."
-        keywords="impact rewards, sustainability rewards, social impact points, brand partnerships, sustainable products, eco-friendly rewards, social enterprise rewards, impact points redemption"
+        title={t("rewardsPage.seoTitle")}
+        description={t("rewardsPage.seoDescription")}
+        keywords={t("rewardsPage.seoKeywords")}
         canonicalUrl="https://dopaya.com/rewards"
         ogType="website"
         ogImage="https://dopaya.com/og-rewards.jpg"
@@ -278,9 +286,9 @@ export default function RewardsPageV2() {
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold mb-4">Impact Rewards</h1>
+            <h1 className="text-4xl font-bold mb-4">{t("rewardsPage.title")}</h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Redeem your impact points for exclusive rewards from sustainable brands you'll love
+              {t("rewardsPage.subtitle")}
             </p>
           </div>
 
@@ -290,9 +298,9 @@ export default function RewardsPageV2() {
               <Gift className="h-5 w-5 text-yellow-600" />
               <AlertDescription className="flex items-center justify-between">
                 <div className="flex-1">
-                  <h4 className="font-semibold text-gray-900 mb-1">Unlock your first reward!</h4>
+                  <h4 className="font-semibold text-gray-900 mb-1">{t("rewardsPage.unlockBannerTitle")}</h4>
                   <p className="text-sm text-gray-700">
-                    Showing rewards you can unlock with your current Impact Points (≤{maxPointsFilter} IP).
+                    {t("rewardsPage.unlockBannerDescription", { maxPoints: maxPointsFilter })}
                   </p>
                 </div>
                 <Button
@@ -319,10 +327,10 @@ export default function RewardsPageV2() {
                 </div>
                 <div className="space-y-2">
                   <h2 className="text-2xl font-bold text-gray-900">
-                    Unlock Your First Reward
+                    {t("rewardsPage.lockedStateTitle")}
                   </h2>
                   <p className="text-lg text-gray-700 max-w-2xl mx-auto">
-                    You have already received 50 Impact Points. Support from $5 to unlock your first reward (instead of usually $10).
+                    {t("rewardsPage.lockedStateDescription")}
                   </p>
                 </div>
                 <Button
@@ -330,7 +338,7 @@ export default function RewardsPageV2() {
                   className="bg-[#f2662d] hover:bg-[#d9551f] text-white font-semibold px-8 py-6 text-lg"
                   style={{ backgroundColor: '#f2662d' }}
                 >
-                  Support any project with $5 to unlock rewards
+                  {t("rewardsPage.lockedStateButton")}
                 </Button>
               </div>
 
@@ -338,7 +346,7 @@ export default function RewardsPageV2() {
               {sampleRewards.length > 0 && (
                 <div className="space-y-4">
                   <h3 className="text-xl font-semibold text-gray-900 text-center">
-                    Sample Rewards You Can Unlock
+                    {t("rewardsPage.sampleRewardsTitle")}
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {sampleRewards.map((reward) => (
@@ -359,7 +367,7 @@ export default function RewardsPageV2() {
                           <div className="flex items-center justify-between">
                             <h4 className="font-semibold text-gray-900">{reward.title}</h4>
                             <span className="text-sm font-medium text-[#f2662d]">
-                              {reward.pointsCost} IP
+                              {reward.pointsCost} {t("rewardsPage.impactPoints")}
                             </span>
                           </div>
                           <p className="text-sm text-gray-600 line-clamp-2">
@@ -368,11 +376,11 @@ export default function RewardsPageV2() {
                           <div className="pt-2">
                             {reward.available ? (
                               <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                Available now
+                                {t("rewardsPage.availableNow")}
                               </span>
                             ) : (
                               <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                                Coming soon
+                                {t("rewardsPage.comingSoon")}
                               </span>
                             )}
                           </div>
@@ -381,7 +389,7 @@ export default function RewardsPageV2() {
                     ))}
                   </div>
                   <p className="text-sm text-center text-gray-500 italic">
-                    If a reward becomes unavailable, we'll replace it with equal or higher value.
+                    {t("rewardsPage.sampleRewardsNote")}
                   </p>
                 </div>
               )}
@@ -393,7 +401,7 @@ export default function RewardsPageV2() {
             <div className="mb-12">
               <div className="relative max-w-xl mx-auto">
                 <Input
-                  placeholder="Search rewards and brands..."
+                  placeholder={t("rewardsPage.searchPlaceholder")}
                   value={searchQuery}
                   onChange={handleSearch}
                   className="pl-10 pr-10 h-12 text-base"
@@ -423,17 +431,17 @@ export default function RewardsPageV2() {
                   {/* Featured Sustainable Brands Section */}
                   <section>
                     <div className="text-center mb-8">
-                      <h2 className="text-3xl font-bold mb-3">Featured Sustainable Brands</h2>
+                      <h2 className="text-3xl font-bold mb-3">{t("rewardsPage.featuredBrandsTitle")}</h2>
                       <p className="text-muted-foreground max-w-2xl mx-auto">
-                        Discover amazing brands making a positive impact on the world
+                        {t("rewardsPage.featuredBrandsSubtitle")}
                       </p>
                     </div>
 
                     {brands.length === 0 ? (
                       <div className="text-center py-12 bg-gray-50 rounded-lg">
-                        <p className="text-xl font-semibold mb-2">No brands found</p>
+                        <p className="text-xl font-semibold mb-2">{t("rewardsPage.noBrandsFound")}</p>
                         <p className="text-muted-foreground">
-                          Check the debug info above to see what's being fetched
+                          {t("rewardsPage.noBrandsFoundSubtitle")}
                         </p>
                       </div>
                     ) : (
@@ -475,7 +483,7 @@ export default function RewardsPageV2() {
                               </div>
                               <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                 <Sparkles className="h-3 w-3" />
-                                Sustainable Brand
+                                {t("rewardsPage.sustainableBrand")}
                               </span>
                             </div>
 
@@ -514,16 +522,16 @@ export default function RewardsPageV2() {
                             {/* Brand Info & CTA */}
                             <div className="p-6 space-y-4">
                               <p className="text-sm text-gray-600 line-clamp-2">
-                                {brand.description || "Discover amazing sustainable products"}
+                                {brand.description || t("rewardsPage.discoverBrand")}
                               </p>
                               
                               {lowestPointReward && (
                                 <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
                                   <p className="text-sm font-medium text-orange-900">
-                                    Get {lowestPointReward.retailValue || "rewards"} with your points
+                                    {t("rewardsPage.getRewardsWithPoints", { value: lowestPointReward.retailValue || t("rewards.title") })}
                                   </p>
                                   <p className="text-xs text-orange-700 mt-1">
-                                    Starting from {lowestPointReward.pointsCost} Impact Points
+                                    {t("rewardsPage.startingFrom", { points: lowestPointReward.pointsCost })}
                                   </p>
                                 </div>
                               )}
@@ -537,7 +545,7 @@ export default function RewardsPageV2() {
                                   element?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                                 }}
                               >
-                                Discover Brand
+                                {t("rewardsPage.discoverBrand")}
                               </Button>
                             </div>
                           </div>
@@ -550,9 +558,9 @@ export default function RewardsPageV2() {
                   {/* Available Rewards Section */}
                   <section>
                     <div className="text-center mb-8">
-                      <h2 className="text-3xl font-bold mb-3">Available Rewards</h2>
+                      <h2 className="text-3xl font-bold mb-3">{t("rewardsPage.availableRewardsTitle")}</h2>
                       <p className="text-muted-foreground max-w-2xl mx-auto">
-                        Unlock exclusive rewards with your Impact Points
+                        {t("rewardsPage.availableRewardsSubtitle")}
                       </p>
                     </div>
 
@@ -601,14 +609,14 @@ export default function RewardsPageV2() {
 
                                 <div className="flex items-center justify-between">
                                   <div>
-                                    <p className="text-sm text-muted-foreground">Requires</p>
+                                    <p className="text-sm text-muted-foreground">{t("rewardsPage.requires")}</p>
                                     <p className="text-2xl font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>
-                                      {reward.pointsCost} <span className="text-sm font-normal">Points</span>
+                                      {reward.pointsCost} <span className="text-sm font-normal">{t("rewardsPage.points")}</span>
                                     </p>
                                   </div>
                                   {reward.retailValue && (
                                     <div className="text-right">
-                                      <p className="text-sm text-muted-foreground">Value</p>
+                                      <p className="text-sm text-muted-foreground">{t("rewardsPage.value")}</p>
                                       <p className="text-lg font-semibold text-green-600">
                                         {reward.retailValue}
                                       </p>
@@ -618,7 +626,7 @@ export default function RewardsPageV2() {
 
                                 {brand && (
                                   <p className="text-sm text-muted-foreground">
-                                    Brand: <span className="font-medium text-gray-900">{brand.name}</span>
+                                    {t("rewardsPage.brand")} <span className="font-medium text-gray-900">{brand.name}</span>
                                   </p>
                                 )}
 
@@ -627,7 +635,7 @@ export default function RewardsPageV2() {
                                   style={{ backgroundColor: BRAND_COLORS.primaryOrange }}
                                   onClick={() => handleRedeemReward(reward)}
                                 >
-                                  Unlock Reward
+                                  {t("rewardsPage.unlockReward")}
                                 </Button>
                               </div>
                             </div>
@@ -636,10 +644,10 @@ export default function RewardsPageV2() {
                       </div>
                     ) : (
                       <div className="text-center py-12">
-                        <p className="text-xl font-semibold">No rewards match your search</p>
-                        <p className="text-muted-foreground mt-2">Try adjusting your search</p>
+                        <p className="text-xl font-semibold">{t("rewardsPage.noRewardsMatch")}</p>
+                        <p className="text-muted-foreground mt-2">{t("rewardsPage.tryAdjustingSearch")}</p>
                         <Button className="mt-4" onClick={clearSearch}>
-                          Clear Search
+                          {t("rewardsPage.clearSearch")}
                         </Button>
                       </div>
                     )}

@@ -1,6 +1,9 @@
 import { Link } from "wouter";
+import { useTranslation } from "@/lib/i18n/use-translation";
+import { LanguageLink } from "@/components/ui/language-link";
 
 export default function ThankYouPage() {
+  const { t } = useTranslation();
   // Images for the impact projects grid
   const impactImages = [
     "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=200&h=200", // Person speaking
@@ -26,7 +29,7 @@ export default function ThankYouPage() {
                 <div key={index} className="aspect-square rounded-md overflow-hidden bg-gray-100 shadow-sm border border-gray-100">
                   <img 
                     src={src} 
-                    alt={`Impact project ${index + 1}`} 
+                    alt={`${t("thankYou.impactProjectAlt")} ${index + 1}`} 
                     className="w-full h-full object-cover transition-transform hover:scale-105"
                     loading="lazy"
                   />
@@ -38,25 +41,24 @@ export default function ThankYouPage() {
           {/* Right side - Content */}
           <div className="flex flex-col space-y-5 order-1 md:order-2">
             <h1 className="text-3xl md:text-[2.5rem] leading-tight font-bold text-[#1a1a3a]">
-              You have helped to shape our impact platform
+              {t("thankYou.title")}
             </h1>
             
             <p className="text-gray-700 text-lg">
-              Thank you for participating in our survey <span className="text-orange-500">🧡</span>
+              {t("thankYou.thankYouMessage")} <span className="text-orange-500">🧡</span>
             </p>
             
             <div className="text-gray-700">
               <p className="mb-2">
-                Your feedback helps us to shape the future of <span className="font-bold">Dopaya</span>, an
-                Impact Platform with outstanding change makers to make 
+                {t("thankYou.feedbackDescription")} <span className="font-bold">{t("thankYou.platformName")}</span>, {t("thankYou.platformDescription")}
               </p>
               <p className="font-bold text-[#1a1a3a]">
-                Giving more efficient, transparent and rewarding.
+                {t("thankYou.givingDescription")}
               </p>
             </div>
             
             <p className="text-gray-700">
-              We would be more than happy to see you around once we have launched <span className="text-yellow-500">😊</span>
+              {t("thankYou.seeYouMessage")} <span className="text-yellow-500">😊</span>
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 pt-5">
@@ -67,14 +69,14 @@ export default function ThankYouPage() {
                 className="px-6 py-3 text-white font-medium rounded-md text-center transition-colors"
                 style={{ backgroundColor: '#f2662d' }}
               >
-                Join Waitlist
+                {t("thankYou.joinWaitlist")}
               </a>
-              <Link 
+              <LanguageLink 
                 href="/"
                 className="px-6 py-3 border border-[#e0e0e0] text-[#1a1a3a] font-medium rounded-md text-center hover:bg-gray-50 transition-colors"
               >
-                Learn More
-              </Link>
+                {t("thankYou.learnMore")}
+              </LanguageLink>
             </div>
           </div>
         </div>

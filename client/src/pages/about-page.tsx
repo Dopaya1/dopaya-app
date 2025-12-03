@@ -6,14 +6,16 @@ import abdulMujeebImage from "@/assets/Abdul Mujeeb_1749476510704.png";
 import SESpectrumSlider from "@/components/ui/se-spectrum-slider";
 import { TYPOGRAPHY } from "@/constants/typography";
 import { SEOHead } from "@/components/seo/seo-head";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 export default function AboutPageV2() {
+  const { t } = useTranslation();
   return (
     <>
       <SEOHead
-        title="About Dopaya - Building the Future of Social Impact | Our Mission & Team"
-        description="Learn about Dopaya's mission to make social impact more transparent and rewarding. Meet our team building the platform that connects supporters with verified social enterprises."
-        keywords="about dopaya, social impact mission, social enterprise platform, impact transparency, social impact team, sustainable development, social entrepreneurship"
+        title={t("about.seoTitle")}
+        description={t("about.seoDescription")}
+        keywords={t("about.seoKeywords")}
         canonicalUrl="https://dopaya.com/about"
         ogType="website"
         ogImage="https://dopaya.com/og-about.jpg"
@@ -21,7 +23,7 @@ export default function AboutPageV2() {
           "@context": "https://schema.org",
           "@type": "AboutPage",
           "name": "About Dopaya",
-          "description": "Learn about Dopaya's mission to make social impact more transparent and rewarding",
+          "description": t("about.seoDescription"),
           "url": "https://dopaya.com/about",
           "mainEntity": {
             "@type": "Organization",
@@ -32,7 +34,7 @@ export default function AboutPageV2() {
               "@type": "Person",
               "name": "Patrick Widmann"
             },
-            "mission": "Making social impact more transparent, rewarding, and community-led"
+            "mission": t("about.visionTitle")
           }
         }}
       />
@@ -42,17 +44,17 @@ export default function AboutPageV2() {
       <section className={`w-full py-24`} style={{ backgroundColor: '#f8f6f1' }}>
         <div className="container mx-auto px-4">
           <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-bold text-[#f2662d] mb-4">[du·pa·ya]</h1>
-            <p className="text-gray-600 mb-8">(Origin: Sanskrit & English, Meaning: Taking action toward real solutions)</p>
+            <h1 className="text-4xl md:text-5xl font-bold text-[#f2662d] mb-4">{t("about.nameMeaning")}</h1>
+            <p className="text-gray-600 mb-8">{t("about.nameOrigin")}</p>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
               <div className="bg-white rounded-lg p-8 shadow-sm border">
-                <h2 className="text-xl font-bold text-center mb-2">DO</h2>
-                <p className="text-center">Action, making things happen.</p>
+                <h2 className="text-xl font-bold text-center mb-2">{t("about.nameDo")}</h2>
+                <p className="text-center">{t("about.nameDoDescription")}</p>
               </div>
               <div className="bg-white rounded-lg p-8 shadow-sm border">
-                <h2 className="text-xl font-bold text-center mb-2">UPAYA</h2>
-                <p className="text-center">A skillful means, an effective method, a path toward a goal.</p>
+                <h2 className="text-xl font-bold text-center mb-2">{t("about.nameUpaya")}</h2>
+                <p className="text-center">{t("about.nameUpayaDescription")}</p>
               </div>
             </div>
           </div>
@@ -66,21 +68,21 @@ export default function AboutPageV2() {
             <div className="order-2 lg:order-1">
               <img 
                 src="https://images.unsplash.com/photo-1593113598332-cd288d649433?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80" 
-                alt="Changemakers in action" 
+                alt={t("about.changemakersInAction")} 
                 className="rounded-lg object-cover h-full w-full"
               />
             </div>
             <div className="order-1 lg:order-2 flex flex-col justify-center">
               <h2 className={`${TYPOGRAPHY.section} text-gray-900 mb-8`}>
-                We believe supporting impact should feel personal, powerful — and actually work.
+                {t("about.problemTitle")}
               </h2>
               
               <div className={`${TYPOGRAPHY.body} text-gray-700`}>
                 <p>
-                  We started Dopaya because we were frustrated by how broken the world of impact felt. Billions are invested in social causes every year, but so much of it gets lost in overhead or unclear processes.<br/>
-                  Meanwhile, incredible social entrepreneurs struggle to get awareness, access to small amounts of funding that could change lives sustainably.<br/>
-                  What if we could make supporting impact feel more like building something real?<br/>
-                  More transparent. More joyful. And more connected to outcomes — not just promises.
+                  {t("about.problemText1")}<br/>
+                  {t("about.problemText2")}<br/>
+                  {t("about.problemText3")}<br/>
+                  {t("about.problemText4")}
                 </p>
               </div>
             </div>
@@ -96,13 +98,11 @@ export default function AboutPageV2() {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-left">
             <h2 className={`${TYPOGRAPHY.section} mb-12`}>
-              Building the most transparent, rewarding, and community-led impact platform.
+              {t("about.visionTitle")}
             </h2>
             
-            <div className="text-xl leading-relaxed">
-              <p>
-                We believe a better way is possible — and people-powered. Where every dollar is tracked. Every result is visible. And everyone who supports becomes part of the impact story. Dopaya isn't just about mobilizing capital. It's an ecosystem where contributions are rewarded, changemakers are empowered, and support sparks long-term impact.
-              </p>
+            <div className="text-xl leading-relaxed whitespace-pre-line">
+              {t("about.visionText")}
             </div>
           </div>
         </div>
@@ -113,34 +113,34 @@ export default function AboutPageV2() {
         <section className="w-full bg-white py-24">
           <div className="container mx-auto px-4">
             <h2 className={`${TYPOGRAPHY.section} text-gray-900 text-center mb-16`}>
-              Our approach to impact
+              {t("about.approachTitle")}
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 max-w-6xl mx-auto">
               {/* Transparent by Design */}
               <div className="text-center p-8 rounded-xl border border-gray-200 bg-white hover:shadow-lg hover:border-gray-300 transition-all duration-300 hover:scale-105">
                 <div className="text-4xl mb-6">🔍</div>
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Transparent by Design</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-4">{t("about.transparentTitle")}</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  Track every dollar and impact outcome live on your dashboard.
+                  {t("about.transparentDescription")}
                 </p>
               </div>
               
               {/* Built Around People */}
               <div className="text-center p-8 rounded-xl border border-gray-200 bg-white hover:shadow-lg hover:border-gray-300 transition-all duration-300 hover:scale-105">
                 <div className="text-4xl mb-6">🤝</div>
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Built Around People</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-4">{t("about.builtAroundPeopleTitle")}</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  We fund vetted social enterprises with strong founder missions — not vague causes.
+                  {t("about.builtAroundPeopleDescription")}
                 </p>
               </div>
               
               {/* Giving = Earning */}
               <div className="text-center p-8 rounded-xl border border-gray-200 bg-white hover:shadow-lg hover:border-gray-300 transition-all duration-300 hover:scale-105">
                 <div className="text-4xl mb-6">🎁</div>
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Giving = Earning</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-4">{t("about.givingEarningTitle")}</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  Earn rewards, badges, and Impact Points for supporting change.
+                  {t("about.givingEarningDescription")}
                 </p>
               </div>
             </div>
@@ -152,8 +152,8 @@ export default function AboutPageV2() {
         <section className="py-16 md:py-20">
           <div className="container mx-auto px-4">
             <div className="text-center mb-8 md:mb-10">
-              <h2 className={`${TYPOGRAPHY.section} mb-4`}>The community behind Dopaya</h2>
-              <p className={`${TYPOGRAPHY.body} text-gray-600`}>No fancy titles. Just dedication.</p>
+              <h2 className={`${TYPOGRAPHY.section} mb-4`}>{t("about.teamTitle")}</h2>
+              <p className={`${TYPOGRAPHY.body} text-gray-600`}>{t("about.teamSubtitle")}</p>
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4 lg:gap-6">
@@ -210,11 +210,11 @@ export default function AboutPageV2() {
         <section className="py-12 md:py-16">
           <div className="container mx-auto px-4">
             <div className="text-center bg-[#f2662d] py-12 px-6 rounded-lg text-white">
-              <h2 className="text-2xl md:text-3xl font-bold mb-6">Ready to join our founding member community?</h2>
-              <p className="text-lg mb-6 text-orange-100">Be part of the first 1,000 supporters who help us prove this model works</p>
+              <h2 className="text-2xl md:text-3xl font-bold mb-6">{t("about.ctaTitle")}</h2>
+              <p className="text-lg mb-6 text-orange-100">{t("about.ctaSubtitle")}</p>
               <a href="https://tally.so/r/m6MqAe" target="_blank" rel="noopener noreferrer">
                 <Button size="lg" className="bg-white text-[#f2662d] hover:bg-gray-50">
-                  Become a Founding Member
+                  {t("about.ctaButton")}
                 </Button>
               </a>
             </div>

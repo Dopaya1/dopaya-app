@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { LanguageLink } from "@/components/ui/language-link";
 import { Project } from "@shared/schema";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,14 +7,23 @@ import { getCategoryColors } from "@/lib/category-colors";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { trackProjectClick } from "@/lib/simple-analytics";
 import { getProjectImageUrl } from "@/lib/image-utils";
+import { useTranslation } from "@/lib/i18n/use-translation";
+import { useI18n } from "@/lib/i18n/i18n-context";
+import { getProjectMissionStatement, getProjectDescription } from "@/lib/i18n/project-content";
 
 interface ProjectCardProps {
   project: Project;
 }
 
 export function ProjectCard({ project }: ProjectCardProps) {
+  const { t } = useTranslation();
+  const { language } = useI18n();
   const categoryColors = getCategoryColors(project.category || '');
   const projectImageUrl = getProjectImageUrl(project);
+  
+  // Get language-specific content
+  const projectMissionStatement = getProjectMissionStatement(project, language);
+  const projectDescription = getProjectDescription(project, language);
 
   const handleProjectClick = () => {
     trackProjectClick(project.slug, project.title);
@@ -44,24 +53,26 @@ export function ProjectCard({ project }: ProjectCardProps) {
         <h3 className="text-lg font-bold text-dark font-heading mb-2">{project.title}</h3>
         
         {/* Mission Statement */}
-        {project.missionStatement && (
+        {projectMissionStatement && (
           <p className="text-sm text-neutral mb-2 line-clamp-3 leading-relaxed whitespace-pre-line">
-            {project.missionStatement}
+            {projectMissionStatement}
           </p>
         )}
         
-        <p className="text-sm text-neutral mb-4 line-clamp-3 whitespace-pre-line">{project.description}</p>
+        {projectDescription && (
+          <p className="text-sm text-neutral mb-4 line-clamp-3 whitespace-pre-line">{projectDescription}</p>
+        )}
       </CardContent>
       <CardFooter className="p-4 pt-0 mt-auto">
-        <Link href={`/project/${project.slug}`}>
+        <LanguageLink href={`/project/${project.slug}`}>
           <Button 
             className="w-full text-white" 
             style={{ backgroundColor: '#f2662d' }}
             onClick={handleProjectClick}
           >
-            View Project
+            {t("projects.viewProject")}
           </Button>
-        </Link>
+        </LanguageLink>
       </CardFooter>
     </Card>
   );

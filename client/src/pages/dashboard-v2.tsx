@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { ImpactStats } from "@/components/dashboard/impact-stats";
 import { ImpactChart } from "@/components/dashboard/impact-chart";
 import { Helmet } from "react-helmet";
-import { Link, useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
+import { LanguageLink } from "@/components/ui/language-link";
 import { DonationSuccessModal } from "@/components/donation/donation-success-modal";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { getDailyQuoteForUser, ImpactQuote } from "@/constants/impact-quotes";
@@ -22,11 +23,17 @@ import { triggerConfetti } from "@/lib/confetti";
 import ExpandableGallery from "@/components/ui/gallery-animation";
 import { getProjectImageUrl, getLogoUrl } from "@/lib/image-utils";
 import { toast } from "@/hooks/use-toast";
+import { useTranslation } from "@/lib/i18n/use-translation";
+import { useI18n } from "@/lib/i18n/i18n-context";
+import { formatCurrency, formatNumber } from "@/lib/i18n/formatters";
+import { getProjectImpactUnit, getProjectImpactNoun, getProjectImpactVerb, getRewardTitle } from "@/lib/i18n/project-content";
 
 
 export default function DashboardV2() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
+  const { t } = useTranslation();
+  const { language } = useI18n();
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [donationAmount, setDonationAmount] = useState(0);
   const [dailyQuote, setDailyQuote] = useState<ImpactQuote | null>(null);
@@ -326,7 +333,7 @@ export default function DashboardV2() {
         announcement.setAttribute('aria-live', 'polite');
         announcement.setAttribute('aria-atomic', 'true');
         announcement.className = 'sr-only';
-        announcement.textContent = 'Welcome — 50 Impact Points added to your account.';
+        announcement.textContent = t("dashboard.welcomeTitle");
         document.body.appendChild(announcement);
         
         // Trigger confetti in background (modal is already showing)
@@ -858,7 +865,7 @@ export default function DashboardV2() {
           {/* Welcome back and Badge - Side by side on desktop, stacked on mobile */}
           <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 mb-3">
             <h2 className="text-3xl font-bold text-dark font-heading">
-              Welcome back!
+              {t("dashboard.welcomeBack")}
             </h2>
             
             {/* Badge - Beside Welcome back on desktop, below on mobile */}
@@ -901,10 +908,10 @@ export default function DashboardV2() {
               {/* Updated microcopy for Impact Aspirers */}
               <div className="relative inline-block mb-3">
                 <p className="text-sm font-semibold text-gray-700 mb-1">
-                  You've received {impactPoints} Impact Points ≈ ${pointsValue} value.
+                  {t("dashboard.receivedImpactPoints", { points: formatNumber(impactPoints), value: formatCurrency(pointsValue) })}
                 </p>
                 <p className="text-xs text-gray-500">
-                  Support any project to unlock your first reward.
+                  {t("dashboard.supportToUnlock")}
                 </p>
                 {/* Tooltip 1 - COMMENTED OUT (not needed) */}
                 {/* {currentTooltip === 1 && (
@@ -944,7 +951,11 @@ export default function DashboardV2() {
                     />
                   </div>
                   <span className="text-xs text-gray-600 font-medium">
-                    {impactPoints} / {pointsToFirstReward} ({Math.round(progressToReward)}%)
+                    {t("dashboard.progressToReward", { 
+                      current: formatNumber(impactPoints), 
+                      total: formatNumber(pointsToFirstReward), 
+                      percent: Math.round(progressToReward) 
+                    })}
                   </span>
                 </div>
               </div>
@@ -957,7 +968,7 @@ export default function DashboardV2() {
                   onClick={() => handleSupportClick('header')}
                   aria-label="Support a project — opens support modal"
                 >
-                  Support a project
+                  {t("dashboard.supportAProject")}
                 </Button>
                 {/* Tooltip 3 - COMMENTED OUT (not needed) */}
                 {/* {currentTooltip === 3 && (
@@ -1000,7 +1011,7 @@ export default function DashboardV2() {
                   onClick={() => handleSupportClick('header')}
                   aria-label="Support a project — opens support modal"
                 >
-                  Support a project
+                  {t("dashboard.supportAProject")}
                 </Button>
               </div>
 
@@ -1010,7 +1021,7 @@ export default function DashboardV2() {
                 className="border-gray-300 text-gray-700 hover:bg-gray-50"
                 onClick={handleRedeemClick}
               >
-                Get rewards
+                {t("dashboard.getRewards")}
               </Button>
             </div>
           )}
@@ -1025,7 +1036,7 @@ export default function DashboardV2() {
       {/* Social Enterprises Section */}
       <div className="mb-6" style={{ marginTop: '24px' }}>
         {/* Main Headline */}
-        <h2 className="text-xl font-bold text-dark font-heading mb-6">Social Enterprises</h2>
+        <h2 className="text-xl font-bold text-dark font-heading mb-6">{t("dashboard.socialEnterprises")}</h2>
         
         {!hasSupported ? (
           // NEW USERS: Show only Highlighted Social Enterprises (full width)
@@ -1061,7 +1072,7 @@ export default function DashboardV2() {
               </div>
             ) : (
               <div className="text-center py-6 bg-white rounded-lg shadow-sm">
-                <p className="text-neutral">No featured social enterprises available at the moment.</p>
+                <p className="text-neutral">{t("dashboard.noFeaturedAvailable")}</p>
               </div>
             )}
           </div>
@@ -1070,7 +1081,7 @@ export default function DashboardV2() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Left: Social Enterprises you have supported */}
             <div>
-              <h3 className="text-lg font-semibold text-dark font-heading mb-6">Social Enterprises you have supported</h3>
+              <h3 className="text-lg font-semibold text-dark font-heading mb-6">{t("dashboard.socialEnterprisesSupported")}</h3>
             {isLoadingSupported ? (
               <div className="space-y-3">
                 {Array(2).fill(0).map((_, i) => (
@@ -1094,11 +1105,10 @@ export default function DashboardV2() {
                   const { project, totalAmount, totalImpactPoints, donationCount, lastDonationDate } = item;
                   
                   // Calculate impact description from project
-                  // Use impactUnit, impact_verb, impact_noun from project (snake_case from DB)
-                  const projectAny = project as any;
-                  const impactUnit = project.impactUnit || 'impact';
-                  const impactVerb = projectAny.impact_verb || projectAny.impactVerb || 'created';
-                  const impactNoun = projectAny.impact_noun || projectAny.impactNoun || impactUnit;
+                  // Use impactUnit, impact_verb, impact_noun from project with language support
+                  const impactUnit = getProjectImpactUnit(project, language) || 'impact';
+                  const impactVerb = getProjectImpactVerb(project, language) || 'created';
+                  const impactNoun = getProjectImpactNoun(project, language) || impactUnit;
                   
                   // Calculate impact amount based on totalImpactPoints
                   // For now, we'll use a simple calculation: totalImpactPoints / 10 as a rough estimate
@@ -1107,12 +1117,12 @@ export default function DashboardV2() {
                   
                   const projectImageUrl = getProjectImageUrl(project) || project.imageUrl || '/placeholder-project.png';
                   const formattedDate = lastDonationDate 
-                    ? new Date(lastDonationDate).toLocaleDateString('en-US', { 
+                    ? new Date(lastDonationDate).toLocaleDateString(language === 'de' ? 'de-CH' : 'en-US', { 
                         month: 'short', 
                         day: 'numeric', 
                         year: 'numeric' 
                       })
-                    : 'N/A';
+                    : t("dashboard.notAvailable");
                   
                   return (
                     <div 
@@ -1134,19 +1144,19 @@ export default function DashboardV2() {
                       {/* Middle Section - Name, Amount & Date */}
                       <div className="flex-1 min-w-0 p-4 flex flex-col justify-center">
                         {/* Project Name - Clickable Link */}
-                        <Link href={`/project/${project.slug || project.id}`} className="mb-2">
+                        <LanguageLink href={`/project/${project.slug || project.id}`} className="mb-2">
                           <h4 className="text-base font-semibold text-gray-900 hover:text-[#f2662d] transition-colors group-hover:text-[#f2662d]">
                             {project.title}
                           </h4>
-                        </Link>
+                        </LanguageLink>
                         
                         {/* Amount & Date - Small */}
                         <div className="flex items-center gap-2 text-xs text-gray-500">
-                          <span>${totalAmount}</span>
+                          <span>{formatCurrency(totalAmount)}</span>
                           {donationCount > 1 && (
                             <>
                               <span>•</span>
-                              <span>{donationCount} donations</span>
+                              <span>{formatNumber(donationCount)} {t("dashboard.donations")}</span>
                             </>
                           )}
                           <span>•</span>
@@ -1178,20 +1188,20 @@ export default function DashboardV2() {
                     onClick={() => setVisibleCount(prev => prev + LOAD_MORE_COUNT)}
                     className="w-full mt-4"
                   >
-                    Load More ({supportedProjectsWithDonations.length - visibleCount} remaining)
+                    {t("dashboard.loadMore", { remaining: supportedProjectsWithDonations.length - visibleCount })}
                   </Button>
                 )}
               </div>
             ) : (
               <div className="text-center py-6 bg-white rounded-lg shadow-sm">
-                <p className="text-neutral">You haven't supported any startups yet.</p>
+                <p className="text-neutral">{t("dashboard.noStartupsSupported")}</p>
               </div>
             )}
           </div>
 
           {/* Right: Highlighted Social Enterprises */}
           <div>
-            <h3 className="text-lg font-semibold text-dark font-heading mb-6">Highlighted Social Enterprises</h3>
+            <h3 className="text-lg font-semibold text-dark font-heading mb-6">{t("dashboard.highlightedSocialEnterprises")}</h3>
             {isLoadingFeatured ? (
               <div className="grid grid-cols-1 gap-6">
                 {Array(2).fill(0).map((_, i) => (
@@ -1223,7 +1233,7 @@ export default function DashboardV2() {
               </div>
             ) : (
               <div className="text-center py-6 bg-white rounded-lg shadow-sm">
-                <p className="text-neutral">No featured social enterprises available at the moment.</p>
+                <p className="text-neutral">{t("dashboard.noFeaturedAvailable")}</p>
               </div>
             )}
           </div>
@@ -1234,7 +1244,7 @@ export default function DashboardV2() {
       {/* Rewards Section */}
       <div className="mb-6" style={{ marginTop: '24px' }}>
         {/* Main Headline */}
-        <h2 className="text-xl font-bold text-dark font-heading mb-6">Rewards</h2>
+        <h2 className="text-xl font-bold text-dark font-heading mb-6">{t("dashboard.rewards")}</h2>
         
         {!hasRedemptions ? (
           // NEW USERS (no redemptions): Show only Featured Rewards (full width) with ExpandableGallery
@@ -1269,7 +1279,7 @@ export default function DashboardV2() {
               </div>
             ) : (
               <div className="text-center py-6 bg-white rounded-lg shadow-sm">
-                <p className="text-neutral">No featured rewards available at the moment.</p>
+                <p className="text-neutral">{t("dashboard.noFeaturedRewards")}</p>
               </div>
             )}
           </div>
@@ -1278,7 +1288,7 @@ export default function DashboardV2() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Left: Sustainable rewards you have unlocked */}
             <div>
-              <h3 className="text-lg font-semibold text-dark font-heading mb-6">Sustainable rewards you have unlocked</h3>
+              <h3 className="text-lg font-semibold text-dark font-heading mb-6">{t("dashboard.sustainableRewardsUnlocked")}</h3>
               {isLoadingRedemptions ? (
                 <div className="space-y-3">
                   {Array(2).fill(0).map((_, i) => (
@@ -1305,12 +1315,12 @@ export default function DashboardV2() {
                     
                     const rewardImageUrl = reward.imageUrl || reward.image_url || '/placeholder-reward.png';
                     const formattedDate = redemptionDate 
-                      ? new Date(redemptionDate).toLocaleDateString('en-US', { 
+                      ? new Date(redemptionDate).toLocaleDateString(language === 'de' ? 'de-CH' : 'en-US', { 
                           month: 'short', 
                           day: 'numeric', 
                           year: 'numeric' 
                         })
-                      : 'N/A';
+                      : t("dashboard.notAvailable");
                     
                     return (
                       <div 
@@ -1361,7 +1371,7 @@ export default function DashboardV2() {
                           {/* Reward Name - Clickable Link */}
                           <Link href="/rewards" className="mb-2">
                             <h4 className="text-base font-semibold text-gray-900 hover:text-[#f2662d] transition-colors group-hover:text-[#f2662d]">
-                              {reward.title}
+                              {getRewardTitle(reward, language)}
                             </h4>
                           </Link>
                           
@@ -1409,7 +1419,7 @@ export default function DashboardV2() {
                 </div>
               ) : (
                 <div className="text-center py-6 bg-white rounded-lg shadow-sm">
-                  <p className="text-neutral">You haven't redeemed any rewards yet.</p>
+                  <p className="text-neutral">{t("dashboard.noRewardsRedeemed")}</p>
                 </div>
               )}
             </div>
@@ -1447,7 +1457,7 @@ export default function DashboardV2() {
                 </div>
               ) : (
                 <div className="text-center py-6 bg-white rounded-lg shadow-sm">
-                  <p className="text-neutral">No featured rewards available at the moment.</p>
+                  <p className="text-neutral">{t("dashboard.noFeaturedRewards")}</p>
                 </div>
               )}
             </div>
@@ -1458,19 +1468,19 @@ export default function DashboardV2() {
       {/* Impact Over Time - Graph with overlay placeholder for all users */}
       <Card className="mb-12 relative">
         <CardHeader className="relative z-10 bg-white">
-          <CardTitle>Your Impact Over Time</CardTitle>
+          <CardTitle>{t("dashboard.yourImpactOverTime")}</CardTitle>
           <div className="flex items-center space-x-6 text-sm mt-2">
             <div className="flex items-center space-x-2">
               <div className="w-3 h-0.5 bg-primary"></div>
-              <span className="text-gray-600">Impact Points</span>
+              <span className="text-gray-600">{t("dashboard.impactPoints")}</span>
             </div>
             <div className="flex items-center space-x-2">
               <div className="w-3 h-0.5 bg-green-500" style={{ borderStyle: 'dashed', borderWidth: '1px 0', background: 'none', borderColor: '#10B981' }}></div>
-              <span className="text-gray-600">Impact Created</span>
+              <span className="text-gray-600">{t("dashboard.impactCreated")}</span>
             </div>
             <div className="flex items-center space-x-2">
               <div className="w-3 h-0.5 bg-purple-500" style={{ borderStyle: 'dashed', borderWidth: '1px 0', background: 'none', borderColor: '#8B5CF6' }}></div>
-              <span className="text-gray-600">Support amount</span>
+              <span className="text-gray-600">{t("dashboard.supportAmount")}</span>
             </div>
           </div>
         </CardHeader>
@@ -1483,16 +1493,16 @@ export default function DashboardV2() {
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/75 backdrop-blur-sm rounded-lg" style={{ top: 0, left: 0, right: 0, bottom: 0 }}>
             <div className="flex flex-col items-center justify-center py-12 text-center max-w-md px-4">
             <h3 className="text-lg font-semibold text-gray-700 mb-3">
-              Coming soon
+              {t("dashboard.comingSoon")}
             </h3>
             <p className="text-base text-gray-500 mb-6">
-              We are working on your Personal Impact Dashboard - fully transparent impact tracking with real data over time.
+              {t("dashboard.personalImpactDashboard")}
             </p>
             
             {/* Newsletter Signup Section - Replaces "Keep me updated" button */}
             <div className="w-full">
               <p className="text-sm text-gray-500 mb-4">
-                Get notified when your Personal Impact Dashboard is ready
+                {t("dashboard.getNotifiedWhenReady")}
               </p>
               
               {isNewsletterSubscribed ? (
@@ -1642,9 +1652,9 @@ export default function DashboardV2() {
 
                   <div className="mt-8 lg:mt-10 text-center lg:text-left">
                     <Button size="lg" className="text-white font-semibold px-6 lg:px-8 py-3 lg:py-4 text-base lg:text-lg min-h-[44px] lg:min-h-[48px] w-full sm:w-auto bg-[#f2662d] hover:bg-[#d9551f]" asChild>
-                      <Link href={`/project/${selectedProject.slug || selectedProject.id}`}>
+                      <LanguageLink href={`/project/${selectedProject.slug || selectedProject.id}`}>
                         Support This Project
-                      </Link>
+                      </LanguageLink>
                     </Button>
                   </div>
                 </div>
@@ -1775,7 +1785,7 @@ export default function DashboardV2() {
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-gray-900">
-                        Support a project
+                        {t("dashboard.supportAProject")}
                       </p>
                       <p className="text-xs text-gray-700 mt-1">
                         Start with a small amount and unlock your first reward.
@@ -1803,7 +1813,7 @@ export default function DashboardV2() {
                         Discover inspiring social enterprises
                       </p>
                       <p className="text-xs text-gray-700 mt-1">
-                        Explore verified innovators solving real problems.
+                        {t("dashboard.exploreVerifiedInnovators")}
                       </p>
                     </div>
                   </button>

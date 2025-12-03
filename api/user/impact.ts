@@ -139,7 +139,7 @@ async function getUserImpact(userId: number) {
         amountDonatedChange: 0,
         projectsSupported: 0,
         projectsSupportedChange: 0,
-        userLevel: totalDonations > 0 ? 'supporter' : 'aspirer',
+        userLevel: totalDonations > 0 ? 'changemaker' : 'aspirer',
       };
     }
     
@@ -154,8 +154,8 @@ async function getUserImpact(userId: number) {
     const projectsSupported = distinctProjectIds.size;
     
     // Determine user status based on impactPoints >= 100 (not amountDonated)
-    const userLevel: string = impactPoints >= 100 ? 'supporter' : 'aspirer';
-    const userStatus: string = impactPoints >= 100 ? 'supporter' : 'aspirer';
+    const userLevel: string = impactPoints >= 100 ? 'changemaker' : 'aspirer';
+    const userStatus: string = impactPoints >= 100 ? 'changemaker' : 'aspirer';
     
     return {
       impactPoints,

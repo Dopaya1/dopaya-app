@@ -16,6 +16,9 @@ import dopayaLogo from "@assets/Dopaya Logo.png";
 import { ProcessingImpact } from "@/components/donation/processing-impact";
 import { SupportMiniJourney } from "@/components/donation/support-mini-journey";
 import { AuthModal } from "@/components/auth/auth-modal";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useTranslation } from "@/lib/i18n/use-translation";
+import { useI18n } from "@/lib/i18n/i18n-context";
 
 // Feature flag: controls whether the post-support mini-journey is shown.
 // Set to false to fall back to the simple redirect-to-rewards behavior.
@@ -24,6 +27,8 @@ const USE_MINI_JOURNEY_PREVIEW = true;
 export default function SupportPage() {
   const { slug } = useParams<{ slug: string }>();
   const [, navigate] = useLocation();
+  const { t } = useTranslation();
+  const { language } = useI18n();
 
   const previewEnabled = isOnboardingPreviewEnabled();
   const { user } = useAuth();
@@ -114,7 +119,7 @@ export default function SupportPage() {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <p className="text-gray-500 text-sm">
-          Redirecting to project page...
+          {t("support.redirecting")}
         </p>
       </div>
     );
@@ -147,10 +152,10 @@ export default function SupportPage() {
             />
           </svg>
           <h1 className="text-2xl font-bold text-dark font-heading mb-2">
-            Project Not Found
+            {t("support.projectNotFound")}
           </h1>
           <p className="text-neutral">
-            The project you're looking for doesn't exist or has been removed.
+            {t("support.projectNotFoundDescription")}
           </p>
         </div>
       </div>
@@ -286,30 +291,6 @@ export default function SupportPage() {
         {/* Mini-journey overlay */}
         {showMiniJourney && (
           <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
-            {/* Subtle confetti around the white card (outside content) */}
-            <div className="pointer-events-none absolute inset-0">
-              <span className="absolute top-6 left-10 text-lg opacity-80 animate-bounce">
-                ✨
-              </span>
-              <span
-                className="absolute top-8 right-8 text-base opacity-80 animate-bounce"
-                style={{ animationDelay: "120ms" }}
-              >
-                🎉
-              </span>
-              <span
-                className="absolute bottom-10 left-12 text-base opacity-80 animate-bounce"
-                style={{ animationDelay: "220ms" }}
-              >
-                ⭐
-              </span>
-              <span
-                className="absolute bottom-12 right-10 text-base opacity-80 animate-bounce"
-                style={{ animationDelay: "320ms" }}
-              >
-                💫
-              </span>
-            </div>
 
             {/* External close / skip button */}
             <button
@@ -337,7 +318,7 @@ export default function SupportPage() {
               onClick={() => navigate(`/project/${project.slug}`)}
               className="text-sm text-gray-600 hover:text-gray-900"
             >
-              ← Back to project
+              {t("support.backToProject")}
             </button>
             <div className="flex-1 flex justify-center">
               <img
@@ -358,15 +339,13 @@ export default function SupportPage() {
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-1 flex-1">
                 <p className="text-xs font-semibold tracking-wide text-[#f2662d] uppercase">
-                  Support Preview (Payment Page)
+                  {t("support.supportPreview")}
                 </p>
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
                   {project.title}
                 </h1>
                 <p className="text-sm text-gray-600">
-                  This is a preview of the dedicated payment page. The layout mirrors
-                  the new Dopaya support modal, but runs directly on a full page.
-                  Payment processing is not wired here yet.
+                  {t("support.previewDescription")}
                 </p>
               </div>
               {headerImageUrl && (
@@ -412,7 +391,7 @@ export default function SupportPage() {
                     {isSuggested && !isActive && (
                       <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-green-100 text-green-700 text-[10px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap">
                         <Heart className="w-3 h-3" />
-                        SUGGESTED
+                        {t("support.suggested")}
                       </div>
                     )}
                   </div>
@@ -459,7 +438,7 @@ export default function SupportPage() {
 
               {hasSelectedAmount && currentSupportAmount > 0 && currentSupportAmount < 10 && (
                 <p className="text-xs text-red-600 font-medium">
-                  Amount must be at least $10
+                  {t("support.amountMinimum")}
                 </p>
               )}
             </div>
@@ -472,9 +451,9 @@ export default function SupportPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <p className="text-sm text-gray-900">
-                      Congratulations! You will get{" "}
+                      {t("support.congratulations")}{" "}
                       <span className="font-bold">{impactPoints.toLocaleString()}</span>{" "}
-                      Impact Points and create real impact!
+                      {t("support.impactPointsEarned")}
                     </p>
                   </div>
                   <div className="ml-4 flex-shrink-0">
@@ -487,8 +466,7 @@ export default function SupportPage() {
 
               <div className="flex items-center gap-1 text-[11px] text-gray-600">
                 <span>
-                  100% goes to the project, minus unavoidable payment fees. Supported by our
-                  nonprofit partner Impaktera.
+                  {t("support.goesToProject")}
                 </span>
                 <Popover>
                   <PopoverTrigger asChild>
@@ -498,10 +476,9 @@ export default function SupportPage() {
                   </PopoverTrigger>
                   <PopoverContent className="w-80 text-sm">
                     <div className="space-y-2">
-                      <p className="font-semibold mb-2">About Impaktera</p>
+                      <p className="font-semibold mb-2">{t("support.aboutImpaktera")}</p>
                       <p>
-                        Impaktera is a Suisse-based non-profit Association according to Art. 60 ff.
-                        of the Swiss Civil Code, ZGB.
+                        {t("support.impakteraDescription")}
                       </p>
                     </div>
                   </PopoverContent>
@@ -514,12 +491,9 @@ export default function SupportPage() {
           {hasSelectedAmount && currentSupportAmount > 0 && (
             <div className="space-y-4">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">Tip Dopaya</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">{t("support.tipDopaya")}</h3>
                 <p className="text-xs text-gray-500 mb-4">
-                  We have 0% platform fee for Social Enterprises, because we believe in{" "}
-                  <span className="font-semibold text-[#f2662d]">Impact First</span>. Dopaya can
-                  keep the platform independent and ad-free thanks to people who leave an optional
-                  amount here:
+                  {t("support.tipDescription")}
                 </p>
 
                 {!isCustomTip ? (
@@ -549,7 +523,7 @@ export default function SupportPage() {
                       }}
                       className="text-xs text-gray-600 hover:text-gray-900 underline mt-2"
                     >
-                      Enter custom tip
+                      {t("support.enterCustomTip")}
                     </button>
                   </>
                 ) : (
@@ -580,7 +554,7 @@ export default function SupportPage() {
                       }}
                       className="text-xs text-gray-600 hover:text-gray-900 underline"
                     >
-                      Use slider instead
+                      {t("support.useSliderInstead")}
                     </button>
                   </div>
                 )}
@@ -591,13 +565,13 @@ export default function SupportPage() {
           {/* Payment method */}
           {hasSelectedAmount && currentSupportAmount > 0 && (
             <div className="space-y-3">
-              <h3 className="text-lg font-semibold text-gray-900">Payment method</h3>
+              <h3 className="text-lg font-semibold text-gray-900">{t("support.paymentMethod")}</h3>
               <div className="flex items-center space-x-3 p-4 border-2 border-gray-300 rounded-lg bg-white">
                 <div className="h-4 w-4 rounded-full border-2 border-[#f2662d] bg-[#f2662d] flex items-center justify-center">
                   <div className="h-2 w-2 rounded-full bg-white" />
                 </div>
                 <span className="text-sm font-medium text-gray-900">
-                  Credit or debit card (Stripe)
+                  {t("support.creditDebitCard")}
                 </span>
               </div>
             </div>
@@ -618,7 +592,7 @@ export default function SupportPage() {
                     htmlFor="hideName"
                     className="text-sm text-gray-700 cursor-pointer leading-relaxed"
                   >
-                    Don't display my name publicly on the Dopaya platform.
+                    {t("support.dontDisplayName")}
                   </label>
                   <Popover>
                     <PopoverTrigger asChild>
@@ -632,9 +606,7 @@ export default function SupportPage() {
                     </PopoverTrigger>
                     <PopoverContent className="w-80 text-sm">
                       <p>
-                        We believe in &quot;Who does good should also talk about it and inspire others&quot;.
-                        We want to highlight our first supporters on the platform to inspire more
-                        people to follow your action.
+                        {t("support.whyShowNames")}
                       </p>
                     </PopoverContent>
                   </Popover>
@@ -651,8 +623,7 @@ export default function SupportPage() {
                   htmlFor="signUpUpdates"
                   className="text-sm text-gray-700 cursor-pointer leading-relaxed"
                 >
-                  Yes, sign me up to hear updates about new social innovators and exciting brand
-                  rewards. You can unsubscribe anytime.
+                  {t("support.signUpForUpdates")}
                 </label>
               </div>
             </div>
@@ -663,17 +634,17 @@ export default function SupportPage() {
             <div className="space-y-4 pt-4 border-t border-gray-200">
               <div className="space-y-3">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Your support amount</span>
+                  <span className="text-gray-600">{t("support.yourSupportAmount")}</span>
                   <span className="font-medium text-gray-900">
                     ${currentSupportAmount.toFixed(2)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Tip to Dopaya</span>
+                  <span className="text-gray-600">{t("support.tipToDopaya")}</span>
                   <span className="font-medium text-gray-900">${tipAmount.toFixed(2)}</span>
                 </div>
                 <div className="flex items-center justify-between text-lg font-bold pt-2 border-t border-gray-300">
-                  <span>Total due today</span>
+                  <span>{t("support.totalDueToday")}</span>
                   <span>${totalAmount.toFixed(2)}</span>
                 </div>
               </div>
@@ -683,16 +654,54 @@ export default function SupportPage() {
                   disabled={!hasSelectedAmount || currentSupportAmount <= 0}
                   className="w-full h-14 text-base font-semibold bg-yellow-400 hover:bg-yellow-500 text-gray-900 disabled:opacity-60"
                   style={{ backgroundColor: "#FFC107", color: "#1a1a3a" }}
-                  onClick={() => {
+                  onClick={async () => {
                     if (!hasSelectedAmount || currentSupportAmount <= 0) return;
-                    setShowProcessingImpact(true);
+                    
+                    // TEST MODE: Create donation via API
+                    // Set VITE_TEST_MODE=true in .env to enable test mode
+                    const TEST_MODE = import.meta.env.VITE_TEST_MODE === 'true';
+                    
+                    if (TEST_MODE && project?.id && user) {
+                      try {
+                        console.log('[TEST MODE] Creating donation via support page');
+                        
+                        // Use direct API endpoint (bypasses Stripe, creates donation + transaction automatically)
+                        // Include slug in request body for fallback lookup if project ID is wrong
+                        const response = await apiRequest("POST", `/api/projects/${project.id}/donate`, {
+                          amount: currentSupportAmount,
+                          slug: project.slug // Include slug for fallback lookup
+                        });
+                        
+                        if (!response.ok) {
+                          const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+                          throw new Error(errorData.message || `Server error: ${response.status}`);
+                        }
+                        
+                        const donation = await response.json();
+                        console.log('[TEST MODE] ✅ Donation created:', donation);
+                        
+                        // MICROSTEP 1.2: Invalidate impact query to update navbar immediately
+                        queryClient.invalidateQueries({ queryKey: ["/api/user/impact"] });
+                        console.log('[TEST MODE] ✅ Invalidated impact query - navbar will update');
+                        
+                        // Show processing animation after successful donation
+                        setShowProcessingImpact(true);
+                      } catch (error: any) {
+                        console.error('[TEST MODE] Donation failed:', error);
+                        alert(`Donation failed: ${error.message || 'Unknown error'}`);
+                        // Don't show animation on error
+                        return;
+                      }
+                    } else {
+                      // Preview mode - just show animation (no real payment)
+                      setShowProcessingImpact(true);
+                    }
                   }}
                 >
-                  Continue
+                  {t("support.continue")}
                 </Button>
                 <p className="text-[11px] text-center text-gray-500">
-                  By clicking 'Continue', you agree to Dopaya's Terms of Service and Privacy
-                  Notice. (Preview – processing animation only, no real payment yet)
+                  {t("support.termsAgreement")}
                 </p>
               </div>
             </div>

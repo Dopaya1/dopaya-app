@@ -12,7 +12,7 @@ import {
 import session from 'express-session';
 import createMemoryStore from 'memorystore';
 import { createClient } from '@supabase/supabase-js';
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './secrets';
+// Removed import from secrets.ts - we read directly from process.env to ensure .env is loaded first
 import { scrypt, randomBytes, timingSafeEqual } from 'crypto';
 import { promisify } from 'util';
 
@@ -28,18 +28,39 @@ const STORAGE_BUCKETS = {
 // Use memory store for session storage
 const MemoryStore = createMemoryStore(session);
 
-// Initialize Supabase client with validation
-let supabase: ReturnType<typeof createClient>;
-try {
+// Lazy initialization of Supabase client - only initialize when first used
+// This ensures environment variables are loaded before initialization
+let supabase: ReturnType<typeof createClient> | null = null;
+
+function getSupabaseClient(): ReturnType<typeof createClient> {
+  if (supabase) {
+    return supabase;
+  }
+  
+  // Read from process.env directly (not from secrets.ts) to ensure .env is loaded
+  const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
+  const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
+  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || '';
+  
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    console.error('[supabase-storage-new] ❌ Missing Supabase credentials');
     throw new Error(`Missing Supabase credentials: SUPABASE_URL=${!!SUPABASE_URL}, SUPABASE_ANON_KEY=${!!SUPABASE_ANON_KEY}`);
   }
-  supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  console.log('[supabase-storage-new] Supabase client initialized');
-} catch (error) {
-  console.error('[supabase-storage-new] Failed to initialize Supabase client:', error);
-  // Create a minimal client that will fail gracefully
-  supabase = createClient(SUPABASE_URL || 'https://placeholder.supabase.co', SUPABASE_ANON_KEY || 'placeholder-key');
+  
+  const supabaseKey = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
+  
+  if (!SUPABASE_SERVICE_ROLE_KEY) {
+    console.warn('[supabase-storage-new] ⚠️  Using ANON_KEY - RLS policies may block inserts. Consider setting SUPABASE_SERVICE_ROLE_KEY.');
+  }
+  
+  try {
+    supabase = createClient(SUPABASE_URL, supabaseKey);
+  } catch (error) {
+    console.error('[supabase-storage-new] ❌ Failed to create Supabase client:', error);
+    throw error;
+  }
+  
+  return supabase;
 }
 
 // Helper functions for password hashing
@@ -59,7 +80,7 @@ async function comparePasswords(supplied: string, stored: string) {
 // Helper function to upload files to Supabase storage
 async function uploadFile(bucketName: string, filePath: string, file: Buffer | Blob | File, contentType: string): Promise<string | null> {
   try {
-    const { data, error } = await supabase.storage
+      const { data, error } = await getSupabaseClient().storage
       .from(bucketName)
       .upload(filePath, file, {
         contentType,
@@ -72,7 +93,7 @@ async function uploadFile(bucketName: string, filePath: string, file: Buffer | B
     }
 
     // Get public URL for the file
-    const { data: urlData } = supabase.storage
+      const { data: urlData } = getSupabaseClient().storage
       .from(bucketName)
       .getPublicUrl(filePath);
 
@@ -86,7 +107,7 @@ async function uploadFile(bucketName: string, filePath: string, file: Buffer | B
 // Helper function to delete files from Supabase storage
 async function deleteFile(bucketName: string, filePath: string): Promise<boolean> {
   try {
-    const { error } = await supabase.storage
+      const { error } = await getSupabaseClient().storage
       .from(bucketName)
       .remove([filePath]);
 
@@ -125,7 +146,7 @@ export class SupabaseStorage implements IStorage {
   async getUser(id: number): Promise<User | undefined> {
     try {
       // Select all columns - Supabase returns them as-is (camelCase if that's the column name)
-      const { data, error } = await supabase
+      const { data, error } = await getSupabaseClient()
         .from('users')
         .select('*')
         .eq('id', id)
@@ -152,7 +173,7 @@ export class SupabaseStorage implements IStorage {
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await getSupabaseClient()
         .from('users')
         .select('*')
         .eq('username', username)
@@ -174,7 +195,7 @@ export class SupabaseStorage implements IStorage {
   async getUserByEmail(email: string): Promise<User | undefined> {
     try {
       // Select all columns - Supabase returns them as-is (camelCase if that's the column name)
-      const { data, error } = await supabase
+      const { data, error } = await getSupabaseClient()
         .from('users')
         .select('*')
         .eq('email', email)
@@ -203,13 +224,111 @@ export class SupabaseStorage implements IStorage {
     }
   }
 
+  async getUserByAuthId(authUserId: string): Promise<User | undefined> {
+    try {
+      console.log('[getUserByAuthId] Looking up user by auth_user_id:', authUserId);
+      const { data, error } = await getSupabaseClient()
+        .from('users')
+        .select('id, email, auth_user_id, impactPoints, username, firstName, lastName')
+        .eq('auth_user_id', authUserId)
+        .maybeSingle();
+      
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No rows returned - user doesn't exist
+          console.log('[getUserByAuthId] User not found');
+          return undefined;
+        }
+        console.error(`[getUserByAuthId] Error retrieving user with auth_user_id ${authUserId}:`, error);
+        return undefined;
+      }
+      
+      if (data) {
+        console.log('[getUserByAuthId] ✅ User found:', { id: data.id, email: data.email });
+      }
+      
+      return data as User | undefined;
+    } catch (error) {
+      console.error(`[getUserByAuthId] Exception retrieving user:`, error);
+      return undefined;
+    }
+  }
+
+  async createUserMinimal(params: {
+    username: string;
+    email: string;
+    firstName?: string;
+    lastName?: string;
+    auth_user_id?: string | null;
+  }): Promise<User> {
+    try {
+      console.log('[createUserMinimal] Creating minimal user:', { 
+        username: params.username, 
+        email: params.email, 
+        auth_user_id: params.auth_user_id 
+      });
+      
+      // Insert minimal user (no password for Supabase auth users)
+      const { data, error } = await getSupabaseClient()
+        .from('users')
+        .insert([{
+          username: params.username,
+          email: params.email,
+          firstName: params.firstName || '',
+          lastName: params.lastName || '',
+          auth_user_id: params.auth_user_id || null,
+          password: '', // Empty password for Supabase auth users
+          impactPoints: 50, // Welcome bonus
+          totalDonations: 0
+        }])
+        .select()
+        .single();
+      
+      if (error) {
+        // Handle unique constraint violation (concurrent creation)
+        if (error.code === '23505') { // Unique violation
+          console.log('[createUserMinimal] ⚠️ Unique constraint violation, fetching existing user...');
+          
+          // Try to fetch by auth_user_id first
+          if (params.auth_user_id) {
+            const existing = await this.getUserByAuthId(params.auth_user_id);
+            if (existing) {
+              console.log('[createUserMinimal] ✅ Found existing user by auth_user_id:', existing.id);
+              return existing;
+            }
+          }
+          
+          // Fallback: fetch by email
+          const existing = await this.getUserByEmail(params.email);
+          if (existing) {
+            console.log('[createUserMinimal] ✅ Found existing user by email:', existing.id);
+            return existing;
+          }
+          
+          // If we still can't find it, throw the original error
+          console.error('[createUserMinimal] ❌ Unique violation but user not found:', error);
+          throw new Error(`Failed to create user: ${error.message}`);
+        }
+        
+        console.error('[createUserMinimal] ❌ Error creating user:', error);
+        throw new Error(`Failed to create user: ${error.message}`);
+      }
+      
+      console.log('[createUserMinimal] ✅ User created successfully:', data.id);
+      return data;
+    } catch (error) {
+      console.error('[createUserMinimal] ❌ Exception creating user:', error);
+      throw error;
+    }
+  }
+
   async createUser(user: InsertUser): Promise<User> {
     try {
       // Hash the password
       const hashedPassword = await hashPassword(user.password);
       
       // Create the user record with 50 Impact Points welcome bonus
-      const { data, error } = await supabase
+      const { data, error } = await getSupabaseClient()
         .from('users')
         .insert([{ 
           ...user, 
@@ -237,7 +356,7 @@ export class SupabaseStorage implements IStorage {
   async getProjects(): Promise<Project[]> {
     try {
       console.log('Getting projects from Supabase...');
-      const { data, error } = await supabase
+      const { data, error } = await getSupabaseClient()
         .from('projects')
         .select('*')
         .eq('status', 'active');
@@ -257,7 +376,13 @@ export class SupabaseStorage implements IStorage {
 
   async getProject(id: number): Promise<Project | undefined> {
     try {
-      const { data, error } = await supabase
+      const SUPABASE_URL_FOR_LOG = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
+      const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || '';
+      console.log(`[getProject] Looking up project ID: ${id}`);
+      console.log(`[getProject] Using Supabase URL: ${SUPABASE_URL_FOR_LOG ? `✅ Set (${SUPABASE_URL_FOR_LOG.substring(0, 30)}...)` : '❌ MISSING'}`);
+      console.log(`[getProject] Using key type: ${SUPABASE_SERVICE_ROLE_KEY ? 'SERVICE_ROLE' : 'ANON'}`);
+      
+      const { data, error } = await getSupabaseClient()
         .from('projects')
         .select('*')
         .eq('id', id)
@@ -265,20 +390,33 @@ export class SupabaseStorage implements IStorage {
         .single();
       
       if (error) {
-        console.error(`Error retrieving project with ID ${id} from Supabase:`, error);
+        console.error(`[getProject] ❌ Error retrieving project with ID ${id} from Supabase:`, {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
         return undefined;
+      }
+      
+      if (data) {
+        console.log(`[getProject] ✅ Project found:`, { id: data.id, title: data.title, slug: data.slug });
+      } else {
+        console.log(`[getProject] ⚠️ No project found with ID ${id}`);
       }
       
       return data || undefined;
     } catch (error) {
-      console.error(`Error retrieving project with ID ${id}:`, error);
+      console.error(`[getProject] ❌ Exception retrieving project with ID ${id}:`, error);
       return undefined;
     }
   }
 
   async getProjectBySlug(slug: string): Promise<Project | undefined> {
     try {
-      const { data, error } = await supabase
+      const client = getSupabaseClient();
+      
+      const { data, error } = await client
         .from('projects')
         .select('*')
         .eq('slug', slug)
@@ -286,13 +424,26 @@ export class SupabaseStorage implements IStorage {
         .single();
       
       if (error) {
-        console.error(`Error retrieving project with slug ${slug} from Supabase:`, error);
+        // Log full error if status >= 400
+        if (error.status && error.status >= 400) {
+          console.error(`[getProjectBySlug] ❌ Supabase API error:`, {
+            code: error.code,
+            message: error.message,
+            status: error.status
+          });
+        }
         return undefined;
+      }
+      
+      if (data) {
+        console.log(`[getProjectBySlug] ✅ Project found:`, { id: data.id, title: data.title, slug: data.slug });
+      } else {
+        console.log(`[getProjectBySlug] ⚠️ No project found with slug ${slug}`);
       }
       
       return data || undefined;
     } catch (error) {
-      console.error(`Error retrieving project with slug ${slug}:`, error);
+      console.error(`[getProjectBySlug] ❌ Exception retrieving project with slug ${slug}:`, error);
       return undefined;
     }
   }
@@ -300,7 +451,7 @@ export class SupabaseStorage implements IStorage {
   async getFeaturedProjects(): Promise<Project[]> {
     try {
       console.log('Getting featured projects from Supabase...');
-      const { data, error } = await supabase
+      const { data, error } = await getSupabaseClient()
         .from('projects')
         .select('*')
         .eq('status', 'active')
@@ -328,7 +479,7 @@ export class SupabaseStorage implements IStorage {
         slug: project.slug || this.generateSlug(project.title)
       };
       
-      const { data, error } = await supabase
+      const { data, error } = await getSupabaseClient()
         .from('projects')
         .insert([projectWithSlug])
         .select()
@@ -353,7 +504,7 @@ export class SupabaseStorage implements IStorage {
         project.slug = this.generateSlug(project.title);
       }
       
-      const { data, error } = await supabase
+      const { data, error } = await getSupabaseClient()
         .from('projects')
         .update(project)
         .eq('id', id)
@@ -376,7 +527,7 @@ export class SupabaseStorage implements IStorage {
   async getProjectMedia(projectId: number): Promise<ProjectMedia[]> {
     try {
       // Removed the sortOrder since the column doesn't exist
-      const { data, error } = await supabase
+      const { data, error } = await getSupabaseClient()
         .from('project_media')
         .select('*')
         .eq('projectId', projectId);
@@ -395,7 +546,7 @@ export class SupabaseStorage implements IStorage {
 
   async addProjectMedia(media: InsertProjectMedia): Promise<ProjectMedia | undefined> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await getSupabaseClient()
         .from('project_media')
         .insert([media])
         .select()
@@ -460,7 +611,7 @@ export class SupabaseStorage implements IStorage {
   // Project Impact Metrics operations
   async getProjectImpactMetrics(projectId: number): Promise<ProjectImpactMetrics[]> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await getSupabaseClient()
         .from('project_impact_metrics')
         .select('*')
         .eq('projectId', projectId)
@@ -480,7 +631,7 @@ export class SupabaseStorage implements IStorage {
 
   async addProjectImpactMetric(metric: InsertProjectImpactMetrics): Promise<ProjectImpactMetrics | undefined> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await getSupabaseClient()
         .from('project_impact_metrics')
         .insert([metric])
         .select()
@@ -512,61 +663,124 @@ export class SupabaseStorage implements IStorage {
       description?: string;
     }
   ): Promise<void> {
+    const supabaseClient = getSupabaseClient(); // Ensure client is initialized
+    
+    // Try RPC function first (atomic at database level)
+    // If RPC function doesn't exist, fall back to manual implementation
     try {
-      // Get current balance
-      const { data: user, error: userError } = await supabase
-        .from('users')
-        .select('impactPoints')
-        .eq('id', userId)
-        .single();
+      const { data: rpcResult, error: rpcError } = await supabaseClient.rpc('apply_points_change', {
+        p_user_id: userId,
+        p_points_change: pointsChange,
+        p_transaction_type: transactionData.transactionType,
+        p_donation_id: transactionData.donationId || null,
+        p_project_id: transactionData.projectId || null,
+        p_support_amount: transactionData.supportAmount || null,
+        p_reward_id: transactionData.rewardId || null,
+        p_redemption_id: transactionData.redemptionId || null,
+        p_description: transactionData.description || null
+      });
       
-      if (userError || !user) {
-        throw new Error(`User ${userId} not found: ${userError?.message}`);
+      if (!rpcError && rpcResult) {
+        // RPC function succeeded (atomic operation)
+        console.log(`[applyPointsChange] ✅ Used RPC function. User ${userId}: ${pointsChange > 0 ? '+' : ''}${pointsChange} points. Balance: ${rpcResult.old_balance} → ${rpcResult.new_balance}`);
+        return;
       }
       
-      const currentBalance = (user as any).impactPoints ?? 0;
-      const newBalance = currentBalance + pointsChange;
-      
-      // Insert transaction record (use snake_case for user_transactions table)
-      const { error: transactionError } = await supabase
-        .from('user_transactions')
-        .insert([{
-          user_id: userId,
-          transaction_type: transactionData.transactionType,
-          project_id: transactionData.projectId || null,
-          donation_id: transactionData.donationId || null,
-          support_amount: transactionData.supportAmount || null,
-          reward_id: transactionData.rewardId || null,
-          redemption_id: transactionData.redemptionId || null,
-          points_change: pointsChange,
-          points_balance_after: newBalance,
-          description: transactionData.description || null,
-          metadata: null
-        }]);
-      
-      if (transactionError) {
-        throw new Error(`Failed to create transaction: ${transactionError.message}`);
+      // RPC function doesn't exist or failed - check if it's a "function not found" error
+      if (rpcError && rpcError.code === '42883') {
+        // Function doesn't exist - use fallback
+        console.log(`[applyPointsChange] ⚠️ RPC function not found (code 42883), using fallback implementation`);
+      } else if (rpcError) {
+        // Other RPC error - log and use fallback
+        console.warn(`[applyPointsChange] ⚠️ RPC function error: ${rpcError.message}, using fallback implementation`);
       }
-      
-      // Update cached balance in users table (use camelCase for users table)
-      const { error: updateError } = await supabase
-        .from('users')
-        .update({ impactPoints: newBalance })
-        .eq('id', userId);
-      
-      if (updateError) {
-        throw new Error(`Failed to update balance: ${updateError.message}`);
-      }
-      
-      console.log(`[applyPointsChange] User ${userId}: ${pointsChange > 0 ? '+' : ''}${pointsChange} points. Balance: ${currentBalance} → ${newBalance}`);
-    } catch (error) {
-      console.error(`[applyPointsChange] Error for user ${userId}:`, error);
-      throw error;
+    } catch (rpcException) {
+      // RPC call threw an exception - use fallback
+      console.warn(`[applyPointsChange] ⚠️ RPC call exception: ${rpcException instanceof Error ? rpcException.message : String(rpcException)}, using fallback implementation`);
     }
+    
+    // FALLBACK: Manual implementation with retry logic for race conditions
+    const maxRetries = 3;
+    let lastError: Error | null = null;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        // Get current balance
+        const { data: user, error: userError } = await supabaseClient
+          .from('users')
+          .select('impactPoints')
+          .eq('id', userId)
+          .single();
+        
+        if (userError || !user) {
+          throw new Error(`User ${userId} not found: ${userError?.message}`);
+        }
+        
+        const currentBalance = (user as any).impactPoints ?? 0;
+        const newBalance = currentBalance + pointsChange;
+        
+        // Insert transaction record (use snake_case for user_transactions table)
+        const { error: transactionError } = await supabaseClient
+          .from('user_transactions')
+          .insert([{
+            user_id: userId,
+            transaction_type: transactionData.transactionType,
+            project_id: transactionData.projectId || null,
+            donation_id: transactionData.donationId || null,
+            support_amount: transactionData.supportAmount || null,
+            reward_id: transactionData.rewardId || null,
+            redemption_id: transactionData.redemptionId || null,
+            points_change: pointsChange,
+            points_balance_after: newBalance,
+            description: transactionData.description || null,
+            metadata: null
+          }]);
+        
+        if (transactionError) {
+          throw new Error(`Failed to create transaction: ${transactionError.message}`);
+        }
+        
+        // Update cached balance in users table (use camelCase for users table)
+        const { error: updateError } = await supabaseClient
+          .from('users')
+          .update({ impactPoints: newBalance })
+          .eq('id', userId);
+        
+        if (updateError) {
+          throw new Error(`Failed to update balance: ${updateError.message}`);
+        }
+        
+        console.log(`[applyPointsChange] ✅ Fallback method (attempt ${attempt}). User ${userId}: ${pointsChange > 0 ? '+' : ''}${pointsChange} points. Balance: ${currentBalance} → ${newBalance}`);
+        return; // Success - exit retry loop
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        
+        // If this is the last attempt, throw the error
+        if (attempt === maxRetries) {
+          console.error(`[applyPointsChange] ❌ Failed after ${maxRetries} attempts for user ${userId}:`, lastError);
+          throw lastError;
+        }
+        
+        // Wait before retry (exponential backoff: 50ms, 100ms, 200ms)
+        const waitTime = 50 * Math.pow(2, attempt - 1);
+        console.warn(`[applyPointsChange] ⚠️ Attempt ${attempt} failed for user ${userId}, retrying in ${waitTime}ms...`, lastError.message);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      }
+    }
+    
+    // Should never reach here, but TypeScript needs it
+    throw lastError || new Error(`Failed to apply points change for user ${userId} after ${maxRetries} attempts`);
   }
 
   // Donation operations
   async createDonation(donation: InsertDonation): Promise<Donation> {
+    console.log('[createDonation] Called with:', {
+      userId: donation.userId,
+      projectId: donation.projectId,
+      amount: donation.amount,
+      impactPoints: donation.impactPoints,
+      status: donation.status
+    });
     try {
       // Update the project's raised amount and donors count
       try {
@@ -590,15 +804,73 @@ export class SupabaseStorage implements IStorage {
       }
       
       // Create the donation record
-      const { data, error } = await supabase
+      // ACTUAL DATABASE SCHEMA USES camelCase (userId, projectId, impactPoints, createdAt)
+      // stripeSessionId column does not exist in database - removed
+      const donationForInsert: any = {
+        userId: donation.userId,           // ✅ camelCase (matches actual DB)
+        projectId: donation.projectId,     // ✅ camelCase (matches actual DB)
+        amount: donation.amount,            // ✅ matches actual DB
+        impactPoints: donation.impactPoints, // ✅ camelCase (matches actual DB)
+        status: donation.status || 'pending' // ✅ matches actual DB
+      };
+      
+      // Check service role key for logging
+      const SUPABASE_URL_FOR_LOG = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
+      const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || '';
+      
+      console.log('[createDonation] ========== DB INSERT ATTEMPT ==========');
+      console.log('[createDonation] Supabase URL:', SUPABASE_URL_FOR_LOG ? `✅ Set (${SUPABASE_URL_FOR_LOG.substring(0, 30)}...)` : '❌ MISSING');
+      console.log('[createDonation] Using key type:', SUPABASE_SERVICE_ROLE_KEY ? 'SERVICE_ROLE_KEY ✅' : 'ANON_KEY ⚠️');
+      console.log('[createDonation] Inserting with camelCase (actual DB format):', JSON.stringify(donationForInsert, null, 2));
+      console.log('[createDonation] Table: donations');
+      console.log('[createDonation] Columns being inserted: userId, projectId, amount, impactPoints, status');
+      
+      const { data, error } = await getSupabaseClient()
         .from('donations')
-        .insert([donation])
+        .insert([donationForInsert])
         .select()
         .single();
       
       if (error) {
-        console.error('Error creating donation in Supabase:', error);
+        console.error('[createDonation] ========== SUPABASE ERROR ==========');
+        console.error('[createDonation] ❌ Error message:', error.message);
+        console.error('[createDonation] ❌ Error code:', error.code);
+        console.error('[createDonation] ❌ Error details:', error.details);
+        console.error('[createDonation] ❌ Error hint:', error.hint);
+        console.error('[createDonation] ❌ Full error object:', JSON.stringify(error, null, 2));
+        console.error('[createDonation] ❌ Failed insert data:', JSON.stringify(donationForInsert, null, 2));
+        console.error('[createDonation] ❌ Stack trace:');
+        console.error(new Error().stack);
+        console.error('[createDonation] ========== END ERROR ==========');
         throw new Error(`Failed to create donation: ${error.message}`);
+      }
+      
+      console.log('[createDonation] ✅ Donation created successfully:', data?.id);
+      
+      // ============================================
+      // STEP 3: Create transaction record and update balance
+      // ============================================
+      // Non-blocking: errors don't fail donation creation
+      // Uses existing applyPointsChange() method (verified in Step 1)
+      if (donation.impactPoints > 0) {
+        try {
+          await this.applyPointsChange(
+            donation.userId,
+            donation.impactPoints, // positive points earned
+            {
+              transactionType: 'donation',
+              donationId: data.id,
+              projectId: donation.projectId,
+              supportAmount: donation.amount,
+              description: `Support: $${donation.amount} for project ${donation.projectId}`
+            }
+          );
+          console.log(`[createDonation] ✅ Transaction created for donation ${data.id}, user ${donation.userId}, +${donation.impactPoints} points`);
+        } catch (transactionError) {
+          // Non-critical: log error but don't fail the donation creation
+          console.error(`[createDonation] ⚠️ Failed to create transaction for donation ${data.id}:`, transactionError);
+          // Continue - donation was created successfully
+        }
       }
       
       return data;
@@ -610,7 +882,7 @@ export class SupabaseStorage implements IStorage {
 
   async getUserDonations(userId: number): Promise<Donation[]> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await getSupabaseClient()
         .from('donations')
         .select('*, projects(title, slug, imageUrl)')
         .eq('userId', userId)
@@ -630,7 +902,7 @@ export class SupabaseStorage implements IStorage {
 
   async getProjectDonations(projectId: number): Promise<Donation[]> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await getSupabaseClient()
         .from('donations')
         .select('*')
         .eq('projectId', projectId)
@@ -651,7 +923,7 @@ export class SupabaseStorage implements IStorage {
   // Reward operations
   async getRewards(): Promise<Reward[]> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await getSupabaseClient()
         .from('rewards')
         .select('*');
       
@@ -669,7 +941,7 @@ export class SupabaseStorage implements IStorage {
 
   async getReward(id: number): Promise<Reward | undefined> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await getSupabaseClient()
         .from('rewards')
         .select('*')
         .eq('id', id)
@@ -690,7 +962,7 @@ export class SupabaseStorage implements IStorage {
 
   async getFeaturedRewards(): Promise<Reward[]> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await getSupabaseClient()
         .from('rewards')
         .select('*')
         .eq('featured', true);
@@ -709,7 +981,7 @@ export class SupabaseStorage implements IStorage {
 
   async createReward(reward: InsertReward): Promise<Reward> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await getSupabaseClient()
         .from('rewards')
         .insert([reward])
         .select()
@@ -729,28 +1001,74 @@ export class SupabaseStorage implements IStorage {
 
   // Redemption operations
   async createRedemption(redemption: InsertRedemption): Promise<Redemption> {
+    let redemptionId: number | null = null;
+    
     try {
-      const { data, error } = await supabase
+      // Step 1: Insert redemption record
+      const { data, error } = await getSupabaseClient()
         .from('redemptions')
         .insert([redemption])
         .select()
         .single();
       
       if (error) {
-        console.error('Error creating redemption in Supabase:', error);
+        console.error('[createRedemption] ❌ Error creating redemption in Supabase:', error);
         throw new Error(`Failed to create redemption: ${error.message}`);
       }
       
-      return data;
+      redemptionId = data.id;
+      console.log(`[createRedemption] ✅ Redemption record created: ${redemptionId}`);
+      
+      // Step 2: Create transaction and update balance (atomic operation)
+      // MICROSTEP 2: Added rollback logic if applyPointsChange fails
+      try {
+        await this.applyPointsChange(
+          redemption.userId,
+          -redemption.pointsSpent, // negative (points are deducted)
+          {
+            transactionType: 'redemption',
+            redemptionId: data.id,
+            rewardId: redemption.rewardId,
+            description: `Redeemed reward ${redemption.rewardId}`
+          }
+        );
+        
+        console.log(`[createRedemption] ✅ Redemption ${redemptionId} completed: Transaction created for user ${redemption.userId}, -${redemption.pointsSpent} points`);
+        return data;
+        
+      } catch (pointsError) {
+        // Step 3: Rollback - delete redemption if applyPointsChange failed
+        console.error(`[createRedemption] ❌ applyPointsChange failed for redemption ${redemptionId}, attempting rollback...`);
+        
+        try {
+          const { error: deleteError } = await getSupabaseClient()
+            .from('redemptions')
+            .delete()
+            .eq('id', redemptionId);
+          
+          if (deleteError) {
+            console.error(`[createRedemption] ❌ CRITICAL: Failed to rollback redemption ${redemptionId}:`, deleteError);
+            // Log to monitoring system in production
+          } else {
+            console.log(`[createRedemption] ✅ Rollback successful: Redemption ${redemptionId} deleted`);
+          }
+        } catch (rollbackError) {
+          console.error(`[createRedemption] ❌ CRITICAL: Exception during rollback:`, rollbackError);
+        }
+        
+        // Re-throw the original error
+        throw pointsError;
+      }
+      
     } catch (error) {
-      console.error('Error creating redemption:', error);
+      console.error('[createRedemption] ❌ Error creating redemption:', error);
       throw new Error('Failed to create redemption');
     }
   }
 
   async getUserRedemptions(userId: number): Promise<Redemption[]> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await getSupabaseClient()
         .from('redemptions')
         .select('*, rewards(title, imageUrl, partnerLevel)')
         .eq('userId', userId)
@@ -764,6 +1082,66 @@ export class SupabaseStorage implements IStorage {
       return data || [];
     } catch (error) {
       console.error(`Error fetching redemptions for user ${userId}:`, error);
+      return [];
+    }
+  }
+
+  /**
+   * Get user redemptions with full reward data
+   * Returns redemptions with complete reward information for dashboard display
+   */
+  async getUserRedemptionsWithRewards(userId: number): Promise<Array<{
+    redemption: Redemption;
+    reward: Reward;
+    pointsSpent: number;
+    redemptionDate: Date | null;
+    status: string;
+  }>> {
+    try {
+      // Get all redemptions with full reward data and brand data
+      const { data: redemptions, error: redemptionsError } = await getSupabaseClient()
+        .from('redemptions')
+        .select(`
+          *,
+          rewards (
+            *,
+            brands (*)
+          )
+        `)
+        .eq('userId', userId)
+        .order('createdAt', { ascending: false });
+      
+      if (redemptionsError || !redemptions || redemptions.length === 0) {
+        if (redemptionsError) {
+          console.error(`Error fetching redemptions for user ${userId}:`, redemptionsError);
+        }
+        return [];
+      }
+      
+      // Map to return structure
+      const result = redemptions.map((redemption: any) => {
+        const reward = redemption.rewards || redemption.reward;
+        const redemptionDate = redemption.createdAt || redemption.created_at;
+        
+        return {
+          redemption: {
+            id: redemption.id,
+            userId: redemption.userId || redemption.user_id,
+            rewardId: redemption.rewardId || redemption.reward_id,
+            pointsSpent: redemption.pointsSpent || redemption.points_spent,
+            status: redemption.status || 'pending',
+            createdAt: redemptionDate ? new Date(redemptionDate) : null
+          } as Redemption,
+          reward: reward as Reward,
+          pointsSpent: redemption.pointsSpent || redemption.points_spent || 0,
+          redemptionDate: redemptionDate ? new Date(redemptionDate) : null,
+          status: redemption.status || 'pending'
+        };
+      });
+      
+      return result;
+    } catch (error) {
+      console.error(`Error fetching redemptions with rewards for user ${userId}:`, error);
       return [];
     }
   }
@@ -809,7 +1187,7 @@ export class SupabaseStorage implements IStorage {
         const amountDonated = totalDonations; // Already extracted above
         
         // Determine user status based on impactPoints >= 100 (not amountDonated)
-        const userStatus: "aspirer" | "supporter" = impactPoints >= 100 ? "supporter" : "aspirer";
+        const userStatus: "aspirer" | "changemaker" = impactPoints >= 100 ? "changemaker" : "aspirer";
         
         return {
           impactPoints,
@@ -831,7 +1209,7 @@ export class SupabaseStorage implements IStorage {
       const projectsSupported = distinctProjectIds.size;
       
       // Determine user status based on impactPoints >= 100 (not amountDonated)
-      const userStatus: "aspirer" | "supporter" = impactPoints >= 100 ? "supporter" : "aspirer";
+      const userStatus: "aspirer" | "changemaker" = impactPoints >= 100 ? "changemaker" : "aspirer";
       
       return {
         impactPoints, // ✅ From users table
@@ -933,6 +1311,95 @@ export class SupabaseStorage implements IStorage {
       return projects || [];
     } catch (error) {
       console.error(`Error fetching supported projects for user ${userId}:`, error);
+      return [];
+    }
+  }
+
+  /**
+   * Get supported projects with aggregated donation data
+   * Returns projects with total amount, total impact, donation count, and last donation date
+   */
+  async getUserSupportedProjectsWithDonations(userId: number): Promise<Array<{
+    project: Project;
+    totalAmount: number;
+    totalImpactPoints: number;
+    donationCount: number;
+    lastDonationDate: Date | null;
+    donations: Donation[];
+  }>> {
+    try {
+      // Get all donations for the user with project details
+      const { data: donations, error: donationsError } = await supabase
+        .from('donations')
+        .select('*')
+        .eq('userId', userId)
+        .order('createdAt', { ascending: false });
+      
+      if (donationsError || !donations || donations.length === 0) {
+        console.error(`Error or no donations found for user ${userId}:`, donationsError);
+        return [];
+      }
+      
+      // Group donations by projectId
+      const donationsByProject = new Map<number, Donation[]>();
+      donations.forEach((donation: any) => {
+        const projectId = donation.projectId;
+        if (!donationsByProject.has(projectId)) {
+          donationsByProject.set(projectId, []);
+        }
+        donationsByProject.get(projectId)!.push(donation);
+      });
+      
+      // Get unique project IDs
+      const projectIds = Array.from(donationsByProject.keys());
+      
+      // Get project details
+      const { data: projects, error: projectsError } = await supabase
+        .from('projects')
+        .select('*')
+        .in('id', projectIds);
+      
+      if (projectsError) {
+        console.error(`Error fetching supported projects for user ${userId}:`, projectsError);
+        return [];
+      }
+      
+      // Aggregate data per project
+      const result = (projects || []).map((project: any) => {
+        const projectDonations = donationsByProject.get(project.id) || [];
+        
+        // Calculate aggregates
+        const totalAmount = projectDonations.reduce((sum, d: any) => sum + (d.amount || 0), 0);
+        const totalImpactPoints = projectDonations.reduce((sum, d: any) => sum + (d.impactPoints || 0), 0);
+        const donationCount = projectDonations.length;
+        
+        // Get last donation date (most recent)
+        const lastDonation = projectDonations[0]; // Already sorted by createdAt DESC
+        const lastDonationDate = lastDonation?.createdAt 
+          ? new Date(lastDonation.createdAt) 
+          : null;
+        
+        return {
+          project: project as Project,
+          totalAmount,
+          totalImpactPoints,
+          donationCount,
+          lastDonationDate,
+          donations: projectDonations as Donation[]
+        };
+      });
+      
+      // Sort by last donation date (most recent first)
+      result.sort((a, b) => {
+        if (!a.lastDonationDate && !b.lastDonationDate) return 0;
+        if (!a.lastDonationDate) return 1;
+        if (!b.lastDonationDate) return -1;
+        return b.lastDonationDate.getTime() - a.lastDonationDate.getTime();
+      });
+      
+      return result;
+    } catch (error) {
+      console.error(`Error fetching supported projects with donations for user ${userId}:`, error);
       return [];
     }
   }

@@ -2,15 +2,25 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Building2, Target, User, DollarSign, Globe, MapPin, Zap } from "lucide-react";
 import { SEOHead } from "@/components/seo/seo-head";
+import { useTranslation } from "@/lib/i18n/use-translation";
+import { useI18n } from "@/lib/i18n/i18n-context";
+import { LanguageLink } from "@/components/ui/language-link";
 
 export default function EligibilityGuidelines() {
+  const { t } = useTranslation();
+  const { language } = useI18n();
+  
   return (
     <>
       <SEOHead
-        title="Eligibility Guidelines"
-        description="Discover the eligibility criteria for social enterprises to join Dopaya. Learn about our requirements for business model, impact orientation, and founder profile."
-        keywords="eligibility criteria, social enterprises, application requirements, impact ventures, business model, social entrepreneurship"
-        canonicalUrl="https://dopaya.com/eligibility"
+        title={t("eligibility.seoTitle")}
+        description={t("eligibility.seoDescription")}
+        keywords={t("eligibility.seoKeywords")}
+        canonicalUrl={`https://dopaya.com${language === 'de' ? '/de/eligibility' : '/eligibility'}`}
+        alternateUrls={{
+          en: 'https://dopaya.com/eligibility',
+          de: 'https://dopaya.com/de/eligibility',
+        }}
       />
       <EligibilityContent />
     </>
@@ -18,67 +28,69 @@ export default function EligibilityGuidelines() {
 }
 
 function EligibilityContent() {
+  const { t } = useTranslation();
+  
   const criteria = [
     {
       icon: Building2,
-      title: "Business Model & Stage",
-      description: "We are looking for early-stage social enterprises with a proven and viable business model that shows clear potential for revenue generation and long-term impact.",
+      title: t("eligibility.criteria.businessModel.title"),
+      description: t("eligibility.criteria.businessModel.description"),
       bgColor: "bg-blue-50",
       iconColor: "text-blue-600",
       borderColor: "border-blue-200"
     },
     {
       icon: Target,
-      title: "Organization Type",
-      description: "We support for-profit or revenue-generating social enterprises, including Pvt Ltd and Section 8 companies (if impact- and revenue-driven). Traditional grant-dependent NGOs are currently not eligible. Ventures should be legally registered and ideally under 5 years old.",
+      title: t("eligibility.criteria.organizationType.title"),
+      description: t("eligibility.criteria.organizationType.description"),
       bgColor: "bg-green-50",
       iconColor: "text-green-600",
       borderColor: "border-green-200"
     },
     {
       icon: CheckCircle,
-      title: "Impact Orientation",
-      description: "There must be a strong social or environmental impact focus, with a clear and transparent link between donation and tangible outcomes. Ideally, impact can be demonstrated in a quantifiable, compelling way.",
+      title: t("eligibility.criteria.impactOrientation.title"),
+      description: t("eligibility.criteria.impactOrientation.description"),
       bgColor: "bg-purple-50",
       iconColor: "text-purple-600",
       borderColor: "border-purple-200"
     },
     {
       icon: User,
-      title: "Founder Profile",
-      description: "We seek exceptional founders with a strong personal mission, entrepreneurial drive, and a collaborative mindset who are committed to long-term social change.",
+      title: t("eligibility.criteria.founderProfile.title"),
+      description: t("eligibility.criteria.founderProfile.description"),
       bgColor: "bg-orange-50",
       iconColor: "text-orange-600",
       borderColor: "border-orange-200"
     },
     {
       icon: DollarSign,
-      title: "Use of Funds",
-      description: "Donations should be used for immediate, visible impact implementation — without losing the long-term benefits of a sustainable, revenue-generating business model.",
+      title: t("eligibility.criteria.useOfFunds.title"),
+      description: t("eligibility.criteria.useOfFunds.description"),
       bgColor: "bg-red-50",
       iconColor: "text-red-600",
       borderColor: "border-red-200"
     },
     {
       icon: Globe,
-      title: "Sector",
-      description: "We are sector-agnostic and open to any field as long as there is a clear, measurable social or environmental impact.",
+      title: t("eligibility.criteria.sector.title"),
+      description: t("eligibility.criteria.sector.description"),
       bgColor: "bg-teal-50",
       iconColor: "text-teal-600",
       borderColor: "border-teal-200"
     },
     {
       icon: MapPin,
-      title: "Region",
-      description: "We are globally open. There is no geographic limitation as long as the enterprise addresses a pressing issue with measurable outcomes.",
+      title: t("eligibility.criteria.region.title"),
+      description: t("eligibility.criteria.region.description"),
       bgColor: "bg-indigo-50",
       iconColor: "text-indigo-600",
       borderColor: "border-indigo-200"
     },
     {
       icon: Zap,
-      title: "Efficiency",
-      description: "High dollar-to-impact ratio, now or in future. Highly efficient team using AI for operations and scaling.",
+      title: t("eligibility.criteria.efficiency.title"),
+      description: t("eligibility.criteria.efficiency.description"),
       bgColor: "bg-yellow-50",
       iconColor: "text-yellow-600",
       borderColor: "border-yellow-200"
@@ -112,7 +124,7 @@ function EligibilityContent() {
               transition={{ duration: 0.6 }}
               className="text-4xl md:text-5xl font-bold text-gray-900 mb-6"
             >
-              Eligibility Guidelines
+              {t("eligibility.title")}
             </motion.h1>
             <motion.p 
               initial={{ opacity: 0, y: 20 }}
@@ -120,8 +132,7 @@ function EligibilityContent() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-xl text-gray-600 max-w-3xl mx-auto mb-8"
             >
-              We're looking for exceptional social enterprises that combine impact with sustainability. 
-              Review our criteria to see if your venture aligns with our mission.
+              {t("eligibility.subtitle")}
             </motion.p>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -130,7 +141,7 @@ function EligibilityContent() {
             >
               <a href="https://tally.so/r/3EM0vA" target="_blank" rel="noopener noreferrer">
                 <Button className="text-white px-8 py-3 text-lg" style={{ backgroundColor: '#f2662d' }}>
-                  Apply Now
+                  {t("eligibility.applyNow")}
                 </Button>
               </a>
             </motion.div>
@@ -142,10 +153,9 @@ function EligibilityContent() {
       <section className="py-24 bg-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Our Selection Criteria</h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">{t("eligibility.selectionCriteriaTitle")}</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Each criterion reflects our commitment to supporting ventures that create meaningful, 
-              measurable impact while building sustainable business models.
+              {t("eligibility.selectionCriteriaSubtitle")}
             </p>
           </div>
 
@@ -177,9 +187,9 @@ function EligibilityContent() {
       <section className="py-24 bg-gray-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Key Requirements Summary</h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">{t("eligibility.keyRequirementsTitle")}</h2>
             <p className="text-lg text-gray-600">
-              Your social enterprise should meet these essential criteria
+              {t("eligibility.keyRequirementsSubtitle")}
             </p>
           </div>
 
@@ -187,24 +197,24 @@ function EligibilityContent() {
             <div className="bg-white rounded-lg p-6 shadow-md">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
-                What We're Looking For
+                {t("eligibility.whatWeAreLookingFor")}
               </h3>
               <ul className="space-y-3 text-gray-700">
                 <li className="flex items-start">
                   <span className="w-2 h-2 bg-green-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                  Early-stage ventures with proven business models
+                  {t("eligibility.lookingFor.earlyStage")}
                 </li>
                 <li className="flex items-start">
                   <span className="w-2 h-2 bg-green-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                  Revenue-generating social enterprises
+                  {t("eligibility.lookingFor.revenueGenerating")}
                 </li>
                 <li className="flex items-start">
                   <span className="w-2 h-2 bg-green-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                  Quantifiable social/environmental impact
+                  {t("eligibility.lookingFor.quantifiableImpact")}
                 </li>
                 <li className="flex items-start">
                   <span className="w-2 h-2 bg-green-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                  Mission-driven, collaborative founders
+                  {t("eligibility.lookingFor.missionDriven")}
                 </li>
               </ul>
             </div>
@@ -214,20 +224,20 @@ function EligibilityContent() {
                 <span className="w-5 h-5 bg-red-100 rounded-full flex items-center justify-center mr-2">
                   <span className="w-2 h-2 bg-red-500 rounded-full"></span>
                 </span>
-                Current Limitations
+                {t("eligibility.currentLimitations")}
               </h3>
               <ul className="space-y-3 text-gray-700">
                 <li className="flex items-start">
                   <span className="w-2 h-2 bg-red-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                  Traditional grant-dependent NGOs
+                  {t("eligibility.limitations.traditionalNGOs")}
                 </li>
                 <li className="flex items-start">
                   <span className="w-2 h-2 bg-red-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                  Projects without measurable impact
+                  {t("eligibility.limitations.noMeasurableImpact")}
                 </li>
                 <li className="flex items-start">
                   <span className="w-2 h-2 bg-red-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                  Unregistered organizations
+                  {t("eligibility.limitations.unregistered")}
                 </li>
               </ul>
             </div>
@@ -246,14 +256,13 @@ function EligibilityContent() {
             className="rounded-2xl p-12 text-white"
             style={{ background: 'linear-gradient(to right, #f2662d, #e55a1f)' }}
           >
-            <h2 className="text-3xl font-bold mb-4">Ready to Make an Impact?</h2>
+            <h2 className="text-3xl font-bold mb-4">{t("eligibility.ctaTitle")}</h2>
             <p className="text-xl mb-8 opacity-90">
-              If your social enterprise aligns with our criteria, we'd love to hear from you. 
-              Join our community of changemakers today.
+              {t("eligibility.ctaDescription")}
             </p>
             <a href="https://tally.so/r/3EM0vA" target="_blank" rel="noopener noreferrer">
               <Button className="bg-white hover:bg-gray-100 px-8 py-3 text-lg font-semibold" style={{ color: '#f2662d' }}>
-                Submit Your Application
+                {t("eligibility.submitApplication")}
               </Button>
             </a>
           </motion.div>
@@ -263,13 +272,13 @@ function EligibilityContent() {
       {/* Contact Section */}
       <section className="py-16 bg-gray-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h3 className="text-2xl font-bold text-gray-900 mb-4">Questions About Eligibility?</h3>
+          <h3 className="text-2xl font-bold text-gray-900 mb-4">{t("eligibility.questionsTitle")}</h3>
           <p className="text-gray-600 mb-6">
-            Our team is here to help you understand if your venture is a good fit for our platform.
+            {t("eligibility.questionsDescription")}
           </p>
-          <a href="/contact" className="font-medium" style={{ color: '#f2662d' }}>
-            Contact us for guidance →
-          </a>
+          <LanguageLink href="/contact" className="font-medium" style={{ color: '#f2662d' }}>
+            {t("eligibility.contactForGuidance")}
+          </LanguageLink>
         </div>
       </section>
     </div>

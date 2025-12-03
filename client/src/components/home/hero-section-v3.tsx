@@ -9,8 +9,11 @@ import { TYPOGRAPHY } from "@/constants/typography";
 import { BRAND_COLORS } from "@/constants/colors";
 import { InteractiveValueCalculator } from "@/components/ui/interactive-value-calculator";
 import { getProjectImageUrl } from "@/lib/image-utils";
+import { useI18n } from "@/lib/i18n/i18n-context";
+import { getProjectImpactUnit, getProjectImpactNoun, getProjectImpactVerb, getRewardTitle } from "@/lib/i18n/project-content";
 
 export function HeroSectionV3() {
+  const { language } = useI18n();
   // State for rotating startup examples with locking behavior (subheadline)
   const [currentStartupIndex, setCurrentStartupIndex] = useState(0);
   const startupIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -143,7 +146,7 @@ export function HeroSectionV3() {
     for (let i = 1; i <= 7; i++) {
       const donation = project[`donation_${i}` as keyof Project] as number;
       const impact = project[`impact_${i}` as keyof Project] as string;
-      const impactUnit = project.impact_unit as string;
+      const impactUnit = getProjectImpactUnit(project, language) || "impact created";
       
       if (donation && impact) {
         tiers.push({
@@ -173,8 +176,8 @@ export function HeroSectionV3() {
   const impactAmount = currentTier?.impact || "0";
   const impactUnit = currentTier?.unit || "impact created";
   const impactPoints = currentTier?.points || 0;
-  const impactVerb = currentProject?.impact_verb || "help";
-  const impactNoun = currentProject?.impact_noun || "people";
+  const impactVerb = currentProject ? getProjectImpactVerb(currentProject, language) || "help" : "help";
+  const impactNoun = currentProject ? getProjectImpactNoun(currentProject, language) || "people" : "people";
   
   // Calculate rewards value (25% more than donation amount)
   const calculateRewardsValue = (amount: number) => {
@@ -456,7 +459,7 @@ export function HeroSectionV3() {
                         <>
                           <img
                             src={reward.imageUrl}
-                            alt={reward.title}
+                            alt={getRewardTitle(reward, language)}
                             className="w-full h-full object-cover group-hover:brightness-100 transition-all duration-300"
                           />
                           <div className="absolute inset-0 bg-black/40 group-hover:bg-black/0 transition-all duration-300"></div>

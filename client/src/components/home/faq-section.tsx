@@ -6,34 +6,15 @@ import {
 } from "@/components/ui/accordion";
 import { TYPOGRAPHY } from "@/constants/typography";
 import { BRAND_COLORS } from "@/constants/colors";
+import { useTranslation } from "@/lib/i18n/use-translation";
+import { useI18n } from "@/lib/i18n/i18n-context";
+import { translations } from "@/lib/i18n/translations";
 
 export function FAQSection() {
-  const faqs = [
-    {
-      question: "Why should I support social enterprises instead of NGOs?",
-      answer: "Social enterprises use sustainable business models to create long-term impact. Unlike NGOs that often rely on recurring donations, social enterprises reinvest earnings into their mission — making your contribution go further. Some even deliver a measurable social return on investment (SROI) of 2×, 3× or more."
-    },
-    {
-      question: "How does Dopaya make money?",
-      answer: "Currently, 100% of your investment goes directly to social enterprises. We're supported by small community contributions and brand partnership fees. Our goal is to keep platform costs minimal while maximizing impact."
-    },
-    {
-      question: "How does Dopaya ensure contributions are used correctly?",
-      answer: "Every social enterprise on Dopaya goes through a careful vetting process. We assess their impact model, financials, and governance to ensure credibility. We also track how funds are used and offer supporters clear visibility through updates and dashboards."
-    },
-    {
-      question: "Can I choose where my contribution goes?",
-      answer: "Yes. You can explore our list of vetted social enterprises and choose who to support — or let Dopaya recommend an initiative based on your interests. Either way, your impact is real, transparent, and trackable."
-    },
-    {
-      question: "What kind of rewards do supporters receive?",
-      answer: "Every contribution earns you Impact Points — which unlock badges, perks, and access to curated brand experiences. The more you give or refer, the more rewarding your journey becomes."
-    },
-    {
-      question: "Are contributions tax-deductible?",
-      answer: "In many cases, yes. We're working to expand this and provide tax-friendly options for more users globally."
-    }
-  ];
+  const { t } = useTranslation();
+  const { language } = useI18n();
+  // Direkt auf das Array zugreifen, da t() nur Strings zurückgibt
+  const faqs = translations[language].homeSections.faq.questions;
 
   return (
     <section className="py-24" style={{ backgroundColor: BRAND_COLORS.bgWhite }}>
@@ -43,10 +24,10 @@ export function FAQSection() {
             color: BRAND_COLORS.textPrimary, 
             fontFamily: "'Satoshi', 'Inter', system-ui, sans-serif" 
           }}>
-            Frequently Asked Questions
+            {t("homeSections.faq.title")}
           </h2>
           <p className="text-xl max-w-2xl mx-auto" style={{ color: BRAND_COLORS.textSecondary }}>
-            Answers to common questions about our platform and how it works
+            {t("homeSections.faq.subtitle")}
           </p>
         </div>
         

@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Project } from "@shared/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Link } from "wouter";
+import { LanguageLink } from "@/components/ui/language-link";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/lib/supabase";
 
@@ -81,11 +81,9 @@ export function SupportedProjects({ supportCount = 0, showEmptyStateText = false
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
           </svg>
           <p className="text-neutral">You haven't supported any social enterprises yet.</p>
-          <Link href="/projects">
-            <a className="inline-block mt-3 text-primary hover:underline">
-              Explore social enterprises to support
-            </a>
-          </Link>
+          <LanguageLink href="/projects" className="inline-block mt-3 text-primary hover:underline">
+            Explore social enterprises to support
+          </LanguageLink>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -98,13 +96,13 @@ export function SupportedProjects({ supportCount = 0, showEmptyStateText = false
                   <h3 className="text-lg font-bold text-dark font-heading mb-2">{project.title}</h3>
                   <p className="text-sm text-neutral mb-4 whitespace-pre-line">{project.description}</p>
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-xs text-neutral">${project.goalAmount?.toLocaleString() || '0'} goal</span>
-                    <Link href={`/project/${project.slug || project.id}`} className="text-primary hover:underline text-sm font-medium flex items-center">
+                    <span className="text-xs text-neutral">${(project as any).goalAmount?.toLocaleString() || '0'} goal</span>
+                    <LanguageLink href={`/project/${project.slug || project.id}`} className="text-primary hover:underline text-sm font-medium flex items-center">
                       View
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                       </svg>
-                    </Link>
+                    </LanguageLink>
                   </div>
                 </CardContent>
               </Card>

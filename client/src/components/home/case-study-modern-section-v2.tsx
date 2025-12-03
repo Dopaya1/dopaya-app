@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Link } from "wouter";
+import { LanguageLink } from "@/components/ui/language-link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { X, Target, TrendingUp, Users, Heart, ArrowRight, Wind, ChevronDown, GraduationCap, BookOpen, Lightbulb } from "lucide-react";
@@ -407,9 +407,9 @@ export function CaseStudyModernSectionV2() {
                             style={{ backgroundColor: BRAND_COLORS.primaryOrange }}
                             asChild
                           >
-                            <Link href={`/project/${selectedProject.slug || selectedProject.id}`}>
+                            <LanguageLink href={`/project/${selectedProject.slug || selectedProject.id}`}>
                               Support This Project
-                            </Link>
+                            </LanguageLink>
                           </Button>
                         </div>
                   </div>

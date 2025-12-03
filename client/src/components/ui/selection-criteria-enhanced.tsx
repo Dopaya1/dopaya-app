@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { EnhancedCard } from './enhanced-card';
 import { Building2, Target, Users, DollarSign, Globe, MapPin, Zap, CheckCircle } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n/use-translation';
 
 interface CriteriaItem {
   title: string;
@@ -11,45 +12,47 @@ interface CriteriaItem {
 }
 
 export function SelectionCriteriaEnhanced() {
+  const { t } = useTranslation();
+  
   const criteria: CriteriaItem[] = [
     {
-      title: "Business Model & Stage",
-      description: "Early-stage, legally registered, with proven revenue or potential.",
+      title: t("socialEnterprises.eligibilityBusinessModel"),
+      description: t("socialEnterprises.eligibilityBusinessModelDesc"),
       variant: "default"
     },
     {
-      title: "Organization Type",
-      description: "Pvt Ltd, Section 8, or similar revenue-generating social ventures. NGOs not eligible.",
+      title: t("socialEnterprises.eligibilityOrganizationType"),
+      description: t("socialEnterprises.eligibilityOrganizationTypeDesc"),
       variant: "default"
     },
     {
-      title: "Impact Orientation",
-      description: "Clear, measurable social or environmental impact, ideally quantifiable.",
+      title: t("socialEnterprises.eligibilityImpactOrientation"),
+      description: t("socialEnterprises.eligibilityImpactOrientationDesc"),
       variant: "default"
     },
     {
-      title: "Founder Profile",
-      description: "Mission-driven, entrepreneurial founders committed to long-term change.",
+      title: t("socialEnterprises.eligibilityFounderProfile"),
+      description: t("socialEnterprises.eligibilityFounderProfileDesc"),
       variant: "default"
     },
     {
-      title: "Use of Funds",
-      description: "Donations must be used for tangible impact with long-term sustainability.",
+      title: t("socialEnterprises.eligibilityUseOfFunds"),
+      description: t("socialEnterprises.eligibilityUseOfFundsDesc"),
       variant: "default"
     },
     {
-      title: "Sector",
-      description: "All sectors welcome, as long as measurable impact is demonstrated.",
+      title: t("socialEnterprises.eligibilitySector"),
+      description: t("socialEnterprises.eligibilitySectorDesc"),
       variant: "default"
     },
     {
-      title: "Region",
-      description: "No geographic restrictions if measurable local outcomes are ensured.",
+      title: t("socialEnterprises.eligibilityRegion"),
+      description: t("socialEnterprises.eligibilityRegionDesc"),
       variant: "default"
     },
     {
-      title: "Efficiency",
-      description: "High dollar-to-impact ratio, now or in future. Highly efficient team using AI for operations and scaling.",
+      title: t("socialEnterprises.eligibilityEfficiency"),
+      description: t("socialEnterprises.eligibilityEfficiencyDesc"),
       variant: "default"
     }
   ];
@@ -58,9 +61,9 @@ export function SelectionCriteriaEnhanced() {
     <section className="py-20 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4">Eligibility Criteria</h2>
+          <h2 className="text-3xl font-bold mb-4">{t("socialEnterprises.eligibilityTitle")}</h2>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            Searching for impactful social enterprises who align with our mission and want to change the system with us.
+            {t("socialEnterprises.eligibilitySubtitle")}
           </p>
         </div>
         

@@ -158,6 +158,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // API Routes
   
+  // Debug endpoint to list all projects (for troubleshooting)
+  app.get("/api/debug/projects", async (req, res) => {
+    try {
+      const projects = await storage.getProjects();
+      return res.json({
+        total: projects.length,
+        storageType: storage.constructor?.name,
+        projects: projects.map(p => ({ id: p.id, slug: p.slug, title: p.title }))
+      });
+    } catch (error) {
+      console.error('[GET /api/debug/projects] Error:', error);
+      return res.status(500).json({ message: "Failed to fetch projects" });
+    }
+  });
+
   // Projects
   app.get("/api/projects", async (req, res) => {
     try {
@@ -327,7 +342,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const project = projects.find(p => p.slug === slug);
       
       if (!project) {
-        return res.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ message: "Project not found" });
       }
 
       // Extract only non-null donation tiers with their corresponding impacts
@@ -355,7 +370,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Error fetching donation tiers:", error);
-      res.status(500).json({ error: "Failed to fetch donation tiers" });
+      res.status(500).json({ message: "Failed to fetch donation tiers" });
     }
   });
   
@@ -444,20 +459,249 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Donations
   app.post("/api/projects/:id/donate", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "You must be logged in to donate" });
-    }
-    
     try {
+      console.log('[POST /api/projects/:id/donate] ========== REQUEST ==========');
+      console.log('[POST /api/projects/:id/donate] Authorization header:', req.headers.authorization ? 'Present' : 'Missing');
+      console.log('[POST /api/projects/:id/donate] Authorization header value:', req.headers.authorization ? req.headers.authorization.substring(0, 30) + '...' : 'N/A');
+      console.log('[POST /api/projects/:id/donate] All headers:', JSON.stringify(req.headers, null, 2));
+      
+      // Try Supabase auth first (same pattern as /api/user/impact)
+      const supabaseUser = await getSupabaseUser(req);
+      console.log('[POST /api/projects/:id/donate] Supabase user:', supabaseUser ? { email: supabaseUser.email, id: supabaseUser.id } : 'null');
+      
+      let userId: number | undefined;
+      
+      if (supabaseUser) {
+        let dbUser: User | undefined;
+        
+        // ========== DIAGNOSTIC: Inspect storage instance ==========
+        console.log('[POST /api/projects/:id/donate] 🔍 ========== STORAGE DIAGNOSTICS ==========');
+        console.log('[POST /api/projects/:id/donate] 🔍 Storage instance type:', storage.constructor?.name || 'Unknown');
+        console.log('[POST /api/projects/:id/donate] 🔍 Storage instance:', storage);
+        console.log('[POST /api/projects/:id/donate] 🔍 Storage methods available:', {
+          getUserByAuthId: typeof storage.getUserByAuthId,
+          createUserMinimal: typeof storage.createUserMinimal,
+          getUserByEmail: typeof storage.getUserByEmail,
+          createUser: typeof storage.createUser,
+          createDonation: typeof storage.createDonation
+        });
+        // Try to check if it's SupabaseStorage instance
+        try {
+          const { SupabaseStorage } = await import('./supabase-storage-new');
+          console.log('[POST /api/projects/:id/donate] 🔍 Is SupabaseStorage?', storage instanceof SupabaseStorage);
+        } catch (e) {
+          console.log('[POST /api/projects/:id/donate] 🔍 Could not check SupabaseStorage type:', e);
+        }
+        console.log('[POST /api/projects/:id/donate] 🔍 ===========================================');
+        
+        // ========== USER LOOKUP FLOW (Step 3.7.5) ==========
+        // Step 1: Try lookup by auth_user_id first (preferred - more reliable)
+        console.log('[POST /api/projects/:id/donate] 🔍 Step 1: Looking up user by auth_user_id:', supabaseUser.id);
+        if (storage.getUserByAuthId && typeof storage.getUserByAuthId === 'function') {
+          dbUser = await storage.getUserByAuthId(supabaseUser.id);
+          if (dbUser) {
+            console.log('[POST /api/projects/:id/donate] ✅ Step 1 SUCCESS: User found by auth_user_id:', { id: dbUser.id, email: dbUser.email, auth_user_id: dbUser.auth_user_id });
+          } else {
+            console.log('[POST /api/projects/:id/donate] ⚠️ Step 1: User NOT found by auth_user_id');
+          }
+        } else {
+          console.warn('[POST /api/projects/:id/donate] ⚠️ Step 1 SKIPPED: getUserByAuthId method not available');
+        }
+        
+        // Step 2: Fallback to email lookup if auth_user_id lookup fails
+        if (!dbUser && supabaseUser.email) {
+          console.log('[POST /api/projects/:id/donate] 🔍 Step 2: Fallback - Looking up user by email:', supabaseUser.email);
+          dbUser = await storage.getUserByEmail(supabaseUser.email);
+          if (dbUser) {
+            console.log('[POST /api/projects/:id/donate] ✅ Step 2 SUCCESS: User found by email:', { id: dbUser.id, email: dbUser.email, auth_user_id: dbUser.auth_user_id || 'NOT SET' });
+          } else {
+            console.log('[POST /api/projects/:id/donate] ⚠️ Step 2: User NOT found by email');
+          }
+        }
+        
+        // Step 3: If still not found, create minimal user on-the-fly
+        if (!dbUser) {
+          console.log('[POST /api/projects/:id/donate] 🔍 Step 3: User not found in DB, creating minimal user on-the-fly...');
+          try {
+            // Derive username from email prefix
+            const username = supabaseUser.email?.split('@')[0] || `user_${Date.now()}`;
+            
+            // Derive name from metadata
+            const fullName = supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name || '';
+            const nameParts = fullName.split(' ').filter(Boolean);
+            const firstName = nameParts[0] || '';
+            const lastName = nameParts.slice(1).join(' ') || '';
+            
+            // Try createUserMinimal first (if available - SupabaseStorage)
+            if (storage.createUserMinimal && typeof storage.createUserMinimal === 'function') {
+              console.log('[POST /api/projects/:id/donate] Using createUserMinimal method');
+              dbUser = await storage.createUserMinimal({
+                username,
+                email: supabaseUser.email || '',
+                firstName,
+                lastName,
+                auth_user_id: supabaseUser.id
+              });
+              console.log('[POST /api/projects/:id/donate] ✅ Step 3 SUCCESS: User created via createUserMinimal:', { id: dbUser.id, email: dbUser.email, auth_user_id: dbUser.auth_user_id || 'NOT SET' });
+            } else {
+              // Fallback: Use standard createUser method (works with both SupabaseStorage and MemStorage)
+              console.log('[POST /api/projects/:id/donate] createUserMinimal not available, using createUser fallback');
+              // Note: createUser will hash the password, but for Supabase auth users we want empty password
+              // We'll pass empty string and the createUser method will handle it
+              const userData: any = {
+                username,
+                email: supabaseUser.email || '',
+                firstName,
+                lastName,
+                password: '' // Empty password for Supabase auth users (will be hashed but that's ok)
+              };
+              dbUser = await storage.createUser(userData);
+              // After creation, update auth_user_id if we have it (since InsertUser doesn't include it)
+              if (supabaseUser.id && dbUser) {
+                // Try to update auth_user_id using direct Supabase call
+                try {
+                  const { createClient } = await import('@supabase/supabase-js');
+                  const { SUPABASE_URL, SUPABASE_ANON_KEY } = await import('./secrets');
+                  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || '';
+                  const supabaseKey = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
+                  const supabase = createClient(SUPABASE_URL, supabaseKey);
+                  
+                  const { error: updateError } = await supabase
+                    .from('users')
+                    .update({ auth_user_id: supabaseUser.id })
+                    .eq('id', dbUser.id);
+                  
+                  if (updateError) {
+                    console.warn('[POST /api/projects/:id/donate] ⚠️ Could not update auth_user_id:', updateError);
+                  } else {
+                    console.log('[POST /api/projects/:id/donate] ✅ Updated auth_user_id for user:', dbUser.id);
+                    // Refresh user data
+                    const updatedUser = await storage.getUser(dbUser.id);
+                    if (updatedUser) dbUser = updatedUser;
+                  }
+                } catch (updateErr) {
+                  console.warn('[POST /api/projects/:id/donate] ⚠️ Could not update auth_user_id:', updateErr);
+                }
+              }
+              console.log('[POST /api/projects/:id/donate] ✅ Step 3 SUCCESS: User created via createUser fallback:', { id: dbUser.id, email: dbUser.email, auth_user_id: dbUser.auth_user_id || 'NOT SET' });
+            }
+          } catch (createError) {
+            console.error('[POST /api/projects/:id/donate] ❌ Failed to create user:', createError);
+            // If it's a unique constraint violation, try to fetch the existing user
+            if (createError instanceof Error && (createError.message.includes('unique') || createError.message.includes('duplicate')) || 
+                (createError as any)?.code === '23505') {
+              console.log('[POST /api/projects/:id/donate] Unique constraint violation, fetching existing user...');
+              // Try to get by email one more time
+              if (supabaseUser.email) {
+                dbUser = await storage.getUserByEmail(supabaseUser.email);
+                if (dbUser) {
+                  console.log('[POST /api/projects/:id/donate] ✅ Found existing user after unique violation:', { id: dbUser.id, email: dbUser.email });
+                }
+              }
+            }
+            
+            if (!dbUser) {
+              console.error('[POST /api/projects/:id/donate] ❌ Step 3 FAILED: User creation failed:', createError);
+              return res.status(500).json({ 
+                message: "Failed to resolve user"
+              });
+            } else {
+              console.log('[POST /api/projects/:id/donate] ✅ Step 3 RECOVERED: User found after unique constraint violation:', { id: dbUser.id, email: dbUser.email });
+            }
+          }
+        }
+        
+        if (!dbUser) {
+          console.error('[POST /api/projects/:id/donate] ❌ CRITICAL: Failed to resolve user after all steps');
+          return res.status(500).json({ message: "Failed to resolve user" });
+        }
+        
+        console.log('[POST /api/projects/:id/donate] ✅ USER RESOLVED: Using user ID:', dbUser.id);
+        userId = dbUser.id;
+      } else {
+        // Fallback to Passport auth
+        console.log('[POST /api/projects/:id/donate] Checking Passport auth...');
+        if (!req.isAuthenticated()) {
+          console.log('[POST /api/projects/:id/donate] ❌ Not authenticated (neither Supabase nor Passport)');
+          return res.status(401).json({ message: "You must be logged in to donate" });
+        }
+        userId = req.user!.id;
+        console.log('[POST /api/projects/:id/donate] Using Passport user ID:', userId);
+      }
+      
+      console.log('[POST /api/projects/:id/donate] Using user ID:', userId);
+      
+      console.log('[POST /api/projects/:id/donate] ========== PROJECT LOOKUP ==========');
+      console.log('[POST /api/projects/:id/donate] Requested project ID from params:', req.params.id);
+      console.log('[POST /api/projects/:id/donate] Request body:', JSON.stringify(req.body, null, 2));
+      console.log('[POST /api/projects/:id/donate] Request query:', JSON.stringify(req.query, null, 2));
+      
       const projectId = parseInt(req.params.id);
       if (isNaN(projectId)) {
+        console.error('[POST /api/projects/:id/donate] ❌ Invalid project ID:', req.params.id);
         return res.status(400).json({ message: "Invalid project ID" });
       }
       
-      const project = await storage.getProject(projectId);
+      console.log('[POST /api/projects/:id/donate] Parsed project ID:', projectId);
+      console.log('[POST /api/projects/:id/donate] Storage type:', storage.constructor?.name);
+      console.log('[POST /api/projects/:id/donate] Calling storage.getProject...');
+      
+      let project = await storage.getProject(projectId);
+      
       if (!project) {
-        return res.status(404).json({ message: "Project not found" });
+        console.error('[POST /api/projects/:id/donate] ❌ Project not found by ID:', projectId);
+        
+        // Try to get all projects to see what's available
+        try {
+          const allProjects = await storage.getProjects();
+          console.log('[POST /api/projects/:id/donate] Total projects available:', allProjects.length);
+          console.log('[POST /api/projects/:id/donate] Available project IDs:', allProjects.map(p => ({ id: p.id, slug: p.slug, title: p.title })));
+          
+          // Check if there's a project with a similar ID (maybe the ID changed)
+          const projectWithSimilarId = allProjects.find(p => p.id.toString().includes(projectId.toString()) || projectId.toString().includes(p.id.toString()));
+          if (projectWithSimilarId) {
+            console.log('[POST /api/projects/:id/donate] ⚠️ Found project with similar ID:', projectWithSimilarId);
+          }
+        } catch (e) {
+          console.error('[POST /api/projects/:id/donate] Could not fetch all projects:', e);
+        }
+        
+        // Try to extract slug from referer header or request body/query
+        let slug = req.body?.slug || req.query?.slug;
+        
+        // If no slug in body/query, try to extract from referer header
+        if (!slug && req.headers.referer) {
+          const refererMatch = req.headers.referer.match(/\/support\/([^/?]+)/);
+          if (refererMatch) {
+            slug = refererMatch[1];
+            console.log('[POST /api/projects/:id/donate] Extracted slug from referer:', slug);
+          }
+        }
+        
+        // Try to look up by slug as fallback
+        if (slug && storage.getProjectBySlug && typeof storage.getProjectBySlug === 'function') {
+          console.log('[POST /api/projects/:id/donate] Attempting fallback lookup by slug:', slug);
+          project = await storage.getProjectBySlug(slug);
+          if (project) {
+            console.log('[POST /api/projects/:id/donate] ✅ Project found by slug fallback:', { id: project.id, slug: project.slug, title: project.title });
+            console.log('[POST /api/projects/:id/donate] ⚠️ Using project ID from slug lookup:', project.id, 'instead of requested:', projectId);
+          } else {
+            console.log('[POST /api/projects/:id/donate] ❌ Project not found by slug either:', slug);
+          }
+        } else {
+          console.log('[POST /api/projects/:id/donate] ⚠️ Cannot use slug fallback - slug not available or method not available');
+        }
+        
+        if (!project) {
+          return res.status(404).json({ message: "Project not found" });
+        }
       }
+      
+      console.log('[POST /api/projects/:id/donate] ✅ Project found:', { id: project.id, title: project.title, slug: project.slug });
+      console.log('[POST /api/projects/:id/donate] ===========================================');
+      
+      // Use the actual project ID from the found project (in case we used slug fallback)
+      const actualProjectId = project.id;
       
       // Validate amount
       const schema = z.object({
@@ -474,17 +718,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Calculate impact points (amount * project multiplier)
       const impactPoints = amount * (project.impactPointsMultiplier || 10);
       
+      // Log donation data before creation
+      console.log('[POST /api/projects/:id/donate] Creating donation with:', {
+        userId,
+        projectId: actualProjectId,
+        requestedProjectId: projectId,
+        amount,
+        impactPoints,
+        projectMultiplier: project.impactPointsMultiplier
+      });
+      
+      // Check for duplicate donation (same user, project, amount within last 5 seconds)
+      const { createClient } = await import('@supabase/supabase-js');
+      // Read directly from process.env to ensure .env is loaded
+      const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
+      const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
+      const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || '';
+      
+      if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+        // Use service role key for backend operations (bypasses RLS)
+        const supabaseKey = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
+        const supabase = createClient(SUPABASE_URL, supabaseKey);
+        
+        const fiveSecondsAgo = new Date(Date.now() - 5000);
+        const { data: recentDonations, error: duplicateCheckError } = await supabase
+          .from('donations')
+          .select('id, userId, projectId, amount, createdAt')
+          .eq('userId', userId)
+          .eq('projectId', actualProjectId)
+          .eq('amount', amount)
+          .gte('createdAt', fiveSecondsAgo.toISOString())
+          .order('createdAt', { ascending: false })
+          .limit(1);
+        
+        if (duplicateCheckError && duplicateCheckError.code !== 'PGRST116') {
+          // PGRST116 = no rows returned (expected if no duplicate exists)
+          console.warn('[POST /api/projects/:id/donate] ⚠️ Error checking for duplicate donation:', duplicateCheckError.message);
+          // Continue anyway - non-critical error
+        }
+        
+        if (recentDonations && recentDonations.length > 0) {
+          const existingDonation = recentDonations[0];
+          console.log('[POST /api/projects/:id/donate] ⚠️ Duplicate donation detected, returning existing donation:', {
+            id: existingDonation.id,
+            userId: existingDonation.userId,
+            projectId: existingDonation.projectId,
+            amount: existingDonation.amount,
+            createdAt: existingDonation.createdAt
+          });
+          return res.status(200).json(existingDonation); // Return existing donation (idempotent)
+        }
+      } else {
+        console.warn('[POST /api/projects/:id/donate] ⚠️ Missing Supabase credentials for duplicate check, skipping idempotency check');
+        // Continue to create donation - idempotency check is non-critical
+      }
+      
       // Create donation
       const donation = await storage.createDonation({
-        userId: req.user!.id,
-        projectId,
+        userId: userId,
+        projectId: actualProjectId, // Use actual project ID from found project
         amount,
         impactPoints
       });
       
       res.status(201).json(donation);
     } catch (error) {
-      res.status(500).json({ message: "Failed to process donation" });
+      console.error('[POST /api/projects/:id/donate] ========== ROUTE ERROR ==========');
+      console.error('[POST /api/projects/:id/donate] ❌ Error:', error);
+      console.error('[POST /api/projects/:id/donate] Error message:', error instanceof Error ? error.message : String(error));
+      console.error('[POST /api/projects/:id/donate] Error stack:');
+      console.error(error instanceof Error ? error.stack : 'No stack trace available');
+      console.error('[POST /api/projects/:id/donate] Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+      console.error('[POST /api/projects/:id/donate] ========== END ROUTE ERROR ==========');
+      
+      // Return generic error message (NO stack trace to client)
+      res.status(500).json({ 
+        message: "Failed to process donation"
+      });
     }
   });
 
@@ -527,11 +837,145 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Redeem rewards
   app.post("/api/rewards/:id/redeem", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "You must be logged in to redeem rewards" });
-    }
-    
     try {
+      console.log('[POST /api/rewards/:id/redeem] ========== REQUEST ==========');
+      console.log('[POST /api/rewards/:id/redeem] Authorization header:', req.headers.authorization ? 'Present' : 'Missing');
+      
+      // Try Supabase auth first (same pattern as /api/projects/:id/donate)
+      const supabaseUser = await getSupabaseUser(req);
+      console.log('[POST /api/rewards/:id/redeem] Supabase user:', supabaseUser ? { email: supabaseUser.email, id: supabaseUser.id } : 'null');
+      
+      let userId: number | undefined;
+      
+      if (supabaseUser) {
+        let dbUser: User | undefined;
+        
+        // ========== USER LOOKUP FLOW (Step 3.7.5) ==========
+        // Step 1: Try lookup by auth_user_id first (preferred - more reliable)
+        console.log('[POST /api/rewards/:id/redeem] 🔍 Step 1: Looking up user by auth_user_id:', supabaseUser.id);
+        if (storage.getUserByAuthId && typeof storage.getUserByAuthId === 'function') {
+          dbUser = await storage.getUserByAuthId(supabaseUser.id);
+          if (dbUser) {
+            console.log('[POST /api/rewards/:id/redeem] ✅ Step 1 SUCCESS: User found by auth_user_id:', { id: dbUser.id, email: dbUser.email, auth_user_id: dbUser.auth_user_id });
+          } else {
+            console.log('[POST /api/rewards/:id/redeem] ⚠️ Step 1: User NOT found by auth_user_id');
+          }
+        } else {
+          console.warn('[POST /api/rewards/:id/redeem] ⚠️ Step 1 SKIPPED: getUserByAuthId method not available');
+        }
+        
+        // Step 2: Fallback to email lookup if auth_user_id lookup fails
+        if (!dbUser && supabaseUser.email) {
+          console.log('[POST /api/rewards/:id/redeem] 🔍 Step 2: Fallback - Looking up user by email:', supabaseUser.email);
+          dbUser = await storage.getUserByEmail(supabaseUser.email);
+          if (dbUser) {
+            console.log('[POST /api/rewards/:id/redeem] ✅ Step 2 SUCCESS: User found by email:', { id: dbUser.id, email: dbUser.email, auth_user_id: dbUser.auth_user_id || 'NOT SET' });
+          } else {
+            console.log('[POST /api/rewards/:id/redeem] ⚠️ Step 2: User NOT found by email');
+          }
+        }
+        
+        // Step 3: If still not found, create minimal user on-the-fly
+        if (!dbUser) {
+          console.log('[POST /api/rewards/:id/redeem] 🔍 Step 3: User not found in DB, creating minimal user on-the-fly...');
+          try {
+            // Derive username from email prefix
+            const username = supabaseUser.email?.split('@')[0] || `user_${Date.now()}`;
+            
+            // Derive name from metadata
+            const fullName = supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name || '';
+            const nameParts = fullName.split(' ').filter(Boolean);
+            const firstName = nameParts[0] || '';
+            const lastName = nameParts.slice(1).join(' ') || '';
+            
+            // Try createUserMinimal first (if available - SupabaseStorage)
+            if (storage.createUserMinimal && typeof storage.createUserMinimal === 'function') {
+              console.log('[POST /api/rewards/:id/redeem] Using createUserMinimal method');
+              dbUser = await storage.createUserMinimal({
+                username,
+                email: supabaseUser.email || '',
+                firstName,
+                lastName,
+                auth_user_id: supabaseUser.id
+              });
+              console.log('[POST /api/rewards/:id/redeem] ✅ Step 3 SUCCESS: User created via createUserMinimal:', { id: dbUser.id, email: dbUser.email, auth_user_id: dbUser.auth_user_id || 'NOT SET' });
+            } else {
+              // Fallback: Use standard createUser method
+              console.log('[POST /api/rewards/:id/redeem] createUserMinimal not available, using createUser fallback');
+              const userData: any = {
+                username,
+                email: supabaseUser.email || '',
+                firstName,
+                lastName,
+                password: '' // Empty password for Supabase auth users
+              };
+              dbUser = await storage.createUser(userData);
+              // Update auth_user_id after creation
+              if (supabaseUser.id && dbUser) {
+                try {
+                  const { createClient } = await import('@supabase/supabase-js');
+                  const { SUPABASE_URL, SUPABASE_ANON_KEY } = await import('./secrets');
+                  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || '';
+                  const supabaseKey = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
+                  const supabase = createClient(SUPABASE_URL, supabaseKey);
+                  
+                  const { error: updateError } = await supabase
+                    .from('users')
+                    .update({ auth_user_id: supabaseUser.id })
+                    .eq('id', dbUser.id);
+                  
+                  if (updateError) {
+                    console.warn('[POST /api/rewards/:id/redeem] ⚠️ Could not update auth_user_id:', updateError);
+                  } else {
+                    console.log('[POST /api/rewards/:id/redeem] ✅ Updated auth_user_id for user:', dbUser.id);
+                    const updatedUser = await storage.getUser(dbUser.id);
+                    if (updatedUser) dbUser = updatedUser;
+                  }
+                } catch (updateErr) {
+                  console.warn('[POST /api/rewards/:id/redeem] ⚠️ Could not update auth_user_id:', updateErr);
+                }
+              }
+              console.log('[POST /api/rewards/:id/redeem] ✅ Step 3 SUCCESS: User created via createUser fallback:', { id: dbUser.id, email: dbUser.email, auth_user_id: dbUser.auth_user_id || 'NOT SET' });
+            }
+          } catch (createError) {
+            console.error('[POST /api/rewards/:id/redeem] ❌ Failed to create user:', createError);
+            // If it's a unique constraint violation, try to fetch the existing user
+            if (createError instanceof Error && (createError.message.includes('unique') || createError.message.includes('duplicate')) || 
+                (createError as any)?.code === '23505') {
+              console.log('[POST /api/rewards/:id/redeem] Unique constraint violation, fetching existing user...');
+              if (supabaseUser.email) {
+                dbUser = await storage.getUserByEmail(supabaseUser.email);
+                if (dbUser) {
+                  console.log('[POST /api/rewards/:id/redeem] ✅ Step 3 RECOVERED: User found after unique constraint violation:', { id: dbUser.id, email: dbUser.email });
+                }
+              }
+            }
+            
+            if (!dbUser) {
+              console.error('[POST /api/rewards/:id/redeem] ❌ CRITICAL: Failed to resolve user after all steps');
+              return res.status(500).json({ message: "Failed to resolve user" });
+            }
+          }
+        }
+        
+        if (!dbUser) {
+          console.error('[POST /api/rewards/:id/redeem] ❌ CRITICAL: Failed to resolve user after all steps');
+          return res.status(500).json({ message: "Failed to resolve user" });
+        }
+        
+        console.log('[POST /api/rewards/:id/redeem] ✅ USER RESOLVED: Using user ID:', dbUser.id);
+        userId = dbUser.id;
+      } else {
+        // Fallback to Passport auth
+        console.log('[POST /api/rewards/:id/redeem] Checking Passport auth...');
+        if (!req.isAuthenticated()) {
+          console.log('[POST /api/rewards/:id/redeem] ❌ Not authenticated (neither Supabase nor Passport)');
+          return res.status(401).json({ message: "You must be logged in to redeem rewards" });
+        }
+        userId = req.user!.id;
+        console.log('[POST /api/rewards/:id/redeem] Using Passport user ID:', userId);
+      }
+      
       const rewardId = parseInt(req.params.id);
       if (isNaN(rewardId)) {
         return res.status(400).json({ message: "Invalid reward ID" });
@@ -543,21 +987,170 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if user has enough points
-      const userImpact = await storage.getUserImpact(req.user!.id);
+      const userImpact = await storage.getUserImpact(userId);
       if (userImpact.impactPoints < reward.pointsCost) {
         return res.status(400).json({ message: "Insufficient impact points" });
       }
       
       // Create redemption
       const redemption = await storage.createRedemption({
-        userId: req.user!.id,
+        userId,
         rewardId,
-        pointsSpent: reward.pointsCost
+        pointsSpent: reward.pointsCost,
+        status: "pending" // Set status to pending (will be fulfilled when user uses the code)
       });
       
+      console.log('[POST /api/rewards/:id/redeem] ✅ Redemption created successfully:', redemption.id);
       res.status(201).json(redemption);
     } catch (error) {
+      console.error('[POST /api/rewards/:id/redeem] ❌ Error:', error);
       res.status(500).json({ message: "Failed to redeem reward" });
+    }
+  });
+
+  // Welcome bonus transaction endpoint
+  app.post("/api/user/welcome-bonus", async (req, res) => {
+    console.log('[welcome-bonus] Endpoint called');
+    try {
+      // Try Supabase auth first (same pattern as /api/user/impact)
+      const supabaseUser = await getSupabaseUser(req);
+      console.log('[welcome-bonus] Supabase user:', supabaseUser ? supabaseUser.email : 'none');
+      
+      let userId: number | undefined;
+      
+      if (supabaseUser) {
+        // Get database user by email (to get numeric ID)
+        const dbUser = await storage.getUserByEmail(supabaseUser.email || '');
+        if (!dbUser) {
+          console.log('[welcome-bonus] User not found in database:', supabaseUser.email);
+          return res.status(404).json({ message: "User not found in database" });
+        }
+        userId = dbUser.id;
+        console.log('[welcome-bonus] Database user ID:', userId);
+      } else {
+        // Fallback to Passport auth
+        if (!req.isAuthenticated()) {
+          console.log('[welcome-bonus] Not authenticated');
+          return res.status(401).json({ message: "You must be logged in" });
+        }
+        userId = req.user!.id;
+        console.log('[welcome-bonus] Passport user ID:', userId);
+      }
+      
+      // Check if welcome bonus transaction already exists (duplicate prevention)
+      // Use service role key if available (bypasses RLS), otherwise use anon key
+      const { createClient } = await import('@supabase/supabase-js');
+      const { SUPABASE_URL, SUPABASE_ANON_KEY } = await import('./secrets');
+      const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || '';
+      
+      // Use service role key for backend operations (bypasses RLS)
+      const supabaseKey = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
+      if (!SUPABASE_SERVICE_ROLE_KEY) {
+        console.warn('[welcome-bonus] Using ANON_KEY - RLS policies may block inserts. Consider setting SUPABASE_SERVICE_ROLE_KEY.');
+      }
+      
+      const supabase = createClient(SUPABASE_URL, supabaseKey);
+      
+      const { data: existingTransaction, error: checkError } = await supabase
+        .from('user_transactions')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('transaction_type', 'welcome_bonus')
+        .maybeSingle();
+      
+      if (checkError && checkError.code !== 'PGRST116') {
+        // PGRST116 = no rows returned (expected if no transaction exists)
+        console.error('[welcome-bonus] Error checking for existing transaction:', checkError);
+        // Continue anyway - non-critical error
+      }
+      
+      if (existingTransaction) {
+        // Welcome bonus already exists, return success (idempotent)
+        console.log('[welcome-bonus] Transaction already exists');
+        return res.status(200).json({ message: "Welcome bonus already applied" });
+      }
+      
+      // Check if user has 50 points (from database trigger)
+      const user = await storage.getUser(userId);
+      if (!user) {
+        console.log('[welcome-bonus] User not found:', userId);
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const userImpactPoints = (user as any).impactPoints ?? 0;
+      console.log('[welcome-bonus] User impact points:', userImpactPoints);
+      
+      if (userImpactPoints !== 50) {
+        // User doesn't have exactly 50 points, might not be a new user
+        console.log('[welcome-bonus] User does not qualify (has', userImpactPoints, 'points, expected 50)');
+        return res.status(200).json({ message: "User does not qualify for welcome bonus" });
+      }
+      
+      // IMPORTANT: User already has 50 points from trigger, so we record the transaction
+      // with points_change = 50 but balance stays at 50 (not 100)
+      
+      // Create welcome bonus transaction (record 50 points, but balance stays 50)
+      console.log('[welcome-bonus] Attempting to insert transaction for user', userId);
+      const { data: insertedData, error: transactionError } = await supabase
+        .from('user_transactions')
+        .insert([{
+          user_id: userId,
+          transaction_type: 'welcome_bonus',
+          project_id: null,
+          donation_id: null,
+          support_amount: null,
+          reward_id: null,
+          redemption_id: null,
+          points_change: 50, // Record that they received 50 points
+          points_balance_after: 50, // Balance is 50 (already set by trigger)
+          description: 'Welcome bonus: 50 Impact Points for joining Dopaya',
+          metadata: null
+        }])
+        .select(); // Return inserted row for verification
+      
+      if (transactionError) {
+        console.error('[welcome-bonus] Failed to create transaction:', {
+          error: transactionError,
+          message: transactionError.message,
+          code: transactionError.code,
+          details: transactionError.details,
+          hint: transactionError.hint
+        });
+        throw new Error(`Failed to create transaction: ${transactionError.message} (code: ${transactionError.code})`);
+      }
+      
+      console.log('[welcome-bonus] Transaction created successfully:', insertedData);
+      res.status(201).json({ message: "Welcome bonus applied successfully", transactionId: insertedData?.[0]?.id });
+    } catch (error) {
+      console.error('[welcome-bonus] Error applying welcome bonus:', error);
+      // Return 200 instead of 500 to prevent frontend errors - this is non-critical
+      res.status(200).json({ message: "Welcome bonus application failed, but user can continue" });
+    }
+  });
+
+  // Test endpoint to debug authentication
+  app.get("/api/test-auth", async (req, res) => {
+    console.log('[GET /api/test-auth] ========== TEST AUTH ==========');
+    console.log('[GET /api/test-auth] Authorization header:', req.headers.authorization ? 'Present' : 'Missing');
+    if (req.headers.authorization) {
+      console.log('[GET /api/test-auth] Auth header preview:', req.headers.authorization.substring(0, 30) + '...');
+    }
+    
+    const supabaseUser = await getSupabaseUser(req);
+    console.log('[GET /api/test-auth] Supabase user:', supabaseUser ? { email: supabaseUser.email, id: supabaseUser.id } : 'null');
+    
+    if (supabaseUser) {
+      return res.json({ 
+        success: true, 
+        message: 'Authenticated',
+        user: { email: supabaseUser.email, id: supabaseUser.id }
+      });
+    } else {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Not authenticated',
+        hasAuthHeader: !!req.headers.authorization
+      });
     }
   });
 
@@ -680,6 +1273,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/user/supported-projects-with-donations", async (req, res) => {
+    // Try Supabase auth first
+    const supabaseUser = await getSupabaseUser(req);
+    
+    if (supabaseUser) {
+      const dbUser = await storage.getUserByEmail(supabaseUser.email || '');
+      if (!dbUser) {
+        // Return empty array instead of 404 - user might be created by trigger soon
+        return res.json([]);
+      }
+      try {
+        // Check if storage has the new method
+        if (storage.getUserSupportedProjectsWithDonations && typeof storage.getUserSupportedProjectsWithDonations === 'function') {
+          const projectsWithDonations = await storage.getUserSupportedProjectsWithDonations(dbUser.id);
+          return res.json(projectsWithDonations);
+        } else {
+          // Fallback to old method
+          const projects = await storage.getUserSupportedProjects(dbUser.id);
+          return res.json(projects.map(p => ({
+            project: p,
+            totalAmount: 0,
+            totalImpactPoints: 0,
+            donationCount: 0,
+            lastDonationDate: null,
+            donations: []
+          })));
+        }
+      } catch (error) {
+        console.error('[GET /api/user/supported-projects-with-donations] Error:', error);
+        return res.status(500).json({ message: "Failed to fetch supported projects with donations" });
+      }
+    }
+    
+    // Fallback to Passport auth
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "You must be logged in to view supported projects" });
+    }
+    
+    try {
+      // Check if storage has the new method
+      if (storage.getUserSupportedProjectsWithDonations && typeof storage.getUserSupportedProjectsWithDonations === 'function') {
+        const projectsWithDonations = await storage.getUserSupportedProjectsWithDonations(req.user!.id);
+        res.json(projectsWithDonations);
+      } else {
+        // Fallback to old method
+        const projects = await storage.getUserSupportedProjects(req.user!.id);
+        res.json(projects.map(p => ({
+          project: p,
+          totalAmount: 0,
+          totalImpactPoints: 0,
+          donationCount: 0,
+          lastDonationDate: null,
+          donations: []
+        })));
+      }
+    } catch (error) {
+      console.error('[GET /api/user/supported-projects-with-donations] Error:', error);
+      res.status(500).json({ message: "Failed to fetch supported projects with donations" });
+    }
+  });
+
   app.get("/api/user/donations", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "You must be logged in to view donations" });
@@ -703,6 +1357,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(userRedemptions);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch redemptions" });
+    }
+  });
+
+  app.get("/api/user/redemptions-with-rewards", async (req, res) => {
+    // Try Supabase auth first
+    const supabaseUser = await getSupabaseUser(req);
+    
+    if (supabaseUser) {
+      const dbUser = await storage.getUserByEmail(supabaseUser.email || '');
+      if (!dbUser) {
+        // Return empty array instead of 404 - user might be created by trigger soon
+        return res.json([]);
+      }
+      try {
+        // Check if storage has the new method
+        if (storage.getUserRedemptionsWithRewards && typeof storage.getUserRedemptionsWithRewards === 'function') {
+          const redemptionsWithRewards = await storage.getUserRedemptionsWithRewards(dbUser.id);
+          return res.json(redemptionsWithRewards);
+        } else {
+          // Fallback to old method
+          const redemptions = await storage.getUserRedemptions(dbUser.id);
+          return res.json(redemptions.map((r: any) => ({
+            redemption: r,
+            reward: r.rewards || r.reward || {},
+            pointsSpent: r.pointsSpent || r.points_spent || 0,
+            redemptionDate: r.createdAt || r.created_at ? new Date(r.createdAt || r.created_at) : null,
+            status: r.status || 'pending'
+          })));
+        }
+      } catch (error) {
+        console.error('[GET /api/user/redemptions-with-rewards] Error:', error);
+        return res.status(500).json({ message: "Failed to fetch redemptions with rewards" });
+      }
+    }
+    
+    // Fallback to Passport auth
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "You must be logged in to view redemptions" });
+    }
+    
+    try {
+      // Check if storage has the new method
+      if (storage.getUserRedemptionsWithRewards && typeof storage.getUserRedemptionsWithRewards === 'function') {
+        const redemptionsWithRewards = await storage.getUserRedemptionsWithRewards(req.user!.id);
+        res.json(redemptionsWithRewards);
+      } else {
+        // Fallback to old method
+        const redemptions = await storage.getUserRedemptions(req.user!.id);
+        res.json(redemptions.map((r: any) => ({
+          redemption: r,
+          reward: r.rewards || r.reward || {},
+          pointsSpent: r.pointsSpent || r.points_spent || 0,
+          redemptionDate: r.createdAt || r.created_at ? new Date(r.createdAt || r.created_at) : null,
+          status: r.status || 'pending'
+        })));
+      }
+    } catch (error) {
+      console.error('[GET /api/user/redemptions-with-rewards] Error:', error);
+      res.status(500).json({ message: "Failed to fetch redemptions with rewards" });
     }
   });
 
@@ -749,9 +1462,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error testing Vercel sitemap:', error);
       res.status(500).json({ 
-        error: 'Error testing Vercel sitemap', 
-        message: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined
+        message: 'Error testing Vercel sitemap'
       });
     }
   });

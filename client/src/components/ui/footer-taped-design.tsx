@@ -1,10 +1,11 @@
 import { cn } from "@/lib/utils";
 import { useState } from "react";
-import { Link } from "wouter";
 import { Instagram, Mail, Facebook } from 'lucide-react';
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { Project } from "@shared/schema";
+import { LanguageLink } from "@/components/ui/language-link";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 import { BRAND_COLORS } from "@/constants/colors";
 
@@ -17,6 +18,7 @@ export function FooterTapedDesign() {
   const currentYear = new Date().getFullYear();
   const [email, setEmail] = useState("");
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const { t } = useTranslation();
 
   // Fetch featured projects for footer links
   const { data: featuredProjects = [] } = useQuery<Project[]>({
@@ -88,10 +90,10 @@ export function FooterTapedDesign() {
               fontFamily: "'Satoshi', 'Inter', system-ui, sans-serif" 
             }}
           >
-            Stay Updated
+            {t("footer.stayUpdated")}
           </h3>
           <p className="text-sm mb-4" style={{ color: BRAND_COLORS.textSecondary }}>
-            Get the latest impact stories and community updates
+            {t("footer.newsletterDescription")}
           </p>
           
           <form onSubmit={handleNewsletterSubmit} className="flex gap-2">
@@ -99,7 +101,7 @@ export function FooterTapedDesign() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
+              placeholder={t("footer.enterEmail")}
               className="flex-1 px-4 py-2 rounded-lg border text-sm focus:outline-none focus:ring-2"
               style={{ 
                 borderColor: BRAND_COLORS.borderSubtle,
@@ -114,13 +116,13 @@ export function FooterTapedDesign() {
               style={{ backgroundColor: BRAND_COLORS.primaryOrange }}
             >
               <Mail className="h-4 w-4" />
-              Subscribe
+              {t("footer.subscribe")}
             </button>
           </form>
           
           {isSubscribed && (
             <p className="text-sm mt-2" style={{ color: '#059669' }}>
-              Thank you for subscribing!
+              {t("footer.thankYouSubscribing")}
             </p>
           )}
         </div>
@@ -143,7 +145,7 @@ export function FooterTapedDesign() {
           
           {/* Brand Section - Now 1/4 width */}
           <div className='flex flex-col items-start gap-3'>
-            <Link
+            <LanguageLink
               href="/"
               className="flex flex-row gap-2 items-center justify-start text-2xl font-bold"
               style={{ 
@@ -152,12 +154,12 @@ export function FooterTapedDesign() {
               }}
             >
               Dopaya
-            </Link>
+            </LanguageLink>
             <p 
               className='font-medium text-sm leading-relaxed' 
               style={{ color: BRAND_COLORS.textSecondary }}
             >
-              Support social enterprises creating lasting change & unlock exclusive rewards.
+              {t("footer.tagline")}
             </p>
             
             {/* Social Links - Instagram and Facebook */}
@@ -189,44 +191,37 @@ export function FooterTapedDesign() {
               className='uppercase font-semibold text-sm' 
               style={{ color: BRAND_COLORS.textMuted }}
             >
-              Community
+              {t("footer.community")}
             </h4>
             <div className="flex flex-col gap-3 text-sm">
-              <Link 
+              <LanguageLink 
                 className='font-medium hover:underline transition-all' 
                 style={{ color: BRAND_COLORS.textSecondary }}
                 href="/about"
               >
-                About Us
-              </Link>
-              <Link 
+                {t("footer.aboutUs")}
+              </LanguageLink>
+              <LanguageLink 
                 className='font-medium hover:underline transition-all' 
                 style={{ color: BRAND_COLORS.textSecondary }}
                 href="/social-enterprises"
               >
-                Social Enterprise Partners
-              </Link>
-              <Link 
-                className='font-medium hover:underline transition-all' 
-                style={{ color: BRAND_COLORS.textSecondary }}
-                href="/brands"
-              >
-                Brand Partners
-              </Link>
-              <Link 
+                {t("footer.socialEnterprisePartners")}
+              </LanguageLink>
+              <LanguageLink 
                 className='font-medium hover:underline transition-all' 
                 style={{ color: BRAND_COLORS.textSecondary }}
                 href="/contact"
               >
-                Contact Us
-              </Link>
-              <Link 
+                {t("footer.contactUs")}
+              </LanguageLink>
+              <LanguageLink 
                 className='font-medium hover:underline transition-all' 
                 style={{ color: BRAND_COLORS.textSecondary }}
                 href="/faq"
               >
-                FAQ
-              </Link>
+                {t("footer.faq")}
+              </LanguageLink>
             </div>
           </div>
 
@@ -236,25 +231,25 @@ export function FooterTapedDesign() {
               className='uppercase font-semibold text-sm' 
               style={{ color: BRAND_COLORS.textMuted }}
             >
-              Create Impact
+              {t("footer.createImpact")}
             </h4>
             <div className="flex flex-col gap-3 text-sm">
-              <Link 
+              <LanguageLink 
                 className='font-medium hover:underline transition-all' 
                 style={{ color: BRAND_COLORS.textSecondary }}
                 href="/projects"
               >
-                Social Enterprises
-              </Link>
+                {t("footer.socialEnterprises")}
+              </LanguageLink>
               {featuredProjects.map((project) => (
-                <Link 
+                <LanguageLink 
                   key={project.id}
                   className='font-medium hover:underline transition-all' 
                   style={{ color: BRAND_COLORS.textSecondary }}
                   href={`/project/${project.slug}`}
                 >
                   {project.title}
-                </Link>
+                </LanguageLink>
               ))}
             </div>
           </div>
@@ -265,30 +260,30 @@ export function FooterTapedDesign() {
               className='uppercase font-semibold text-sm' 
               style={{ color: BRAND_COLORS.textMuted }}
             >
-              Legal
+              {t("footer.legal")}
             </h4>
             <div className="flex flex-col gap-3 text-sm">
-              <Link 
+              <LanguageLink 
                 className='font-medium hover:underline transition-all' 
                 style={{ color: BRAND_COLORS.textSecondary }}
                 href="/privacy"
               >
-                Privacy Policy
-              </Link>
-              <Link 
+                {t("footer.privacyPolicy")}
+              </LanguageLink>
+              <LanguageLink 
                 className='font-medium hover:underline transition-all' 
                 style={{ color: BRAND_COLORS.textSecondary }}
                 href="/cookies"
               >
-                Cookie Policy
-              </Link>
-              <Link 
+                {t("footer.cookiePolicy")}
+              </LanguageLink>
+              <LanguageLink 
                 className='font-medium hover:underline transition-all' 
                 style={{ color: BRAND_COLORS.textSecondary }}
                 href="/eligibility"
               >
-                Eligibility Guidelines
-              </Link>
+                {t("footer.eligibilityGuidelines")}
+              </LanguageLink>
             </div>
           </div>
         </div>
@@ -298,18 +293,18 @@ export function FooterTapedDesign() {
         <div className="mt-6 px-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-sm">
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-6 items-start sm:items-center">
             <p className="whitespace-nowrap" style={{ color: BRAND_COLORS.textMuted }}>
-              ©{currentYear} Dopaya. All rights reserved.
+              ©{currentYear} Dopaya. {t("footer.copyright")}
             </p>
             <div className="flex flex-row gap-6">
               <span style={{ color: BRAND_COLORS.textMuted }}>
-                Made with ❤️ for social impact
+                {t("footer.madeWithLove")}
               </span>
             </div>
           </div>
 
           <div className="flex gap-6 items-center text-sm">
             <span style={{ color: BRAND_COLORS.textMuted }}>
-              Supporting sustainable change worldwide
+              {t("footer.supportingChange")}
             </span>
           </div>
         </div>

@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Heart, X } from "lucide-react";
 import { loadStripe } from "@stripe/stripe-js";
 import { useAuth } from "@/hooks/use-auth";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Project } from "@shared/schema";
 import { useAuthGuard } from "@/hooks/use-auth-guard";
@@ -79,6 +79,64 @@ export function DonationModal({ isOpen, onClose, project, generalDonation = fals
     setIsLoading(true);
 
     try {
+      // ============================================
+      // TEST MODE: Bypass Stripe, use direct API
+      // ============================================
+      // Set VITE_TEST_MODE=true in .env to enable test mode
+      // This allows testing donations without Stripe integration
+      const TEST_MODE = import.meta.env.VITE_TEST_MODE === 'true';
+      
+      if (TEST_MODE) {
+        console.log('[TEST MODE] Bypassing Stripe, using direct donation API');
+        
+        if (!project?.id) {
+          throw new Error('Project ID is required for donations');
+        }
+        
+        if (!user) {
+          throw new Error('You must be logged in to make a donation');
+        }
+        
+        try {
+          // Use direct API endpoint (bypasses Stripe, creates donation + transaction automatically)
+          const response = await apiRequest("POST", `/api/projects/${project.id}/donate`, {
+            amount: currentAmount
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+            throw new Error(errorData.message || `Server error: ${response.status}`);
+          }
+          
+          const donation = await response.json();
+          console.log('[TEST MODE] ✅ Donation created:', donation);
+          
+          // MICROSTEP 1.2: Invalidate impact query to update navbar immediately
+          queryClient.invalidateQueries({ queryKey: ["/api/user/impact"] });
+          console.log('[TEST MODE] ✅ Invalidated impact query - navbar will update');
+          
+          // Show success message
+          toast({
+            title: "Donation Successful! 🎉",
+            description: `Thank you for your $${currentAmount} donation! You earned ${impactPoints.toLocaleString()} Impact Points.`,
+          });
+          
+          // Close modal after short delay (no reload needed - query invalidation updates navbar)
+          setTimeout(() => {
+            onClose();
+          }, 2000);
+          
+          return;
+        } catch (testError: any) {
+          console.error('[TEST MODE] Donation failed:', testError);
+          // Fallback: if test mode fails, show error but don't try Stripe
+          throw new Error(`Test donation failed: ${testError.message || 'Unknown error'}`);
+        }
+      }
+      
+      // ============================================
+      // PRODUCTION MODE: Use Stripe checkout
+      // ============================================
       const stripe = await stripePromise;
       if (!stripe) {
         throw new Error("Stripe failed to load");
@@ -112,7 +170,6 @@ export function DonationModal({ isOpen, onClose, project, generalDonation = fals
       } else {
         throw new Error('No session ID or URL received from server');
       }
-
 
     } catch (error: any) {
       console.error("Donation error:", error);
@@ -264,7 +321,11 @@ export function DonationModal({ isOpen, onClose, project, generalDonation = fals
 
           {/* Security Notice */}
           <p className="text-xs text-gray-500 text-center">
-            🔒 Secure payment powered by Stripe. Your card information is never stored on our servers.
+            {import.meta.env.VITE_TEST_MODE === 'true' ? (
+              <>🧪 <strong>TEST MODE</strong> - Donations bypass Stripe and are processed directly</>
+            ) : (
+              <>🔒 Secure payment powered by Stripe. Your card information is never stored on our servers.</>
+            )}
           </p>
         </div>
       </DialogContent>

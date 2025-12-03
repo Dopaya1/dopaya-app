@@ -7,14 +7,14 @@ interface ImpactRankDisplayProps {
 
 export function ImpactRankDisplay({ impactPoints, totalDonations }: ImpactRankDisplayProps) {
   // Simple two-status system
-  const isSupporter = totalDonations > 0;
-  const statusName = isSupporter ? "Impact Supporter" : "Impact Aspirer";
-  const statusTagline = isSupporter 
+  const isChangemaker = totalDonations > 0;
+  const statusName = isChangemaker ? "Changemaker" : "Impact Aspirer";
+  const statusTagline = isChangemaker 
     ? "Making real impact happen" 
     : "Ready to make your first impact";
-  const StatusIcon = isSupporter ? Trophy : Sparkles;
-  const statusColor = isSupporter ? "text-green-600" : "text-orange-600";
-  const statusBgColor = isSupporter ? "bg-green-100" : "bg-orange-100";
+  const StatusIcon = isChangemaker ? Trophy : Sparkles;
+  const statusColor = isChangemaker ? "text-green-600" : "text-orange-600";
+  const statusBgColor = isChangemaker ? "bg-green-100" : "bg-orange-100";
 
   return (
     <div className="space-y-3">
@@ -45,7 +45,7 @@ export function ImpactRankDisplay({ impactPoints, totalDonations }: ImpactRankDi
       </div>
 
       {/* Progress Message - Only for Impact Aspirers */}
-      {!isSupporter && impactPoints === 50 && (
+      {!isChangemaker && impactPoints === 50 && (
         <div className="text-sm text-gray-600">
           <span className="font-medium text-primary">
             Earn 50 more Impact Points by supporting your first social enterprise — unlock your first reward!
@@ -53,7 +53,7 @@ export function ImpactRankDisplay({ impactPoints, totalDonations }: ImpactRankDi
         </div>
       )}
       
-      {!isSupporter && impactPoints < 50 && (
+      {!isChangemaker && impactPoints < 50 && (
         <div className="text-sm text-gray-600">
           <span className="font-medium text-primary">
             {100 - impactPoints} more Impact Points to unlock rewards

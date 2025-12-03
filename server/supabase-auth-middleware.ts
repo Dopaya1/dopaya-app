@@ -1,18 +1,41 @@
 import { createClient } from '@supabase/supabase-js';
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './secrets';
 
-// Initialize Supabase client with validation
-let supabase: ReturnType<typeof createClient>;
-try {
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    throw new Error(`Missing Supabase credentials: SUPABASE_URL=${!!SUPABASE_URL}, SUPABASE_ANON_KEY=${!!SUPABASE_ANON_KEY}`);
+// Lazy initialization - only create client when needed (after .env is loaded)
+// Use SERVICE_ROLE_KEY for server-side token verification (has permission to verify tokens)
+// Read directly from process.env to ensure .env is loaded first
+let supabase: ReturnType<typeof createClient> | null = null;
+
+function getSupabaseClient() {
+  if (!supabase) {
+    console.log('[supabase-auth-middleware] ========== INITIALIZATION ==========');
+    
+    // Read directly from process.env (supports both VITE_ prefix and non-prefixed)
+    const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
+    const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
+    const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || '';
+    
+    console.log('[supabase-auth-middleware] SUPABASE_URL:', SUPABASE_URL || '❌ MISSING');
+    console.log('[supabase-auth-middleware] SUPABASE_ANON_KEY:', SUPABASE_ANON_KEY ? `✅ Set (length: ${SUPABASE_ANON_KEY.length})` : '❌ MISSING');
+    console.log('[supabase-auth-middleware] SUPABASE_SERVICE_ROLE_KEY:', SUPABASE_SERVICE_ROLE_KEY ? `✅ Set (length: ${SUPABASE_SERVICE_ROLE_KEY.length})` : '❌ MISSING');
+    
+    if (!SUPABASE_URL) {
+      throw new Error(`Missing SUPABASE_URL`);
+    }
+    
+    // Use SERVICE_ROLE_KEY if available, otherwise fall back to ANON_KEY
+    const supabaseKey = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
+    
+    if (!supabaseKey) {
+      throw new Error(`Missing Supabase key: SUPABASE_SERVICE_ROLE_KEY=${!!SUPABASE_SERVICE_ROLE_KEY}, SUPABASE_ANON_KEY=${!!SUPABASE_ANON_KEY}`);
+    }
+    
+    supabase = createClient(SUPABASE_URL, supabaseKey);
+    console.log('[supabase-auth-middleware] Using key type:', SUPABASE_SERVICE_ROLE_KEY ? 'SERVICE_ROLE_KEY ✅' : 'ANON_KEY ⚠️');
+    console.log('[supabase-auth-middleware] ✅ Supabase client initialized');
+    console.log('[supabase-auth-middleware] ===================================\n');
   }
-  supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  console.log('[supabase-auth-middleware] Supabase client initialized');
-} catch (error) {
-  console.error('[supabase-auth-middleware] Failed to initialize Supabase client:', error);
-  // Create a minimal client that will fail gracefully
-  supabase = createClient(SUPABASE_URL || 'https://placeholder.supabase.co', SUPABASE_ANON_KEY || 'placeholder-key');
+  
+  return supabase;
 }
 
 /**
@@ -22,22 +45,43 @@ try {
 export async function getSupabaseUser(req: any) {
   const authHeader = req.headers.authorization;
   
+  console.log('[getSupabaseUser] ========== AUTH CHECK ==========');
+  console.log('[getSupabaseUser] Authorization header present:', !!authHeader);
+  console.log('[getSupabaseUser] Header starts with Bearer:', authHeader?.startsWith('Bearer '));
+  
   if (!authHeader?.startsWith('Bearer ')) {
+    console.log('[getSupabaseUser] ❌ No Bearer token found');
     return null;
   }
   
   const token = authHeader.substring(7);
+  console.log('[getSupabaseUser] Token length:', token.length);
+  console.log('[getSupabaseUser] Token preview:', token.substring(0, 20) + '...');
   
   try {
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    // Lazy initialization ensures .env is loaded
+    const client = getSupabaseClient();
+    const { data: { user }, error } = await client.auth.getUser(token);
     
-    if (error || !user) {
+    if (error) {
+      console.error('[getSupabaseUser] ❌ Token verification error:', {
+        message: error.message,
+        status: error.status,
+        name: error.name
+      });
       return null;
     }
     
+    if (!user) {
+      console.error('[getSupabaseUser] ❌ No user returned from token');
+      return null;
+    }
+    
+    console.log('[getSupabaseUser] ✅ User authenticated:', user.email);
+    console.log('[getSupabaseUser] ================================');
     return user;
   } catch (error) {
-    console.error('Error verifying Supabase token:', error);
+    console.error('[getSupabaseUser] ❌ Exception verifying Supabase token:', error);
     return null;
   }
 }

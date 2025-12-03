@@ -1,13 +1,22 @@
 import { SEOHead } from "@/components/seo/seo-head";
+import { useTranslation } from "@/lib/i18n/use-translation";
+import { useI18n } from "@/lib/i18n/i18n-context";
 
 export default function PrivacyPolicy() {
+  const { t } = useTranslation();
+  const { language } = useI18n();
+  
   return (
     <>
       <SEOHead
-        title="Privacy Policy"
-        description="Learn about how Dopaya collects, uses, and protects your personal information. Read our comprehensive privacy policy and data protection practices."
-        keywords="privacy policy, data protection, personal information, GDPR, user privacy, data security"
-        canonicalUrl="https://dopaya.com/privacy"
+        title={language === 'de' ? 'Datenschutzerklärung | Privacy Policy | Dopaya' : 'Privacy Policy'}
+        description={language === 'de' ? 'Erfahre, wie Dopaya deine persönlichen Informationen sammelt, verwendet und schützt. Lese unsere umfassende Datenschutzerklärung und Datenschutzpraktiken.' : 'Learn about how Dopaya collects, uses, and protects your personal information. Read our comprehensive privacy policy and data protection practices.'}
+        keywords={language === 'de' ? 'Datenschutzerklärung, Datenschutz, persönliche Informationen, GDPR, Benutzerdatenschutz, Datensicherheit' : 'privacy policy, data protection, personal information, GDPR, user privacy, data security'}
+        canonicalUrl={`https://dopaya.com${language === 'de' ? '/de/privacy' : '/privacy'}`}
+        alternateUrls={{
+          en: 'https://dopaya.com/privacy',
+          de: 'https://dopaya.com/de/privacy',
+        }}
       />
       <div className="min-h-screen bg-white py-16">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">

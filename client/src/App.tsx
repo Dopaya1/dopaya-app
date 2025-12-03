@@ -32,6 +32,8 @@ import { useScrollToTop } from "@/hooks/use-scroll-to-top";
 import { useState, useEffect } from "react";
 import { AuthModal } from "@/components/auth/auth-modal";
 import { trackPageView } from "@/lib/simple-analytics";
+import { I18nProvider } from "@/lib/i18n/i18n-context";
+import { removeLanguagePrefix } from "@/lib/i18n/utils";
 
 // Global auth token detector - redirects to /auth/callback if tokens are in URL hash
 function AuthTokenRedirect() {
@@ -66,6 +68,7 @@ function AuthTokenRedirect() {
 function Router({ onOpenAuthModal }: { onOpenAuthModal: (tab: "login" | "register") => void }) {
   return (
     <Switch>
+      {/* Routes without language prefix (English) */}
       <Route path="/" component={HomePage} />
       <Route path="/projects" component={ProjectsPage} />
       <Route path="/project-v3/:slug" component={ProjectDetailPageV3} />
@@ -88,6 +91,28 @@ function Router({ onOpenAuthModal }: { onOpenAuthModal: (tab: "login" | "registe
       <Route path="/performance-test" component={PerformanceTestPage} />
       <Route path="/analytics-test" component={AnalyticsTestPage} />
       <Route path="/support/:slug" component={SupportPage} />
+      
+      {/* Routes with German language prefix */}
+      <Route path="/de" component={HomePage} />
+      <Route path="/de/projects" component={ProjectsPage} />
+      <Route path="/de/project-v3/:slug" component={ProjectDetailPageV3} />
+      <Route path="/de/project/:slug" component={ProjectDetailPage} />
+      <ProtectedRoute path="/de/dashboard" component={DashboardV2} />
+      <ProtectedRoute path="/de/dashboard-old" component={DashboardPage} />
+      <Route path="/de/contact" component={ContactPage} />
+      <Route path="/de/about" component={AboutPage} />
+      <Route path="/de/rewards" component={RewardsPage} />
+      <Route path="/de/rewards-v2" component={RewardsPageV2} />
+      <Route path="/de/thank-you" component={ThankYouPage} />
+      <Route path="/de/brands" component={BrandsPageV2} />
+      <Route path="/de/brands-v2" component={BrandsPageV2} />
+      <Route path="/de/social-enterprises" component={SocialEnterprisesPage} />
+      <Route path="/de/faq" component={FAQPage} />
+      <Route path="/de/privacy" component={PrivacyPolicy} />
+      <Route path="/de/cookies" component={CookiePolicy} />
+      <Route path="/de/eligibility" component={EligibilityGuidelines} />
+      <Route path="/de/support/:slug" component={SupportPage} />
+      
       <Route component={() => <div className="min-h-screen flex items-center justify-center"><h1 className="text-2xl">Page not found</h1></div>} />
     </Switch>
   );
@@ -114,19 +139,21 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <AuthTokenRedirect />
-        <div className="min-h-screen">
-          {!isSupportPage && <Navbar />}
-          <Router onOpenAuthModal={openAuthModal} />
-          {!isSupportPage && <Footer />}
-          <AuthModal 
-            isOpen={showAuthModal} 
-            onClose={() => setShowAuthModal(false)} 
-            defaultTab={authModalTab}
-          />
-        </div>
-      </AuthProvider>
+      <I18nProvider>
+        <AuthProvider>
+          <AuthTokenRedirect />
+          <div className="min-h-screen">
+            {!isSupportPage && <Navbar />}
+            <Router onOpenAuthModal={openAuthModal} />
+            {!isSupportPage && <Footer />}
+            <AuthModal 
+              isOpen={showAuthModal} 
+              onClose={() => setShowAuthModal(false)} 
+              defaultTab={authModalTab}
+            />
+          </div>
+        </AuthProvider>
+      </I18nProvider>
     </QueryClientProvider>
   );
 }

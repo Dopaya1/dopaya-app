@@ -12,28 +12,37 @@ import {
 
 // Direct access to Supabase via REST API
 // This is used when direct PostgreSQL access is not available
-const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || '';
+// LAZY INITIALIZATION: Client is created on first access, not at module load time
+// This ensures environment variables are loaded before client initialization
+let supabaseClientInstance: SupabaseClient | null = null;
+
+function getSupabaseApiClient(): SupabaseClient {
+  // Return cached instance if already initialized
+  if (supabaseClientInstance) {
+    return supabaseClientInstance;
+  }
+
+  // Get environment variables at call time (after .env is loaded)
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
+  const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
 
 if (!supabaseUrl || !supabaseKey) {
-  console.error('Missing Supabase credentials - API access will not work');
+    console.error('[supabase-api.ts] ❌ Missing Supabase credentials - API access will not work');
 }
 
 // Create a single instance of the Supabase client to reuse
-let supabaseClient: SupabaseClient;
-
 try {
-  supabaseClient = createClient(supabaseUrl, supabaseKey, {
+    supabaseClientInstance = createClient(supabaseUrl, supabaseKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false
     }
   });
-  console.log('Supabase API client initialized');
+    console.log('[supabase-api.ts] ✅ Supabase API client initialized (lazy)');
 } catch (error) {
-  console.error('Failed to initialize Supabase API client:', error);
+    console.error('[supabase-api.ts] ❌ Failed to initialize Supabase API client:', error);
   // Provide a dummy client that logs errors
-  supabaseClient = {
+    supabaseClientInstance = {
     from: () => ({
       select: () => ({
         eq: () => ({
@@ -64,7 +73,16 @@ try {
   } as any;
 }
 
-export const supabaseApi = supabaseClient;
+  return supabaseClientInstance;
+}
+
+// Export a getter that lazily initializes the client
+export const supabaseApi = new Proxy({} as SupabaseClient, {
+  get(_target, prop) {
+    const client = getSupabaseApiClient();
+    return (client as any)[prop];
+  }
+});
 
 // Test the Supabase API connection
 export async function testSupabaseApiConnection() {
@@ -110,7 +128,14 @@ export async function fetchProjects(): Promise<Project[]> {
       .order('created_at', { ascending: false });
     
     if (error) {
-      console.error('Error fetching projects via Supabase API:', error);
+      // Log full error if status >= 400
+      if (error.status && error.status >= 400) {
+        console.error('[supabase-api.ts] ❌ Supabase API error:', {
+          code: error.code,
+          message: error.message,
+          status: error.status
+        });
+      }
       return [];
     }
     

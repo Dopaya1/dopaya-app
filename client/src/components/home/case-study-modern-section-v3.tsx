@@ -5,14 +5,19 @@ import type { Project } from "@shared/schema";
 import { TYPOGRAPHY } from "@/constants/typography";
 import { BRAND_COLORS } from "@/constants/colors";
 import ExpandableGallery from "@/components/ui/gallery-animation";
-import { Link } from "wouter";
+import { LanguageLink } from "@/components/ui/language-link";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, Target, GraduationCap, Droplets, Leaf, Wind, Heart, Users } from "lucide-react";
 import sdgWheelImg from "@assets/sdg wheel.png";
 import { SDGNotificationBell } from "@/components/ui/sdg-notification-bell";
 import { getProjectImageUrl } from "@/lib/image-utils";
+import { useTranslation } from "@/lib/i18n/use-translation";
+import { useI18n } from "@/lib/i18n/i18n-context";
+import { getProjectImpactUnit, getProjectImpactNoun, getProjectImpactVerb, getProjectMissionStatement, getProjectDescription } from "@/lib/i18n/project-content";
 
 export function CaseStudyModernSectionV3() {
+  const { t } = useTranslation();
+  const { language } = useI18n();
   const [selectedProject, setSelectedProject] = React.useState<Project | null>(null);
   const [donationAmount, setDonationAmount] = React.useState(0);
   const [showDonationDropdown, setShowDonationDropdown] = React.useState(false);
@@ -84,7 +89,7 @@ export function CaseStudyModernSectionV3() {
       const sector = p.category || 'Impact';
       return `${sector} →:`; // only sector with arrow
     }),
-    'Explore all projects →:'
+    t("homeSections.caseStudy.exploreAllProjects")
   ];
 
   const sectorToIcon = (sector: string) => {
@@ -109,7 +114,7 @@ export function CaseStudyModernSectionV3() {
     for (let i = 1; i <= 7; i++) {
       const donation = project[`donation_${i}` as keyof Project] as unknown as number;
       const impact = project[`impact_${i}` as keyof Project] as unknown as string;
-      const impactUnit = project.impact_unit as string;
+      const impactUnit = getProjectImpactUnit(project, language) || 'impact created';
       if (donation && impact) {
         tiers.push({ donation, impact, unit: impactUnit || 'impact created', points: donation * 10 });
       }
@@ -127,8 +132,8 @@ export function CaseStudyModernSectionV3() {
   const impactAmount = currentTier?.impact || '0';
   const impactUnit = currentTier?.unit || 'impact created';
   const impactPoints = currentTier?.points || 0;
-  const impactVerb = selectedProject?.impact_verb || 'help';
-  const impactNoun = selectedProject?.impact_noun || 'people';
+  const impactVerb = selectedProject ? getProjectImpactVerb(selectedProject, language) || 'help' : 'help';
+  const impactNoun = selectedProject ? getProjectImpactNoun(selectedProject, language) || 'people' : 'people';
 
   return (
     <section className="py-24" style={{ backgroundColor: BRAND_COLORS.bgWhite }}>
@@ -139,10 +144,10 @@ export function CaseStudyModernSectionV3() {
             color: BRAND_COLORS.textPrimary, 
             fontFamily: "'Satoshi', 'Inter', system-ui, sans-serif" 
           }}>
-            How do you want to change the world today?
+            {t("homeSections.caseStudy.title")}
           </h2>
           <div className="text-xl max-w-2xl mx-auto mb-6 flex items-center justify-center gap-2" style={{ color: BRAND_COLORS.textSecondary }}>
-            <span>Choose a social enterprise and see real impact you can create. Why Social Enterprises?</span>
+            <span>{t("homeSections.caseStudy.subtitle")}</span>
             <SDGNotificationBell />
           </div>
         </div>
@@ -177,10 +182,10 @@ export function CaseStudyModernSectionV3() {
 
               <div className="p-6 lg:p-8 border-b" style={{ borderColor: BRAND_COLORS.borderSubtle }}>
                 <h3 className="text-xl lg:text-2xl font-bold mb-1" style={{ color: BRAND_COLORS.textPrimary }}>
-                  See the impact you can create
+                  {t("homeSections.caseStudy.seeImpact")}
                 </h3>
                 <p className="text-base lg:text-lg" style={{ color: BRAND_COLORS.textSecondary }}>
-                  with {selectedProject.title}
+                  {t("homeSections.caseStudy.withProject")} {selectedProject.title}
                 </p>
               </div>
 
@@ -189,7 +194,7 @@ export function CaseStudyModernSectionV3() {
                   <div>
                     <div className="text-center lg:text-left">
                       <p className="text-2xl lg:text-4xl font-semibold leading-[1.4]" style={{ color: BRAND_COLORS.textPrimary }}>
-                        Support <span className="font-bold" style={{ color: BRAND_COLORS.textPrimary }}>{selectedProject.title}</span> with{' '}
+                        {t("homeSections.caseStudy.support")} <span className="font-bold" style={{ color: BRAND_COLORS.textPrimary }}>{selectedProject.title}</span> {t("homeSections.caseStudy.withProject")}{' '}
                         <span className="relative inline-block">
                           <button
                             onClick={() => setShowDonationDropdown(!showDonationDropdown)}
@@ -210,21 +215,33 @@ export function CaseStudyModernSectionV3() {
                               ))}
                             </div>
                           )}
-                        </span> and help{' '}
-                        <span className="font-bold" style={{ color: BRAND_COLORS.textPrimary }}>{impactVerb}</span>{' '}
-                        <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>{impactAmount}</span>{' '}
-                        <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>{impactNoun}</span>{' '}
-                        <span style={{ color: BRAND_COLORS.textSecondary }}>— earn</span>{' '}
-                        <span className="font-bold" style={{ color: BRAND_COLORS.textPrimary }}>{impactPoints}</span>{' '}
-                        <span style={{ color: BRAND_COLORS.textSecondary }}>Impact Points</span>.
+                        </span> {t("homeSections.caseStudy.andHelp")}{' '}
+                        {language === 'de' ? (
+                          <>
+                            <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>{impactAmount}</span>{' '}
+                            <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>{impactNoun}</span>{' '}
+                            <span className="font-bold" style={{ color: BRAND_COLORS.textPrimary }}>{impactVerb}</span>{' '}
+                          </>
+                        ) : (
+                          <>
+                            <span className="font-bold" style={{ color: BRAND_COLORS.textPrimary }}>{impactVerb}</span>{' '}
+                            <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>{impactAmount}</span>{' '}
+                            <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>{impactNoun}</span>{' '}
+                          </>
+                        )}
+                        <span style={{ color: BRAND_COLORS.textSecondary }}>
+                          <span style={{ fontSize: '0.7em', verticalAlign: 'baseline' }}>—</span> {t("homeSections.caseStudy.earn").replace('— ', '')}
+                        </span>{' '}
+                        <span className="font-bold" style={{ color: BRAND_COLORS.textSecondary }}>{impactPoints}</span>{' '}
+                        <span style={{ color: BRAND_COLORS.textSecondary }}>{t("homeSections.caseStudy.impactPoints")}</span><span style={{ color: BRAND_COLORS.textSecondary }}>.</span>
                       </p>
                     </div>
 
                     <div className="mt-8 lg:mt-10 text-center lg:text-left">
                       <Button size="lg" className="text-white font-semibold px-6 lg:px-8 py-3 lg:py-4 text-base lg:text-lg min-h-[44px] lg:min-h-[48px] w-full sm:w-auto" style={{ backgroundColor: BRAND_COLORS.primaryOrange }} asChild>
-                        <Link href={`/project/${selectedProject.slug || selectedProject.id}`}>
-                          Support This Project
-                        </Link>
+                        <LanguageLink href={`/project/${selectedProject.slug || selectedProject.id}`}>
+                          {t("homeSections.caseStudy.supportThisProject")}
+                        </LanguageLink>
                       </Button>
                     </div>
                   </div>
@@ -242,7 +259,7 @@ export function CaseStudyModernSectionV3() {
                     <div className="absolute bottom-0 left-0 right-0">
                       <div className="bg-white/50 backdrop-blur-sm p-3">
                         <p className="text-sm lg:text-base leading-relaxed font-medium whitespace-pre-line" style={{ color: BRAND_COLORS.textPrimary }}>
-                          {selectedProject.missionStatement || selectedProject.description || "Supporting sustainable livelihoods and community development."}
+                          {getProjectMissionStatement(selectedProject, language) || getProjectDescription(selectedProject, language) || (language === 'de' ? "Unterstützung nachhaltiger Lebensgrundlagen und Gemeinschaftsentwicklung." : "Supporting sustainable livelihoods and community development.")}
                         </p>
                       </div>
                     </div>

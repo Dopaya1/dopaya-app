@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 // Import logo examples
 import AppleLogo from "@/assets/SE_explanation/Apple.png";
@@ -145,9 +146,17 @@ export interface SESpectrumSliderProps
 
 const SESpectrumSlider = React.forwardRef<HTMLDivElement, SESpectrumSliderProps>(
   ({ className, ...props }, ref) => {
+    const { t } = useTranslation();
     const [selectedIndex, setSelectedIndex] = useState(1); // Start with Impact-driven Business
     const currentAnim = spectrumStates[selectedIndex];
     const transition = { type: "spring", stiffness: 300, damping: 30 };
+    
+    // Get translated explanations
+    const explanations = [
+      t("about.spectrumNGOExplanation"),
+      t("about.spectrumImpactDrivenExplanation"),
+      t("about.spectrumForProfitExplanation"),
+    ];
 
     return (
       <motion.div
@@ -161,10 +170,10 @@ const SESpectrumSlider = React.forwardRef<HTMLDivElement, SESpectrumSliderProps>
           {/* Header */}
           <div className="text-center mb-8 md:mb-10 lg:mb-12">
             <h2 className="text-xl md:text-2xl lg:text-3xl font-bold mb-3 md:mb-4 text-black">
-              Self-sustainable businesses driving long-term change
+              {t("about.spectrumTitle")}
             </h2>
             <p className="text-base md:text-lg text-gray-600 max-w-3xl mx-auto px-4">
-              To make impact investments more effective, we support social enterprises that combine nonprofit missions with business sustainability.
+              {t("about.spectrumSubtitle")}
             </p>
           </div>
 
@@ -181,8 +190,8 @@ const SESpectrumSlider = React.forwardRef<HTMLDivElement, SESpectrumSliderProps>
                     }}
                     transition={transition}
                   >
-                    <span className="md:hidden">Typically<br />NGOs</span>
-                    <span className="hidden md:inline">Typically NGOs</span>
+                    <span className="md:hidden">{t("about.spectrumNGOShort")}</span>
+                    <span className="hidden md:inline">{t("about.spectrumNGO")}</span>
                   </motion.span>
                 </div>
                 
@@ -210,7 +219,7 @@ const SESpectrumSlider = React.forwardRef<HTMLDivElement, SESpectrumSliderProps>
                       }}
                       transition={transition}
                     >
-                      Social Enterprises
+                      {t("about.spectrumSocialEnterprises")}
                     </motion.span>
                   </div>
                 </div>
@@ -224,7 +233,7 @@ const SESpectrumSlider = React.forwardRef<HTMLDivElement, SESpectrumSliderProps>
                     }}
                     transition={transition}
                   >
-                    For Profit Business
+                    {t("about.spectrumForProfit")}
                   </motion.span>
                 </div>
               </div>
@@ -276,11 +285,11 @@ const SESpectrumSlider = React.forwardRef<HTMLDivElement, SESpectrumSliderProps>
                   <svg className="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
-                  <span className="text-sm text-gray-600 font-medium">Not for Profit</span>
+                  <span className="text-sm text-gray-600 font-medium">{t("about.spectrumNotForProfit")}</span>
                 </div>
                 
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600 font-medium">For Profit</span>
+                  <span className="text-sm text-gray-600 font-medium">{t("about.spectrumForProfitLabel")}</span>
                   <svg className="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                   </svg>
@@ -301,7 +310,7 @@ const SESpectrumSlider = React.forwardRef<HTMLDivElement, SESpectrumSliderProps>
                   className="text-lg text-black max-w-2xl mx-auto leading-relaxed mb-8"
                   transition={transition}
                 >
-                  {currentAnim.explanation}
+                  {explanations[selectedIndex]}
                 </motion.p>
                 
                 {/* Logo Examples */}
@@ -311,7 +320,7 @@ const SESpectrumSlider = React.forwardRef<HTMLDivElement, SESpectrumSliderProps>
                   transition={{ duration: 0.5, delay: 0.2 }}
                   className="flex flex-col items-center gap-6"
                 >
-                  <h4 className="text-lg font-semibold text-gray-700">Examples</h4>
+                  <h4 className="text-lg font-semibold text-gray-700">{t("about.spectrumExamples")}</h4>
                   <div className="flex justify-center items-center gap-8 flex-wrap">
                     {currentAnim.examples.map((example, index) => (
                       <div key={index} className="flex flex-col items-center gap-3">

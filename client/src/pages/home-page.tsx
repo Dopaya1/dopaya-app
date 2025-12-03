@@ -8,34 +8,70 @@ import { FAQSection } from "@/components/home/faq-section";
 import { SEOHead } from "@/components/seo/seo-head";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { BRAND_COLORS } from "@/constants/colors";
 import { getProjectImageUrl } from "@/lib/image-utils";
 import { ShieldCheck, Gift, Leaf } from "lucide-react";
+import { useTranslation } from "@/lib/i18n/use-translation";
+import { useI18n } from "@/lib/i18n/i18n-context";
+import { LanguageLink } from "@/components/ui/language-link";
+import { translations } from "@/lib/i18n/translations";
+import { getRewardTitle } from "@/lib/i18n/project-content";
 
 export default function HomePage() {
+  const { t } = useTranslation();
+  const { language } = useI18n();
+  
   // rotating word for duplicate hero headline
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const h1IntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const h1Words = ['rewarding', 'transparent', 'efficient', 'meaningful'];
+  const h1Words = useMemo(() => {
+    const words = translations[language].home.heroRotatingWords;
+    // Safety check: ensure it's an array
+    if (!Array.isArray(words) || words.length === 0) {
+      console.warn('heroRotatingWords is not a valid array for language:', language);
+      return language === 'de' 
+        ? ['belohnend', 'transparent', 'effizient', 'bedeutsam']
+        : ['rewarding', 'transparent', 'efficient', 'meaningful'];
+    }
+    return words;
+  }, [language]);
   
   // Info bar slider state (mobile only)
   const [infoBarIndex, setInfoBarIndex] = useState(0);
   const infoBarItems = [
-    'Support selected social enterprises',
-    'Get tangible rewards',
-    '100% sustainable products & transparent impact'
+    t("home.infoBar1"),
+    t("home.infoBar2"),
+    t("home.infoBar3")
   ];
   const infoBarIcons = [ShieldCheck, Gift, Leaf];
 
   useEffect(() => {
+    // Reset index when words change
+    setCurrentWordIndex(0);
+    
+    // Clear existing interval
+    if (h1IntervalRef.current) {
+      clearInterval(h1IntervalRef.current);
+    }
+    
+    // Safety check: ensure we have words
+    if (!h1Words || h1Words.length === 0) {
+      return;
+    }
+    
+    // Set up new interval
     h1IntervalRef.current = setInterval(() => {
-      setCurrentWordIndex((prev) => (prev + 1) % h1Words.length);
+      setCurrentWordIndex((prev) => {
+        const next = (prev + 1) % h1Words.length;
+        return next;
+      });
     }, 3000);
+    
     return () => {
       if (h1IntervalRef.current) clearInterval(h1IntervalRef.current);
     };
-  }, []);
+  }, [h1Words]);
 
   // Auto-rotate info bar items on mobile (every 3 seconds)
   useEffect(() => {
@@ -146,7 +182,7 @@ export default function HomePage() {
                     <div className="relative group cursor-pointer">
                       <img src={getProjectImageUrl(bubbleProjects[0]) || ''} alt={bubbleProjects[0].title} className="w-32 h-32 rounded-full object-cover ring-4 ring-orange-100 transition-transform duration-300 group-hover:scale-110" />
                       <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white text-gray-800 px-2 py-0.5 rounded border border-gray-200 whitespace-nowrap">
-                        Impact: {bubbleProjects[0].category || 'Impact'}
+                        {t("home.impactLabel")} {bubbleProjects[0].category || 'Impact'}
                       </span>
                     </div>
                   )}
@@ -156,7 +192,7 @@ export default function HomePage() {
                     <div className="relative group cursor-pointer">
                       <img src={getProjectImageUrl(bubbleProjects[1]) || ''} alt={bubbleProjects[1].title} className="w-28 h-28 rounded-full object-cover ring-4 ring-orange-100 transition-transform duration-300 group-hover:scale-110" />
                       <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white text-gray-800 px-2 py-0.5 rounded border border-gray-200 whitespace-nowrap">
-                        Impact: {bubbleProjects[1].category || 'Impact'}
+                        {t("home.impactLabel")} {bubbleProjects[1].category || 'Impact'}
                       </span>
                     </div>
                   )}
@@ -166,7 +202,7 @@ export default function HomePage() {
                     <div className="relative group cursor-pointer">
                       <img src={getProjectImageUrl(bubbleProjects[2]) || ''} alt={bubbleProjects[2].title} className="w-32 h-32 rounded-full object-cover ring-4 ring-orange-100 transition-transform duration-300 group-hover:scale-110" />
                       <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white text-gray-800 px-2 py-0.5 rounded border border-gray-200 whitespace-nowrap">
-                        Impact: {bubbleProjects[2].category || 'Impact'}
+                        {t("home.impactLabel")} {bubbleProjects[2].category || 'Impact'}
                       </span>
                     </div>
                   )}
@@ -176,15 +212,27 @@ export default function HomePage() {
               {/* Center: Headline, subheadline, buttons - Desktop */}
               <div className="text-center relative" style={{ zIndex: 2 }}>
                 <h1 className="text-6xl font-bold text-gray-900 leading-tight mb-4">
-                  Supporting real impact made{' '}
-                  <span className="px-3 py-1 rounded-lg inline-block" style={{ backgroundColor: BRAND_COLORS.bgBeige, color: '#F05304' }}>
-                    {h1Words[currentWordIndex]}
-                  </span>
+                  {language === 'de' ? (
+                    <>
+                      {t("home.heroTitlePrefix")}{' '}
+                      <span className="px-3 py-1 rounded-lg inline-block" style={{ backgroundColor: BRAND_COLORS.bgBeige, color: '#F05304' }}>
+                        {h1Words && h1Words.length > 0 ? h1Words[Math.min(currentWordIndex, h1Words.length - 1)] : ''}
+                      </span>
+                      {' '}{t("home.heroTitleSuffix")}
+                    </>
+                  ) : (
+                    <>
+                      {t("home.heroTitlePrefix")}{' '}
+                      <span className="px-3 py-1 rounded-lg inline-block" style={{ backgroundColor: BRAND_COLORS.bgBeige, color: '#F05304' }}>
+                        {h1Words && h1Words.length > 0 ? h1Words[Math.min(currentWordIndex, h1Words.length - 1)] : ''}
+                      </span>
+                    </>
+                  )}
                 </h1>
-                <p className="text-3xl text-gray-700 mb-6 max-w-xl mx-auto">Back verified changemakers - and earn rewards from brands driving sustainability forward.</p>
+                <p className="text-[28px] text-gray-700 mb-6 max-w-xl mx-auto">{t("home.heroSubtitle")}</p>
                 <div className="flex flex-row gap-4 justify-center">
-                  <a href="https://tally.so/r/m6MqAe" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center px-6 py-3 rounded-md bg-[#F05304] text-white hover:bg-[#e14c03]">Join Waitlist</a>
-                  <a href="/projects" className="inline-flex items-center justify-center px-6 py-3 rounded-md border border-gray-300 text-gray-800 hover:bg-gray-50">See Social Enterprises</a>
+                  <a href="https://tally.so/r/m6MqAe" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center px-6 py-3 rounded-md bg-[#F05304] text-white hover:bg-[#e14c03]">{t("home.joinWaitlistShort")}</a>
+                  <LanguageLink href="/projects" className="inline-flex items-center justify-center px-6 py-3 rounded-md border border-gray-300 text-gray-800 hover:bg-gray-50">{t("home.seeSocialEnterprisesShort")}</LanguageLink>
                 </div>
               </div>
 
@@ -193,9 +241,9 @@ export default function HomePage() {
                 <div className="absolute right-2 top-8">
                   {bubbleRewards[0] && (
                     <div className="relative group cursor-pointer">
-                      <img src={bubbleRewards[0].imageUrl || ''} alt={bubbleRewards[0].title} className="w-32 h-32 rounded-full object-cover ring-4 ring-orange-100 transition-transform duration-300 group-hover:scale-110" />
+                      <img src={bubbleRewards[0].imageUrl || ''} alt={getRewardTitle(bubbleRewards[0], language)} className="w-32 h-32 rounded-full object-cover ring-4 ring-orange-100 transition-transform duration-300 group-hover:scale-110" />
                       <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white px-2 py-0.5 rounded border border-gray-200 text-gray-800 whitespace-nowrap">
-                        Reward: {bubbleRewards[0].category || 'Reward'}
+                        {t("home.rewardLabel")} {bubbleRewards[0].category || 'Reward'}
                       </span>
                     </div>
                   )}
@@ -203,9 +251,9 @@ export default function HomePage() {
                 <div className="absolute right-32 top-40">
                   {bubbleRewards[1] && (
                     <div className="relative group cursor-pointer">
-                      <img src={bubbleRewards[1].imageUrl || ''} alt={bubbleRewards[1].title} className="w-28 h-28 rounded-full object-cover ring-4 ring-orange-100 transition-transform duration-300 group-hover:scale-110" />
+                      <img src={bubbleRewards[1].imageUrl || ''} alt={getRewardTitle(bubbleRewards[1], language)} className="w-28 h-28 rounded-full object-cover ring-4 ring-orange-100 transition-transform duration-300 group-hover:scale-110" />
                       <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white px-2 py-0.5 rounded border border-gray-200 text-gray-800 whitespace-nowrap">
-                        Reward: {bubbleRewards[1].category || 'Reward'}
+                        {t("home.rewardLabel")} {bubbleRewards[1].category || 'Reward'}
                       </span>
                     </div>
                   )}
@@ -213,9 +261,9 @@ export default function HomePage() {
                 <div className="absolute right-0 bottom-4">
                   {bubbleRewards[2] && (
                     <div className="relative group cursor-pointer">
-                      <img src={bubbleRewards[2].imageUrl || ''} alt={bubbleRewards[2].title} className="w-32 h-32 rounded-full object-cover ring-4 ring-orange-100 transition-transform duration-300 group-hover:scale-110" />
+                      <img src={bubbleRewards[2].imageUrl || ''} alt={getRewardTitle(bubbleRewards[2], language)} className="w-32 h-32 rounded-full object-cover ring-4 ring-orange-100 transition-transform duration-300 group-hover:scale-110" />
                       <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white px-2 py-0.5 rounded border border-gray-200 text-gray-800 whitespace-nowrap">
-                        Reward: {bubbleRewards[2].category || 'Reward'}
+                        {t("home.rewardLabel")} {bubbleRewards[2].category || 'Reward'}
                       </span>
                     </div>
                   )}
@@ -263,15 +311,27 @@ export default function HomePage() {
               {/* Headline, subheadline, buttons */}
               <div className="text-center w-full mb-6">
                 <h1 className="text-4xl font-bold text-gray-900 leading-tight mb-3">
-                  Supporting real impact made{' '}
-                  <span className="px-2 py-1 rounded-lg inline-block" style={{ backgroundColor: BRAND_COLORS.bgBeige, color: '#F05304' }}>
-                    {h1Words[currentWordIndex]}
-                  </span>
+                  {language === 'de' ? (
+                    <>
+                      {t("home.heroTitlePrefix")}{' '}
+                      <span className="px-2 py-1 rounded-lg inline-block" style={{ backgroundColor: BRAND_COLORS.bgBeige, color: '#F05304' }}>
+                        {h1Words && h1Words.length > 0 ? h1Words[Math.min(currentWordIndex, h1Words.length - 1)] : ''}
+                      </span>
+                      {' '}{t("home.heroTitleSuffix")}
+                    </>
+                  ) : (
+                    <>
+                      {t("home.heroTitlePrefix")}{' '}
+                      <span className="px-2 py-1 rounded-lg inline-block" style={{ backgroundColor: BRAND_COLORS.bgBeige, color: '#F05304' }}>
+                        {h1Words && h1Words.length > 0 ? h1Words[Math.min(currentWordIndex, h1Words.length - 1)] : ''}
+                      </span>
+                    </>
+                  )}
                 </h1>
-                <p className="text-lg text-gray-700 mb-5">Back verified changemakers - and earn rewards from brands driving sustainability forward.</p>
+                <p className="text-lg text-gray-700 mb-5">{t("home.heroSubtitle")}</p>
                 <div className="flex flex-col gap-3 w-full">
-                  <a href="https://tally.so/r/m6MqAe" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center px-6 py-3 rounded-md bg-[#F05304] text-white hover:bg-[#e14c03] w-full">Join Waitlist</a>
-                  <a href="/projects" className="inline-flex items-center justify-center px-6 py-3 rounded-md border border-gray-300 text-gray-800 hover:bg-gray-50 w-full">See Social Enterprises</a>
+                  <a href="https://tally.so/r/m6MqAe" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center px-6 py-3 rounded-md bg-[#F05304] text-white hover:bg-[#e14c03] w-full">{t("home.joinWaitlistShort")}</a>
+                  <LanguageLink href="/projects" className="inline-flex items-center justify-center px-6 py-3 rounded-md border border-gray-300 text-gray-800 hover:bg-gray-50 w-full">{t("home.seeSocialEnterprisesShort")}</LanguageLink>
                 </div>
               </div>
 
@@ -324,7 +384,7 @@ export default function HomePage() {
                           className="w-28 h-28 rounded-full object-cover ring-2 ring-orange-100 transition-transform duration-300 group-active:scale-110" 
                         />
                         <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white text-gray-800 px-2 py-0.5 rounded border border-gray-200 max-w-[140px] whitespace-nowrap overflow-hidden text-ellipsis text-center">
-                          Impact: {bubbleProjects[0].category || 'Impact'}
+                          {t("home.impactLabel")} {bubbleProjects[0].category || 'Impact'}
                         </span>
                       </div>
                     </div>
@@ -338,7 +398,7 @@ export default function HomePage() {
                           className="w-24 h-24 rounded-full object-cover ring-2 ring-orange-100 transition-transform duration-300 group-active:scale-110" 
                         />
                         <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white text-gray-800 px-2 py-0.5 rounded border border-gray-200 max-w-[140px] whitespace-nowrap overflow-hidden text-ellipsis text-center">
-                          Impact: {bubbleProjects[1].category || 'Impact'}
+                          {t("home.impactLabel")} {bubbleProjects[1].category || 'Impact'}
                         </span>
                       </div>
                     </div>
@@ -352,7 +412,7 @@ export default function HomePage() {
                           className="w-28 h-28 rounded-full object-cover ring-2 ring-orange-100 transition-transform duration-300 group-active:scale-110" 
                         />
                         <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white text-gray-800 px-2 py-0.5 rounded border border-gray-200 max-w-[140px] whitespace-nowrap overflow-hidden text-ellipsis text-center">
-                          Impact: {bubbleProjects[2].category || 'Impact'}
+                          {t("home.impactLabel")} {bubbleProjects[2].category || 'Impact'}
                         </span>
                       </div>
                     </div>
@@ -366,11 +426,11 @@ export default function HomePage() {
                       <div className="relative group cursor-pointer">
                         <img 
                           src={bubbleRewards[0].imageUrl || ''} 
-                          alt={bubbleRewards[0].title} 
+                          alt={getRewardTitle(bubbleRewards[0], language)} 
                           className="w-28 h-28 rounded-full object-cover ring-2 ring-orange-100 transition-transform duration-300 group-active:scale-110" 
                         />
                         <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white px-2 py-0.5 rounded border border-gray-200 text-gray-800 max-w-[140px] whitespace-nowrap overflow-hidden text-ellipsis text-center">
-                          Reward: {bubbleRewards[0].category || 'Reward'}
+                          {t("home.rewardLabel")} {bubbleRewards[0].category || 'Reward'}
                         </span>
                       </div>
                     </div>
@@ -380,11 +440,11 @@ export default function HomePage() {
                       <div className="relative group cursor-pointer">
                         <img 
                           src={bubbleRewards[1].imageUrl || ''} 
-                          alt={bubbleRewards[1].title} 
+                          alt={getRewardTitle(bubbleRewards[1], language)} 
                           className="w-24 h-24 rounded-full object-cover ring-2 ring-orange-100 transition-transform duration-300 group-active:scale-110" 
                         />
                         <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white px-2 py-0.5 rounded border border-gray-200 text-gray-800 max-w-[140px] whitespace-nowrap overflow-hidden text-ellipsis text-center">
-                          Reward: {bubbleRewards[1].category || 'Reward'}
+                          {t("home.rewardLabel")} {bubbleRewards[1].category || 'Reward'}
                         </span>
                       </div>
                     </div>
@@ -394,11 +454,11 @@ export default function HomePage() {
                       <div className="relative group cursor-pointer">
                         <img 
                           src={bubbleRewards[2].imageUrl || ''} 
-                          alt={bubbleRewards[2].title} 
+                          alt={getRewardTitle(bubbleRewards[2], language)} 
                           className="w-28 h-28 rounded-full object-cover ring-2 ring-orange-100 transition-transform duration-300 group-active:scale-110" 
                         />
                         <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white px-2 py-0.5 rounded border border-gray-200 text-gray-800 max-w-[140px] whitespace-nowrap overflow-hidden text-ellipsis text-center">
-                          Reward: {bubbleRewards[2].category || 'Reward'}
+                          {t("home.rewardLabel")} {bubbleRewards[2].category || 'Reward'}
                         </span>
                       </div>
                     </div>
@@ -417,19 +477,19 @@ export default function HomePage() {
               <div className="flex items-center justify-center gap-2">
                 <ShieldCheck className="w-5 h-5 text-gray-800 opacity-70 flex-shrink-0" />
                 <p className="text-base lg:text-xl text-gray-800 text-center">
-                  Support selected social enterprises
+                  {t("home.infoBar1")}
                 </p>
               </div>
               <div className="flex items-center justify-center gap-2">
                 <Gift className="w-5 h-5 text-gray-800 opacity-70 flex-shrink-0" />
                 <p className="text-base lg:text-xl text-gray-800 text-center">
-                  Get tangible rewards
+                  {t("home.infoBar2")}
                 </p>
               </div>
               <div className="flex items-center justify-center gap-2">
                 <Leaf className="w-5 h-5 text-gray-800 opacity-70 flex-shrink-0" />
                 <p className="text-base lg:text-xl text-gray-800 text-center">
-                  100% sustainable products & transparent impact
+                  {t("home.infoBar3")}
                 </p>
               </div>
             </div>

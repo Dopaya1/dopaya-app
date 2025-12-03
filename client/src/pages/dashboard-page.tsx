@@ -207,7 +207,7 @@ export default function DashboardPage() {
 
   const displayName = user?.firstName || user?.username || (user?.email ? user.email.split('@')[0] : "Impact Legend");
   const userStatus = safeImpact?.userStatus || "aspirer";
-  const statusDisplayName = userStatus === "supporter" ? "Impact Supporter" : "Impact Aspirer";
+  const statusDisplayName = userStatus === "changemaker" ? "Changemaker" : "Impact Aspirer";
   // Use actual impact points from API
   const impactPoints = safeImpact?.impactPoints ?? 0;
   const totalDonations = safeImpact?.amountDonated ?? 0;
@@ -443,7 +443,7 @@ export default function DashboardPage() {
   
   // Determine number of trophies based on status (simplified)
   const getTrophyCount = (status: string): number => {
-    return status === "supporter" ? 2 : 1;
+    return status === "changemaker" ? 2 : 1;
   };
   
   const trophyCount = getTrophyCount(userStatus);

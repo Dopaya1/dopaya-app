@@ -7,6 +7,7 @@ import { toast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useTranslation } from "@/lib/i18n/use-translation";
 import {
   Form,
   FormControl,
@@ -16,16 +17,18 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 
-const contactFormSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Please enter a valid email address"),
-  message: z.string().min(10, "Message must be at least 10 characters"),
-});
-
-type ContactFormValues = z.infer<typeof contactFormSchema>;
-
 export default function ContactPage() {
+  const { t } = useTranslation();
+  
+  const contactFormSchema = z.object({
+    firstName: z.string().min(1, t("contact.firstNameRequired")),
+    lastName: z.string().min(1, t("contact.lastNameRequired")),
+    email: z.string().email(t("contact.emailInvalid")),
+    message: z.string().min(10, t("contact.messageMinLength")),
+  });
+
+  type ContactFormValues = z.infer<typeof contactFormSchema>;
+
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactFormSchema),
     defaultValues: {
@@ -38,8 +41,8 @@ export default function ContactPage() {
 
   const onSubmit = (data: ContactFormValues) => {
     toast({
-      title: "Message sent",
-      description: "Thank you for your message. We'll get back to you soon.",
+      title: t("contact.messageSentTitle"),
+      description: t("contact.messageSentDescription"),
     });
     console.log(data);
     form.reset();
@@ -52,17 +55,17 @@ export default function ContactPage() {
   return (
     <>
       <SEOHead
-        title="Contact Us | Get in Touch with Dopaya | Social Impact Platform"
-        description="Contact the Dopaya team with your questions about donations, partnerships, social enterprises, or platform support. We're here to help you make a real impact."
-        keywords="contact Dopaya, customer support, partnerships, donations help, platform support, social enterprise support, impact platform contact, get in touch"
+        title={t("contact.seoTitle")}
+        description={t("contact.seoDescription")}
+        keywords={t("contact.seoKeywords")}
         canonicalUrl="https://dopaya.com/contact"
         ogType="website"
         ogImage="https://dopaya.com/og-contact.jpg"
         structuredData={{
           "@context": "https://schema.org",
           "@type": "ContactPage",
-          "name": "Contact Dopaya",
-          "description": "Get in touch with the Dopaya team for support and partnerships",
+          "name": t("contact.title"),
+          "description": t("contact.subtitle"),
           "url": "https://dopaya.com/contact",
           "mainEntity": {
             "@type": "Organization",
@@ -71,7 +74,7 @@ export default function ContactPage() {
               "@type": "ContactPoint",
               "contactType": "customer service",
               "email": "hello@dopaya.org",
-              "availableLanguage": "English"
+              "availableLanguage": "English, German"
             }
           }
         }}
@@ -81,17 +84,16 @@ export default function ContactPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-16">
           {/* Left column */}
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold mb-6">Contact Us</h1>
+            <h1 className="text-3xl md:text-4xl font-bold mb-6">{t("contact.title")}</h1>
             <p className="text-muted-foreground mb-8">
-              In case you have any feedback or concerns, please feel free to
-              write or schedule a call with us
+              {t("contact.subtitle")}
             </p>
 
             <div className="space-y-8">
               <div className="flex items-start space-x-4">
                 <Mail className="h-6 w-6 text-primary mt-0.5" />
                 <div>
-                  <h3 className="font-semibold uppercase text-sm tracking-wider mb-2">Email</h3>
+                  <h3 className="font-semibold uppercase text-sm tracking-wider mb-2">{t("contact.emailLabel")}</h3>
                   <a
                     href="mailto:hello@dopaya.com"
                     className="text-muted-foreground hover:text-primary transition-colors"
@@ -104,7 +106,7 @@ export default function ContactPage() {
               <div className="flex items-start space-x-4">
                 <MessageSquare className="h-6 w-6 text-primary mt-0.5" />
                 <div>
-                  <h3 className="font-semibold uppercase text-sm tracking-wider mb-2">Whatsapp</h3>
+                  <h3 className="font-semibold uppercase text-sm tracking-wider mb-2">{t("contact.whatsappLabel")}</h3>
                   <a
                     href="https://wa.me/4917621140723"
                     className="text-muted-foreground hover:text-primary transition-colors"
@@ -117,12 +119,12 @@ export default function ContactPage() {
               <div className="flex items-start space-x-4">
                 <Calendar className="h-6 w-6 text-primary mt-0.5" />
                 <div>
-                  <h3 className="font-semibold uppercase text-sm tracking-wider mb-2">Calendly Meeting</h3>
+                  <h3 className="font-semibold uppercase text-sm tracking-wider mb-2">{t("contact.calendlyLabel")}</h3>
                   <button
                     onClick={handleCalendlyClick}
                     className="text-primary hover:text-primary/80 font-medium transition-colors"
                   >
-                    Schedule time with us &rarr;
+                    {t("contact.calendlyButton")}
                   </button>
                 </div>
               </div>
@@ -139,9 +141,9 @@ export default function ContactPage() {
                     name="firstName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>First Name *</FormLabel>
+                        <FormLabel>{t("contact.firstNameLabel")}</FormLabel>
                         <FormControl>
-                          <Input placeholder="John" {...field} />
+                          <Input placeholder={t("contact.firstNamePlaceholder")} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -152,9 +154,9 @@ export default function ContactPage() {
                     name="lastName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Last Name *</FormLabel>
+                        <FormLabel>{t("contact.lastNameLabel")}</FormLabel>
                         <FormControl>
-                          <Input placeholder="Doe" {...field} />
+                          <Input placeholder={t("contact.lastNamePlaceholder")} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -167,9 +169,9 @@ export default function ContactPage() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email *</FormLabel>
+                      <FormLabel>{t("contact.emailFieldLabel")}</FormLabel>
                       <FormControl>
-                        <Input placeholder="johndoe@example.com" {...field} />
+                        <Input placeholder={t("contact.emailPlaceholder")} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -181,10 +183,10 @@ export default function ContactPage() {
                   name="message"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Message *</FormLabel>
+                      <FormLabel>{t("contact.messageLabel")}</FormLabel>
                       <FormControl>
                         <Textarea
-                          placeholder="How can we help you?"
+                          placeholder={t("contact.messagePlaceholder")}
                           className="min-h-[150px]"
                           {...field}
                         />
@@ -195,7 +197,7 @@ export default function ContactPage() {
                 />
 
                 <Button type="submit" className="w-full md:w-auto bg-primary">
-                  Submit Form
+                  {t("contact.submitButton")}
                 </Button>
               </form>
             </Form>

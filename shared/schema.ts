@@ -41,6 +41,22 @@ export const projects = pgTable("projects", {
   fundUsage: text("fund_usage"),
   selectionReasoning: text("selection_reasoning"),
   
+  // German translations (nullable - fallback to English if not available)
+  titleDe: text("title_de"),
+  descriptionDe: text("description_de"),
+  slugDe: text("slug_de"),
+  summaryDe: text("summary_de"),
+  missionStatementDe: text("mission_statement_de"),
+  keyImpactDe: text("key_impact_de"),
+  aboutUsDe: text("about_us_de"),
+  impactAchievementsDe: text("impact_achievements_de"),
+  fundUsageDe: text("fund_usage_de"),
+  selectionReasoningDe: text("selection_reasoning_de"),
+  countryDe: text("country_de"),
+  impactUnitDe: text("impact_unit_de"),
+  impactNounDe: text("impact_noun_de"),
+  impactVerbDe: text("impact_verb_de"),
+  
   // Main image/video
   imageUrl: text("image_url").notNull(),
   coverImage: text("cover_image"), // Optional cover image for videos (thumbnail)
@@ -65,6 +81,7 @@ export const projects = pgTable("projects", {
   founderName: text("founder_name"),
   founderImage: text("founder_image"),
   founderBio: text("founder_bio"),
+  founderBioDe: text("founder_bio_de"),
   impactPointsMultiplier: integer("impact_points_multiplier").default(10),
   primarySdg: text("primary_sdg"),
   sdgGoals: text("sdg_goals").array(),
@@ -142,6 +159,7 @@ export type Donation = typeof donations.$inferSelect;
 export const rewards = pgTable("rewards", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
+  titleDe: text("title_de"), // German title
   description: text("description").notNull(),
   imageUrl: text("image_url").notNull(),
   category: text("category").notNull(),
@@ -184,6 +202,7 @@ export const redemptions = pgTable("redemptions", {
   userId: integer("user_id").notNull(),
   rewardId: integer("reward_id").notNull(),
   pointsSpent: integer("points_spent").notNull(),
+  status: text("status").notNull().default("pending"), // pending, fulfilled, or cancelled
   createdAt: timestamp("created_at").defaultNow()
 });
 
@@ -200,6 +219,7 @@ export const backers = pgTable("backers", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   shortDescription: text("short_description"), // Handles both "Shortdescription" and "short_description"
+  shortDescriptionDe: text("short_description_de"), // German translation
   websiteUrl: text("website_url"), // Handles both "website:url" and "website_url"
   logoPath: text("logo_path"),
   featured: boolean("featured").default(false), // Handles both "Featured" and "featured"
@@ -257,6 +277,7 @@ export const brands = pgTable("brands", {
   logoPath: text("logo_path"), // URL or Supabase Storage path
   websiteUrl: text("website_url"),
   description: text("description"), // Short description of the brand
+  descriptionDe: text("description_de"), // German description of the brand
   category: text("category"), // e.g., "Beauty & Wellness", "Food & Agriculture", "Sustainable Lifestyle"
   country: text("country"), // Country where the brand is based (e.g., "Switzerland")
   featured: boolean("featured").default(false), // For featured brands in hero sections

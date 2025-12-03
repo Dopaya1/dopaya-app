@@ -2,12 +2,14 @@ import { ExternalLink } from "lucide-react";
 import { ProjectPressMention } from "@shared/schema";
 import { getLogoUrl } from "@/lib/image-utils";
 import { BRAND_COLORS } from "@/constants/colors";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 interface PressMentionCardProps {
   pressMention: ProjectPressMention;
 }
 
 export function PressMentionCard({ pressMention }: PressMentionCardProps) {
+  const { t } = useTranslation();
   // Try multiple possible field names
   const institutionName = (pressMention as any).institutionName || (pressMention as any).institution_name || '';
   const institutionLogo = (pressMention as any).institutionLogo || (pressMention as any).institution_logo || '';
@@ -94,7 +96,7 @@ export function PressMentionCard({ pressMention }: PressMentionCardProps) {
             className="inline-flex items-center gap-1 text-xs hover:underline transition-all font-medium flex-shrink-0"
             style={{ color: BRAND_COLORS.primaryOrange }}
           >
-            <span>Read article</span>
+            <span>{t("projectDetail.readArticle")}</span>
             <ExternalLink className="h-3 w-3" />
           </a>
         )}

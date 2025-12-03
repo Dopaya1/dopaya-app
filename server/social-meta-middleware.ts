@@ -36,6 +36,19 @@ function extractProjectSlug(url: string): string | null {
 }
 
 export async function socialMetaMiddleware(req: Request, res: Response, next: NextFunction) {
+  // CRITICAL: Skip API routes entirely - they have their own auth
+  if (req.path.startsWith('/api/')) {
+    return next();
+  }
+  
+  // CRITICAL: Skip static assets (favicon, images, etc.)
+  if (req.path.startsWith('/favicon.ico') || 
+      req.path.startsWith('/assets/') || 
+      req.path.startsWith('/static/') ||
+      req.path.match(/\.(ico|png|jpg|jpeg|gif|svg|css|js|woff|woff2|ttf|eot)$/)) {
+    return next();
+  }
+  
   const userAgent = req.headers['user-agent'] || '';
   
   // Only process if it's a social media bot
@@ -62,8 +75,8 @@ export async function socialMetaMiddleware(req: Request, res: Response, next: Ne
   }
 
   try {
-    // Fetch project data
-    console.log(`🔍 Fetching project by slug: ${slug}`);
+    // CRITICAL: Only make Supabase calls for non-API routes that are project pages
+    // This middleware should NEVER make Supabase calls for API routes or static assets
     const project = await storage.getProjectBySlug(slug);
     
     if (!project) {
@@ -111,8 +124,9 @@ export async function socialMetaMiddleware(req: Request, res: Response, next: Ne
     
     console.log(`📤 Sent social preview for: ${project.title}`);
   } catch (error) {
-    console.error('Error in social meta middleware:', error);
-    next();
+    console.error('[social-meta-middleware] Error in social meta middleware:', error);
+    // Always call next() on error - never return 401 for public routes
+    return next();
   }
 }
 

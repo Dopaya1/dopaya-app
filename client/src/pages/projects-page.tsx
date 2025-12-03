@@ -11,6 +11,9 @@ import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Gift, Sparkles } from "lucide-react";
+import { useTranslation } from "@/lib/i18n/use-translation";
+import { useI18n } from "@/lib/i18n/i18n-context";
+import { addLanguagePrefix, removeLanguagePrefix } from "@/lib/i18n/utils";
 
 // Import partner logo images
 import iimbNsrcelLogo from "@assets/iimb-nsrcel.png";
@@ -26,6 +29,8 @@ export default function ProjectsPage() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
   const previewEnabled = isOnboardingPreviewEnabled();
+  const { t } = useTranslation();
+  const { language } = useI18n();
   const [runTour, setRunTour] = useState(false);
   const [showEndOfTourBanner, setShowEndOfTourBanner] = useState(false);
   const [filters, setFilters] = useState<FilterValues>({
@@ -140,33 +145,41 @@ export default function ProjectsPage() {
   return (
     <div className="py-24 bg-white min-h-screen">
       <SEOHead
-        title="Social Impact Projects | Support Verified Social Enterprises | Dopaya"
-        description="Discover and support carefully vetted high-impact social enterprises making a difference worldwide. Track your donations, earn impact points, and see real-world change."
+        title={t("projects.seoTitle")}
+        description={t("projects.seoDescription")}
         keywords="social impact projects, social enterprises, impact investing, charitable donations, development projects, sustainability projects, social enterprise funding, impact measurement"
-        canonicalUrl="https://dopaya.com/projects"
+        canonicalUrl={`https://dopaya.com${language === 'de' ? '/de/projects' : '/projects'}`}
         ogType="website"
         ogImage="https://dopaya.com/og-projects.jpg"
+        alternateUrls={{
+          en: 'https://dopaya.com/projects',
+          de: 'https://dopaya.com/de/projects',
+        }}
         structuredData={{
           "@context": "https://schema.org",
           "@type": "CollectionPage",
-          "name": "Social Impact Projects",
-          "description": "Discover and support carefully vetted high-impact social enterprises",
-          "url": "https://dopaya.com/projects",
+          "name": t("projects.title"),
+          "description": t("projects.seoDescription"),
+          "url": `https://dopaya.com${language === 'de' ? '/de/projects' : '/projects'}`,
           "mainEntity": {
             "@type": "ItemList",
-            "name": "Social Impact Projects",
-            "description": "Verified social enterprises making real-world impact"
+            "name": t("projects.title"),
+            "description": t("projects.seoDescription")
           }
         }}
       />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-10">
-          <h1 className="text-3xl font-bold text-dark font-heading mb-4">Discover Social Enterprises</h1>
+          <h1 className="text-3xl font-bold text-dark font-heading mb-4">{t("projects.pageTitle")}</h1>
           <p className="text-neutral max-w-2xl mx-auto">
-            Support these high-impact social enterprises and track how your contributions create real-world change.
-            Each enterprise is carefully vetted by the Dopaya team.
+            {t("projects.pageDescription")}
           </p>
+          {t("projects.pageSubDescription") && (
+            <p className="text-neutral max-w-2xl mx-auto mt-2">
+              {t("projects.pageSubDescription")}
+            </p>
+          )}
         </div>
       </div>
       
@@ -282,9 +295,9 @@ export default function ProjectsPage() {
       <div className={`py-24 mt-16`} style={{ backgroundColor: '#f2662d' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-white font-heading mb-4">Have a Social Enterprise?</h2>
+            <h2 className="text-2xl font-bold text-white font-heading mb-4">{t("projects.ctaTitle")}</h2>
             <p className="text-white max-w-2xl mx-auto mb-8">
-              Join our platform to access funding, resources, and a community of supporters dedicated to positive social impact.
+              {t("projects.ctaDescription")}
             </p>
             <a 
               href="https://tally.so/r/3EM0vA" 
@@ -293,7 +306,7 @@ export default function ProjectsPage() {
               className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2"
               style={{ color: '#f2662d' }}
             >
-              Apply to Join
+              {t("projects.ctaButton")}
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
               </svg>

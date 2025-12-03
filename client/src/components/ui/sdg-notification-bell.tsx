@@ -5,6 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Bell, Target, Users, Globe, Heart, Zap, Shield } from "lucide-react";
+import { useTranslation } from "@/lib/i18n/use-translation";
+import { useI18n } from "@/lib/i18n/i18n-context";
+import { translations } from "@/lib/i18n/translations";
 
 interface SDGReason {
   id: number;
@@ -13,51 +16,26 @@ interface SDGReason {
   icon: React.ComponentType<{ className?: string }>;
 }
 
-const sdgReasons: SDGReason[] = [
-  {
-    id: 1,
-    title: "Sustainable Business Models",
-    description: "Social enterprises use sustainable business models to create long-term impact, unlike traditional NGOs that often rely on recurring donations.",
-    icon: Target,
-  },
-  {
-    id: 2,
-    title: "Community Empowerment",
-    description: "They focus on empowering local communities and creating self-sustaining solutions that continue to benefit people long after initial support.",
-    icon: Users,
-  },
-  {
-    id: 3,
-    title: "Environmental Impact",
-    description: "Many social enterprises work directly towards UN Sustainable Development Goals, addressing climate change, clean water, and environmental protection.",
-    icon: Globe,
-  },
-  {
-    id: 4,
-    title: "Social Innovation",
-    description: "They develop innovative solutions to social problems, often creating new markets and opportunities for underserved communities.",
-    icon: Zap,
-  },
-  {
-    id: 5,
-    title: "Measurable Impact",
-    description: "Social enterprises provide clear, measurable impact metrics and transparent reporting on how your investment creates real change.",
-    icon: Heart,
-  },
-  {
-    id: 6,
-    title: "Financial Sustainability",
-    description: "They generate their own revenue streams, reducing dependence on donations and ensuring long-term viability of their impact work.",
-    icon: Shield,
-  },
-];
+// Icon mapping für die Gründe
+const iconMap = [Target, Users, Globe, Zap, Heart, Shield];
 
 interface SDGNotificationBellProps {
   className?: string;
 }
 
 export function SDGNotificationBell({ className }: SDGNotificationBellProps) {
+  const { t } = useTranslation();
+  const { language } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
+  
+  // Lade die Gründe aus den Übersetzungen
+  const sdgReasons = translations[language].homeSections.caseStudy.sdgBell.reasons.map((reason, index) => ({
+    id: index + 1,
+    title: reason.title,
+    description: reason.description,
+    icon: iconMap[index] || Target,
+  }));
+  
   const unreadCount = sdgReasons.length;
 
   return (
@@ -67,7 +45,7 @@ export function SDGNotificationBell({ className }: SDGNotificationBellProps) {
           size="icon" 
           variant="outline" 
           className={`relative ${className}`}
-          aria-label="Why Social Enterprises?"
+          aria-label={t("homeSections.caseStudy.sdgBell.title")}
         >
           <Bell size={16} strokeWidth={2} aria-hidden="true" />
           {unreadCount > 0 && (
@@ -80,9 +58,9 @@ export function SDGNotificationBell({ className }: SDGNotificationBellProps) {
       <PopoverContent className="w-[400px] p-0" align="start">
         {/* Header */}
         <div className="border-b px-4 py-3">
-          <h3 className="font-semibold text-sm">Why Social Enterprises?</h3>
+          <h3 className="font-semibold text-sm">{t("homeSections.caseStudy.sdgBell.title")}</h3>
           <p className="text-xs text-muted-foreground mt-1">
-            {unreadCount} reasons why we focus on social enterprises
+            {t("homeSections.caseStudy.sdgBell.subtitle", { count: unreadCount })}
           </p>
         </div>
 
@@ -117,7 +95,7 @@ export function SDGNotificationBell({ className }: SDGNotificationBellProps) {
         {/* Footer */}
         <div className="border-t px-4 py-3">
           <p className="text-xs text-muted-foreground text-center">
-            Working towards UN Sustainable Development Goals
+            {t("homeSections.caseStudy.sdgBell.footer")}
           </p>
         </div>
       </PopoverContent>

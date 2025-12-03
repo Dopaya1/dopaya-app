@@ -1,13 +1,18 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { LanguageLink } from "@/components/ui/language-link";
 import { ExternalLink, Building2, Shield, Users, Loader2 } from "lucide-react";
 import { TYPOGRAPHY } from "@/constants/typography";
 import { BRAND_COLORS } from "@/constants/colors";
 import { MOBILE } from "@/constants/mobile";
 import { getProjectImageUrl, getLogoUrl } from "@/lib/image-utils";
 import { useFeaturedBackers, useBackerProjects } from "@/hooks/use-backers";
+import { useTranslation } from "@/lib/i18n/use-translation";
+import { useI18n } from "@/lib/i18n/i18n-context";
+import { getBackerShortDescription, getProjectMissionStatement, getProjectDescription, getProjectSummary } from "@/lib/i18n/project-content";
 
 export function InstitutionalProofSimple() {
+  const { t } = useTranslation();
+  const { language } = useI18n();
   const [selectedInstitutionId, setSelectedInstitutionId] = useState<number | null>(null);
   
   // Fetch featured backers from database
@@ -29,10 +34,10 @@ export function InstitutionalProofSimple() {
             color: BRAND_COLORS.textPrimary, 
             fontFamily: "'Satoshi', 'Inter', system-ui, sans-serif" 
           }}>
-            Selected for impact. Built on trust.
+            {t("homeSections.institutionalProof.title")}
           </h2>
           <p className="text-xl max-w-2xl mx-auto" style={{ color: BRAND_COLORS.textSecondary }}>
-            Dopaya features changemakers that have earned our confidence - and often the trust of respected global partners, too.
+            {t("homeSections.institutionalProof.subtitle")}
           </p>
         </div>
 
@@ -43,11 +48,11 @@ export function InstitutionalProofSimple() {
           </div>
         ) : backersError ? (
           <div className="text-center py-12 text-red-500">
-            Error loading backers. Please try again later.
+            {t("homeSections.institutionalProof.errorLoading")}
           </div>
         ) : backers.length === 0 ? (
           <div className="text-center py-12" style={{ color: BRAND_COLORS.textSecondary }}>
-            No featured backers available at this time.
+            {t("homeSections.institutionalProof.noBackersAvailable")}
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-8 md:mb-12">
@@ -95,7 +100,7 @@ export function InstitutionalProofSimple() {
                       {backer.name}
                     </h3>
                     <div className="text-xs mt-1 font-medium" style={{ color: BRAND_COLORS.textSecondary }}>
-                      Tap to learn more
+                      {t("homeSections.institutionalProof.tapToLearnMore")}
                     </div>
                   </div>
                 </div>
@@ -163,7 +168,7 @@ export function InstitutionalProofSimple() {
                     className="inline-flex items-center gap-2 text-sm font-medium hover:underline"
                     style={{ color: BRAND_COLORS.primaryOrange }}
                   >
-                    Visit {selectedBacker.name}
+                    {t("homeSections.institutionalProof.visit")} {selectedBacker.name}
                     <ExternalLink className="h-4 w-4" />
                   </a>
                 ) : null}
@@ -174,7 +179,7 @@ export function InstitutionalProofSimple() {
                 <div className="flex items-center gap-2 mb-4">
                   <Users className="h-5 w-5" style={{ color: BRAND_COLORS.primaryOrange }} />
                   <h4 className="text-lg font-semibold" style={{ color: BRAND_COLORS.textPrimary }}>
-                    Supported Projects
+                    {t("homeSections.institutionalProof.supportedProjects")}
                   </h4>
                 </div>
                 
@@ -184,14 +189,14 @@ export function InstitutionalProofSimple() {
                   </div>
                 ) : supportedProjects.length === 0 ? (
                   <div className="text-sm" style={{ color: BRAND_COLORS.textSecondary }}>
-                    No projects found for this institution.
+                    {t("homeSections.institutionalProof.noProjectsFound")}
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {supportedProjects.map((project) => {
                       const projectImage = getProjectImageUrl(project) || '/api/placeholder/100/100';
                       return (
-                        <Link key={project.id} href={`/project/${project.slug}`}>
+                        <LanguageLink key={project.id} href={`/project/${project.slug}`}>
                           <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
                             <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
                               <img 
@@ -214,14 +219,17 @@ export function InstitutionalProofSimple() {
                               </div>
                               <div className="text-xs line-clamp-2" style={{ color: BRAND_COLORS.textSecondary }}>
                                 {(() => {
-                                  const text = project.missionStatement || project.mission_statement || project.summary || project.description || 'No description available.';
+                                  const missionStatement = getProjectMissionStatement(project, language);
+                                  const description = getProjectDescription(project, language);
+                                  const summary = getProjectSummary(project, language);
+                                  const text = missionStatement || description || summary || (language === 'de' ? 'Keine Beschreibung verfügbar.' : 'No description available.');
                                   // Truncate to ~80 characters for a teaser
-                                  return text.length > 80 ? `${text.substring(0, 80)}...` : text;
+                                  return text && text.length > 80 ? `${text.substring(0, 80)}...` : text;
                                 })()}
                               </div>
                             </div>
                           </div>
-                        </Link>
+                        </LanguageLink>
                       );
                     })}
                   </div>
@@ -275,7 +283,7 @@ export function InstitutionalProofSimple() {
                   </div>
                   
                   <p className="text-base mb-6 leading-relaxed" style={{ color: BRAND_COLORS.textSecondary }}>
-                    {selectedBacker.shortDescription || selectedBacker.short_description || 'No description available.'}
+                    {getBackerShortDescription(selectedBacker, language) || (language === 'de' ? 'Keine Beschreibung verfügbar.' : 'No description available.')}
                   </p>
                   
                   {selectedBacker.websiteUrl || selectedBacker.website_url ? (
@@ -286,7 +294,7 @@ export function InstitutionalProofSimple() {
                       className="inline-flex items-center gap-2 text-sm font-medium hover:underline"
                       style={{ color: BRAND_COLORS.primaryOrange }}
                     >
-                      Visit {selectedBacker.name}
+                      {t("projectDetail.visitBacker", { name: selectedBacker.name })}
                       <ExternalLink className="h-4 w-4" />
                     </a>
                   ) : null}
@@ -297,7 +305,7 @@ export function InstitutionalProofSimple() {
                   <div className="flex items-center gap-2 mb-4">
                     <Users className="h-5 w-5" style={{ color: BRAND_COLORS.primaryOrange }} />
                     <h4 className="text-lg font-semibold" style={{ color: BRAND_COLORS.textPrimary }}>
-                      Supported Projects
+                      {t("homeSections.institutionalProof.supportedProjects")}
                     </h4>
                   </div>
                   
@@ -307,7 +315,7 @@ export function InstitutionalProofSimple() {
                     </div>
                   ) : supportedProjects.length === 0 ? (
                     <div className="text-sm" style={{ color: BRAND_COLORS.textSecondary }}>
-                      No projects found for this institution.
+                      {t("homeSections.institutionalProof.noProjectsFound")}
                     </div>
                   ) : (
                     <div className="space-y-3">
@@ -337,9 +345,12 @@ export function InstitutionalProofSimple() {
                                 </div>
                                 <div className="text-xs line-clamp-2" style={{ color: BRAND_COLORS.textSecondary }}>
                                   {(() => {
-                                    const text = project.missionStatement || project.mission_statement || project.summary || project.description || 'No description available.';
+                                    const missionStatement = getProjectMissionStatement(project, language);
+                                    const description = getProjectDescription(project, language);
+                                    const summary = getProjectSummary(project, language);
+                                    const text = missionStatement || description || summary || (language === 'de' ? 'Keine Beschreibung verfügbar.' : 'No description available.');
                                     // Truncate to ~80 characters for a teaser
-                                    return text.length > 80 ? `${text.substring(0, 80)}...` : text;
+                                    return text && text.length > 80 ? `${text.substring(0, 80)}...` : text;
                                   })()}
                                 </div>
                               </div>

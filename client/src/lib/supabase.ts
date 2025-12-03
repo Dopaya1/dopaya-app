@@ -19,7 +19,9 @@ console.log('Using URL:', supabaseUrl);
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Test connection immediately
+// Test connection lazily (only in browser, not during SSR/build)
+// This prevents the test from running during Vite's HTML transformation
+if (typeof window !== 'undefined') {
 console.log('Testing Supabase connection...');
 supabase.from('projects').select('id').limit(1).then(({ data, error }) => {
   if (error) {
@@ -30,3 +32,4 @@ supabase.from('projects').select('id').limit(1).then(({ data, error }) => {
 }).catch(err => {
   console.error('❌ Supabase connection error:', err);
 });
+}

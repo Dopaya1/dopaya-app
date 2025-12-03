@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import { LanguageLink } from "@/components/ui/language-link";
 import { Menu, X, ChevronDown, Star, TrendingUp } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { AuthModal } from "@/components/auth/auth-modal";
@@ -16,6 +17,8 @@ import { UserImpact } from "@shared/schema";
 import dopayaLogo from "@assets/Dopaya Logo.png";
 import { trackEvent } from "@/lib/simple-analytics";
 import { isOnboardingPreviewEnabled } from "@/lib/feature-flags";
+import { LanguageSwitcher } from "@/components/layout/language-switcher";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -24,6 +27,7 @@ export function Navbar() {
   const [location] = useLocation();
   const { user, logoutMutation } = useAuth();
   const previewEnabled = isOnboardingPreviewEnabled();
+  const { t } = useTranslation();
   
   // Fetch user impact data for rank display
   const { data: impact, error: impactError } = useQuery<UserImpact>({
@@ -38,10 +42,10 @@ export function Navbar() {
   // Determine user status: 100+ Impact Points = Supporter, otherwise Aspirer
   // PRIORITY: Calculate based on impactPoints first, then fall back to API value
   // This ensures correct status even if API returns stale data
-  const userStatus = impactPoints >= 100 ? "supporter" : (safeImpact?.userStatus || "aspirer");
+  const userStatus = impactPoints >= 100 ? "changemaker" : (safeImpact?.userStatus || "aspirer");
   
   // Simple two-status system
-  const statusDisplayName = userStatus === "supporter" ? "Impact Supporter" : "Impact Aspirer";
+  const statusDisplayName = userStatus === "changemaker" ? "Changemaker" : "Impact Aspirer";
   
   // For Impact Aspirers, show progress to first reward unlock (100 points)
   // For Supporters, no progress bar needed (rewards already unlocked)
@@ -55,15 +59,18 @@ export function Navbar() {
   };
 
   const links = [
-    { href: "/projects", label: "Social Enterprises" },
-    { href: "/about", label: "About Us" },
-    { href: "/contact", label: "Contact" },
+    { href: "/projects", label: t("nav.socialEnterprises") },
+    { href: "/about", label: t("nav.aboutUs") },
+    { href: "/contact", label: t("nav.contact") },
   ];
 
   const isActive = (path: string) => {
     // Get the path part without the hash
     const pathWithoutHash = path.split('#')[0];
-    return location === pathWithoutHash;
+    // Remove language prefix from location for comparison
+    const locationWithoutLang = location.replace(/^\/de/, '') || '/';
+    const pathWithoutLang = pathWithoutHash.replace(/^\/de/, '') || '/';
+    return locationWithoutLang === pathWithoutLang;
   };
 
   const toggleMenu = () => {
@@ -79,7 +86,7 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
-            <Link 
+            <LanguageLink 
               href="/" 
               className="flex-shrink-0 flex items-center"
                   onClick={() => trackEvent('logo_click', 'navigation', 'home')}
@@ -90,14 +97,14 @@ export function Navbar() {
                 className="h-6 w-auto" 
               />
               <span className="sr-only">DOPAYA</span>
-            </Link>
+            </LanguageLink>
           </div>
           
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center justify-center flex-1">
             <div className="flex space-x-6">
               {links.map((link) => (
-                <Link
+                <LanguageLink
                   key={link.href}
                   href={link.href}
                   className={`px-3 py-2 text-sm font-medium ${
@@ -108,12 +115,15 @@ export function Navbar() {
                   onClick={() => trackEvent('nav_link_click', 'navigation', link.label)}
                 >
                   {link.label}
-                </Link>
+                </LanguageLink>
               ))}
             </div>
           </div>
           
           <div className="hidden md:flex items-center space-x-3">
+            {/* Language Switcher */}
+            <LanguageSwitcher />
+            
             {user ? (
               <>
                 {/* Rank Display (preview only) */}
@@ -141,7 +151,7 @@ export function Navbar() {
                         {showProgress && (
                           <div className="space-y-2">
                             <div className="flex items-center justify-between text-xs text-gray-600">
-                              <span>Progress to unlock rewards</span>
+                              <span>{t("nav.progressToUnlockRewards")}</span>
                               <span className="font-medium">{progress}%</span>
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
@@ -151,31 +161,31 @@ export function Navbar() {
                               />
                             </div>
                             <p className="text-xs text-center text-gray-500">
-                              {nextThreshold - impactPoints} IP to unlock rewards
+                              {t("nav.ipToUnlockRewards", { points: nextThreshold - impactPoints })}
                             </p>
                           </div>
                         )}
                         
                         <div className="pt-3 border-t space-y-2">
-                          <Link 
+                          <LanguageLink 
                             href="/dashboard" 
                             className="block w-full text-sm font-semibold text-[#f2662d] bg-orange-50 hover:bg-orange-100 text-center rounded-full px-3 py-2 transition-colors"
                           >
-                            View full impact dashboard
-                          </Link>
-                          <Link 
+                            {t("nav.viewFullImpactDashboard")}
+                          </LanguageLink>
+                          <LanguageLink 
                             href="/rewards" 
                             className="block w-full text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 text-center rounded-full px-3 py-2 transition-colors"
                           >
-                            Redeem rewards
-                </Link>
+                            {t("nav.redeemRewards")}
+                          </LanguageLink>
                           <button
                             type="button"
                   onClick={handleLogout} 
                             className="mt-2 w-full text-xs text-gray-500 hover:text-gray-800 pt-2 border-t border-gray-100"
                   disabled={logoutMutation.isPending}
                 >
-                            {logoutMutation.isPending ? "Logging out…" : "Log out"}
+                            {logoutMutation.isPending ? t("nav.loggingOut") : t("nav.logOut")}
                           </button>
                         </div>
                       </div>
@@ -189,17 +199,17 @@ export function Navbar() {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="text-dark hover:text-primary px-3 py-2 text-sm font-medium">
-                      Join us
+                      {t("nav.joinUs")}
                       <ChevronDown className="ml-1 h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-96 p-0">
                     <div className="grid grid-cols-1 gap-0">
                       <div className="p-4 hover:bg-[#f8f6f1] transition-colors">
-                        <Link href="/social-enterprises" className="block">
-                          <div className="font-semibold text-base text-gray-900 mb-2">As Social Enterprise</div>
-                          <div className="text-sm text-gray-600 leading-relaxed">Get funding from supporters who understand your value and mission</div>
-                        </Link>
+                        <LanguageLink href="/social-enterprises" className="block">
+                          <div className="font-semibold text-base text-gray-900 mb-2">{t("nav.asSocialEnterprise")}</div>
+                          <div className="text-sm text-gray-600 leading-relaxed">{t("nav.asSocialEnterpriseDescription")}</div>
+                        </LanguageLink>
                       </div>
                     </div>
                   </DropdownMenuContent>
@@ -213,7 +223,7 @@ export function Navbar() {
                     className="bg-[#f2662d] hover:bg-[#d9551f] text-white"
                     style={{ backgroundColor: '#f2662d' }}
                   >
-                    Log In
+                    {t("nav.logIn")}
                   </Button>
                 ) : (
                   <Button 
@@ -222,7 +232,7 @@ export function Navbar() {
                     className="bg-[#f2662d] hover:bg-[#d9551f] text-white"
                     style={{ backgroundColor: '#f2662d' }}
                   >
-                    Join Waitlist
+                    {t("nav.joinWaitlist")}
                   </Button>
                 )}
               </>
@@ -230,7 +240,9 @@ export function Navbar() {
           </div>
           
           {/* Mobile menu button */}
-          <div className="md:hidden flex items-center">
+          <div className="md:hidden flex items-center gap-2">
+            {/* Language Switcher - Mobile */}
+            <LanguageSwitcher />
             <Button variant="ghost" onClick={toggleMenu} aria-expanded={isMenuOpen} aria-controls="mobile-menu">
               <span className="sr-only">Open main menu</span>
               {isMenuOpen ? (
@@ -262,14 +274,14 @@ export function Navbar() {
           ))}
           {/* Mobile Join us options */}
           <div className="px-3 py-2">
-            <div className="text-sm font-medium text-gray-500 mb-2">Join us</div>
-            <Link
+            <div className="text-sm font-medium text-gray-500 mb-2">{t("nav.joinUs")}</div>
+            <LanguageLink
               href="/social-enterprises"
               className="block px-3 py-2 rounded-md text-base font-medium text-dark hover:text-primary"
               onClick={() => setIsMenuOpen(false)}
             >
-              As Social Enterprise
-            </Link>
+              {t("nav.asSocialEnterprise")}
+            </LanguageLink>
           </div>
         </div>
         <div className="pt-4 pb-3 border-t border-gray-200">
@@ -296,28 +308,28 @@ export function Navbar() {
                           />
                         </div>
                         <p className="text-xs text-gray-500">
-                          {nextThreshold - impactPoints} IP to unlock rewards
+                          {t("nav.ipToUnlockRewards", { points: nextThreshold - impactPoints })}
                         </p>
                       </div>
                     )}
                   </div>
                 )}
                 
-                <Link
+                <LanguageLink
                   href="/dashboard"
                   className="block px-3 py-2 rounded-md text-base font-medium text-dark hover:text-primary"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  Dashboard
-                </Link>
+                  {t("nav.dashboard")}
+                </LanguageLink>
                 {previewEnabled && (
-                  <Link
+                  <LanguageLink
                     href="/rewards"
                     className="block px-3 py-2 rounded-md text-base font-medium text-dark hover:text-primary"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    Rewards
-                  </Link>
+                    {t("nav.rewards")}
+                  </LanguageLink>
                 )}
                 <Button
                   onClick={() => {
@@ -327,7 +339,7 @@ export function Navbar() {
                   className="block w-full text-left px-3 py-2"
                   disabled={logoutMutation.isPending}
                 >
-                  {logoutMutation.isPending ? "Logging Out..." : "Log Out"}
+                  {logoutMutation.isPending ? t("nav.loggingOut") : t("nav.logOut")}
                 </Button>
               </>
             ) : (
@@ -341,7 +353,7 @@ export function Navbar() {
                     className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-white bg-primary hover:bg-primary/90"
                     data-testid="button-login-mobile-preview"
                   >
-                    Log In
+                    {t("nav.logIn")}
                   </button>
             ) : (
               <button
@@ -352,7 +364,7 @@ export function Navbar() {
                 className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-white bg-primary hover:bg-primary/90"
                 data-testid="button-waitlist-mobile"
               >
-                Join Waitlist
+                {t("nav.joinWaitlist")}
               </button>
                 )}
               </>

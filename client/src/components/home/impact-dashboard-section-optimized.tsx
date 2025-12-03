@@ -5,6 +5,7 @@ import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { TYPOGRAPHY } from "@/constants/typography";
 import { BRAND_COLORS } from "@/constants/colors";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 interface DashboardFeature {
   step: string
@@ -353,6 +354,7 @@ const DashboardMockup = ({ type }: { type: string }) => {
 };
 
 export function ImpactDashboardSection() {
+  const { t } = useTranslation();
   const [activeVariant, setActiveVariant] = useState<'feature-steps' | 'animated-cards' | 'split-view' | 'minimal-list'>('animated-cards');
   const [currentFeature, setCurrentFeature] = useState(0);
   const [progress, setProgress] = useState(0);
@@ -363,26 +365,26 @@ export function ImpactDashboardSection() {
   const features: DashboardFeature[] = [
     {
       step: "",
-      title: "Individual dashboard",
-      content: "Your personal command center to track every donation, see real impact, and monitor your growth journey with beautiful visualizations.",
+      title: t("homeSections.impactDashboard.individualDashboard.title"),
+      content: t("homeSections.impactDashboard.individualDashboard.content"),
       image: "dashboard-individual"
     },
     {
       step: "",
-      title: "Impact ranking with higher benefits",
-      content: "See where you stand now and unlock the next stages. Progress through ranks to access exclusive rewards and premium partner benefits.",
+      title: t("homeSections.impactDashboard.impactRanking.title"),
+      content: t("homeSections.impactDashboard.impactRanking.content"),
       image: "dashboard-ranking"
     },
     {
-      step: "Our goal",
-      title: "Real time impact tracking",
-      content: "Transparent tracking of every dollar donated and its real-world impact. See verified outcomes from projects you support.",
+      step: t("homeSections.impactDashboard.impactTracking.step"),
+      title: t("homeSections.impactDashboard.impactTracking.title"),
+      content: t("homeSections.impactDashboard.impactTracking.content"),
       image: "dashboard-impact-tracking"
     },
     {
-      step: "Founding member",
-      title: "Early advantage",
-      content: "Join as a founding member and get lifetime access to all premium features, priority support, and exclusive founding member perks.",
+      step: t("homeSections.impactDashboard.foundingMember.step"),
+      title: t("homeSections.impactDashboard.foundingMember.title"),
+      content: t("homeSections.impactDashboard.foundingMember.content"),
       image: "dashboard-founding"
     }
   ];
@@ -455,10 +457,10 @@ export function ImpactDashboardSection() {
             color: BRAND_COLORS.textPrimary, 
             fontFamily: "'Satoshi', 'Inter', system-ui, sans-serif" 
           }}>
-            Transparent impact tracking
+            {t("homeSections.impactDashboard.title")}
           </h2>
           <p className="text-xl max-w-2xl mx-auto" style={{ color: BRAND_COLORS.textSecondary }}>
-            We're building a system that makes every donation traceable. Giving you full transparency into your personal impact journey.
+            {t("homeSections.impactDashboard.subtitle")}
           </p>
         </div>
 
@@ -568,13 +570,13 @@ export function ImpactDashboardSection() {
         <div className="max-w-3xl mx-auto text-center p-8 rounded-2xl" style={{ backgroundColor: BRAND_COLORS.bgWhite }}>
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4" 
                style={{ backgroundColor: '#FFF4ED', color: BRAND_COLORS.primaryOrange }}>
-            🎁 Founding Member Benefits
+            {t("homeSections.impactDashboard.foundingMemberBenefits")}
           </div>
           <h3 className="text-2xl font-bold mb-3" style={{ color: BRAND_COLORS.textPrimary }}>
-            Get lifetime access to all features
+            {t("homeSections.impactDashboard.getLifetimeAccess")}
           </h3>
           <p className="text-base mb-6" style={{ color: BRAND_COLORS.textSecondary }}>
-            Join now as a Founding Member and skip the ranks, enjoy priority access, and unlock exclusive perks forever
+            {t("homeSections.impactDashboard.joinNowDescription")}
           </p>
           <Button 
             size="lg" 
@@ -583,7 +585,7 @@ export function ImpactDashboardSection() {
             asChild
           >
             <Link href="https://tally.so/r/m6MqAe" target="_blank">
-              Join the Waitlist
+              {t("homeSections.impactDashboard.joinWaitlist")}
               <ArrowRight className="h-5 w-5 ml-2" />
             </Link>
           </Button>
@@ -604,10 +606,10 @@ export function ImpactDashboardSection() {
                 color: BRAND_COLORS.textPrimary, 
                 fontFamily: "'Satoshi', 'Inter', system-ui, sans-serif" 
               }}>
-                Transparent impact tracking
+                {t("homeSections.impactDashboard.title")}
               </h2>
               <p className="text-xl max-w-2xl mx-auto" style={{ color: BRAND_COLORS.textSecondary }}>
-                We're building a system that makes every donation traceable. Giving you full transparency into your personal impact journey.
+                {t("homeSections.impactDashboard.subtitle")}
               </p>
             </div>
 
@@ -728,10 +730,10 @@ export function ImpactDashboardSection() {
                 color: BRAND_COLORS.textPrimary, 
                 fontFamily: "'Satoshi', 'Inter', system-ui, sans-serif" 
               }}>
-                One dashboard, complete transparency
+                {t("homeSections.impactDashboard.oneDashboard")}
               </h2>
               <p className="text-xl max-w-2xl mx-auto" style={{ color: BRAND_COLORS.textSecondary }}>
-                Track every dollar, see every impact
+                {t("homeSections.impactDashboard.trackEveryDollar")}
               </p>
             </div>
 
@@ -817,10 +819,10 @@ export function ImpactDashboardSection() {
                 {/* CTA in sidebar */}
                 <div className="p-6 rounded-xl" style={{ backgroundColor: '#FFF4ED' }}>
                   <div className="text-sm font-semibold mb-2" style={{ color: BRAND_COLORS.primaryOrange }}>
-                    🎁 Founding Member
+                    {t("homeSections.impactDashboard.foundingMemberBenefits")}
                   </div>
                   <p className="text-sm mb-4" style={{ color: BRAND_COLORS.textSecondary }}>
-                    Lifetime benefits + skip the ranks
+                    {t("homeSections.impactDashboard.joinAsFoundingMember")}
                   </p>
                   <Button 
                     size="sm"
@@ -829,7 +831,7 @@ export function ImpactDashboardSection() {
                     asChild
                   >
                     <a href="https://tally.so/r/m6MqAe" target="_blank" rel="noopener noreferrer">
-                      Join Waitlist
+                      {t("homeSections.impactDashboard.joinWaitlist")}
                     </a>
                   </Button>
                 </div>
@@ -852,10 +854,10 @@ export function ImpactDashboardSection() {
                 color: BRAND_COLORS.textPrimary, 
                 fontFamily: "'Satoshi', 'Inter', system-ui, sans-serif" 
               }}>
-                Track your impact
+                {t("homeSections.impactDashboard.trackYourImpact")}
               </h2>
               <p className="text-xl max-w-2xl mx-auto" style={{ color: BRAND_COLORS.textSecondary }}>
-                Everything you need in one beautiful dashboard
+                {t("homeSections.impactDashboard.everythingYouNeed")}
               </p>
             </div>
 
@@ -923,10 +925,10 @@ export function ImpactDashboardSection() {
             {/* CTA */}
             <div className="max-w-3xl mx-auto text-center mt-20 p-10 rounded-2xl" style={{ backgroundColor: BRAND_COLORS.bgBeige }}>
               <h3 className="text-2xl font-bold mb-3" style={{ color: BRAND_COLORS.textPrimary }}>
-                Ready to amplify your impact?
+                {t("homeSections.impactDashboard.readyToAmplify")}
               </h3>
               <p className="text-base mb-6" style={{ color: BRAND_COLORS.textSecondary }}>
-                Join as a Founding Member and get lifetime benefits, skip the ranks, and enjoy exclusive perks
+                {t("homeSections.impactDashboard.joinAsFoundingMember")}
               </p>
               <Button 
                 size="lg"
@@ -935,7 +937,7 @@ export function ImpactDashboardSection() {
                 asChild
               >
                 <Link href="https://tally.so/r/m6MqAe" target="_blank">
-                  Join the Waitlist
+                  {t("homeSections.impactDashboard.joinWaitlist")}
                   <ArrowRight className="h-5 w-5 ml-2" />
                 </Link>
               </Button>

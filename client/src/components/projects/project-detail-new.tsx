@@ -2,7 +2,11 @@ import { useEffect, useState } from "react";
 import { Project } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
+import { LanguageLink } from "@/components/ui/language-link";
+import { useTranslation } from "@/lib/i18n/use-translation";
+import { useI18n } from "@/lib/i18n/i18n-context";
+import { getProjectTitle, getProjectDescription, getProjectSummary, getProjectMissionStatement, getProjectKeyImpact, getProjectAboutUs, getProjectImpactAchievements, getProjectFundUsage, getProjectSelectionReasoning, getProjectCountry, getProjectImpactUnit, getProjectImpactNoun, getProjectImpactVerb, hasGermanContent } from "@/lib/i18n/project-content";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -45,11 +49,29 @@ export function ProjectDetailNew({ project }: ProjectDetailProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [_, navigate] = useLocation();
+  const { t } = useTranslation();
+  const { language } = useI18n();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [donationAmount, setDonationAmount] = useState(25);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showStickyBar, setShowStickyBar] = useState(false);
   const [showImpactInfo, setShowImpactInfo] = useState(false);
+  
+  // Get language-specific content
+  const projectTitle = getProjectTitle(project, language);
+  const projectDescription = getProjectDescription(project, language);
+  const projectSummary = getProjectSummary(project, language);
+  const projectMissionStatement = getProjectMissionStatement(project, language);
+  const projectKeyImpact = getProjectKeyImpact(project, language);
+  const projectAboutUs = getProjectAboutUs(project, language);
+  const projectImpactAchievements = getProjectImpactAchievements(project, language);
+  const projectFundUsage = getProjectFundUsage(project, language);
+  const projectSelectionReasoning = getProjectSelectionReasoning(project, language);
+  const projectCountry = getProjectCountry(project, language);
+  const projectImpactUnit = getProjectImpactUnit(project, language);
+  const projectImpactNoun = getProjectImpactNoun(project, language);
+  const projectImpactVerb = getProjectImpactVerb(project, language);
+  const hasGerman = hasGermanContent(project);
   
   // Handle scroll position for sticky bottom bar
   useEffect(() => {
@@ -98,9 +120,9 @@ export function ProjectDetailNew({ project }: ProjectDetailProps) {
   const handleShare = async (platform: string) => {
     console.log(`Sharing to ${platform}...`);
     const url = window.location.href;
-    const title = project.title;
+    const title = projectTitle;
     const shareMessage = `I am supporting ${title} to make a difference! 🌟`;
-    const description = project.description?.substring(0, 150) || 'Check out this amazing social impact project';
+    const description = getProjectDescription(project, language)?.substring(0, 150) || 'Check out this amazing social impact project';
     const imageUrl = project.imageUrl || project.coverImage || '/src/assets/Dopaya Logo.png';
     
     // Try native Web Share API first (works great on mobile!)
@@ -286,17 +308,17 @@ ${url}
   return (
     <>
       <SEOHead
-        title={project.title}
-        description={project.description || project.summary || `Support ${project.title} on Dopaya - Make a real social impact and earn rewards`}
-        keywords={`${project.title}, social impact, ${project.category}, Dopaya, social enterprise, impact investing, rewards`}
+        title={projectTitle}
+        description={getProjectDescription(project, language) || projectSummary || `${t("projectDetail.supportProject")} ${projectTitle} auf Dopaya - Echten sozialen Impact schaffen und Belohnungen verdienen`}
+        keywords={`${projectTitle}, social impact, ${project.category}, Dopaya, social enterprise, impact investing, rewards`}
         ogImage={project.coverImage ? `${window.location.origin}${project.coverImage}` : `${window.location.origin}/src/assets/Dopaya Logo.png`}
         ogType="article"
         canonicalUrl={`${window.location.origin}/project/${project.slug || project.id}`}
         structuredData={{
           "@context": "https://schema.org",
           "@type": "Organization",
-          "name": project.title,
-          "description": project.description || project.summary,
+          "name": projectTitle,
+          "description": getProjectDescription(project, language) || projectSummary,
           "url": `${window.location.origin}/project/${project.slug || project.id}`,
           "image": project.coverImage ? `${window.location.origin}${project.coverImage}` : `${window.location.origin}/src/assets/Dopaya Logo.png`,
           "category": project.category,
@@ -306,12 +328,12 @@ ${url}
       />
       
       <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 ${showStickyBar ? 'pb-24' : ''}`}>
-        <Link href="/projects" className="inline-flex items-center text-primary hover:underline mb-6">
+        <LanguageLink href="/projects" className="inline-flex items-center text-primary hover:underline mb-6">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
           </svg>
-          Back to Projects
-        </Link>
+          {t("projectDetail.backToProjects")}
+        </LanguageLink>
 
       <div className="lg:grid lg:grid-cols-12 lg:gap-8">
         {/* Left Side (2/3 width) */}
@@ -320,17 +342,17 @@ ${url}
             <div className={`inline-block px-2 py-1 ${getCategoryColors(project.category || '').badge} text-xs font-medium rounded mb-2`}>
               {project.category}
             </div>
-            <h1 className="text-3xl font-bold text-dark font-heading">{project.title}</h1>
+            <h1 className="text-3xl font-bold text-dark font-heading">{projectTitle}</h1>
             <p className="text-neutral mt-2 whitespace-pre-line">
-              {project.summary}
+              {projectSummary}
             </p>
           </div>
 
           {/* Mission Statement */}
-          {project.missionStatement && (
+          {projectMissionStatement && (
             <div className="mb-6">
               <p className="text-neutral text-lg leading-relaxed max-w-none break-words whitespace-pre-line">
-                {project.missionStatement}
+                {projectMissionStatement}
               </p>
             </div>
           )}
@@ -338,7 +360,7 @@ ${url}
           <div className="mb-6">
             <EagerOptimizedImage
               src={projectImages[selectedImageIndex]} 
-              alt={`${project.title} - Social impact project in ${project.category} category`} 
+              alt={`${projectTitle} - Social impact project in ${project.category} category`} 
               width={800}
               height={600}
               quality={90}
@@ -353,7 +375,7 @@ ${url}
                 <OptimizedImage
                   key={index}
                   src={img} 
-                  alt={`${project.title} - Image ${index + 1}`}
+                  alt={`${projectTitle} - Image ${index + 1}`}
                   width={200}
                   height={133}
                   quality={80}
@@ -368,19 +390,21 @@ ${url}
 
           {/* About this Social Enterprise */}
           <div className="mb-8">
-            <h2 className="text-xl font-bold text-dark font-heading mb-4">About this Social Enterprise</h2>
-            <p className="text-neutral mb-4 leading-relaxed">
-              {project.description}
-            </p>
-            {project.aboutUs && (
-              <p className="text-neutral mb-4 leading-relaxed">{project.aboutUs}</p>
+            <h2 className="text-xl font-bold text-dark font-heading mb-4">{t("projectDetail.aboutSocialEnterprise")}</h2>
+            {projectDescription && (
+              <p className="text-neutral mb-4 leading-relaxed">
+                {projectDescription}
+              </p>
+            )}
+            {projectAboutUs && (
+              <p className="text-neutral mb-4 leading-relaxed">{projectAboutUs}</p>
             )}
           </div>
 
           {/* Trusted by Leading Organizations */}
           {project.slug === 'ignis-careers' && (
             <div className="mb-6">
-              <h2 className="text-xl font-bold text-dark font-heading mb-4">Trusted by Leading Organizations</h2>
+              <h2 className="text-xl font-bold text-dark font-heading mb-4">{t("projectDetail.trustedByLeadingOrganizations")}</h2>
               {/* Desktop: Grid Layout */}
               <div className="hidden md:grid md:grid-cols-5 gap-1 items-center justify-items-center">
                 {[
@@ -488,11 +512,11 @@ ${url}
           )}
 
           {/* Impact Achievements */}
-          {project.impactAchievements && (
+          {projectImpactAchievements && (
             <div className="mb-8">
-              <h2 className="text-xl font-bold text-dark font-heading mb-4">Impact Achievements</h2>
+              <h2 className="text-xl font-bold text-dark font-heading mb-4">{t("projectDetail.impactAchievements")}</h2>
               <div className="space-y-3">
-                {project.impactAchievements
+                {projectImpactAchievements
                   .split(/[.•\-\*]\s*/)
                   .filter(point => point.trim().length > 0)
                   .map((point, idx) => {
@@ -510,11 +534,11 @@ ${url}
           )}
 
           {/* How Your Donation Will Be Used */}
-          {project.fundUsage && (
+          {projectFundUsage && (
             <div className="mb-8">
-              <h2 className="text-xl font-bold text-dark font-heading mb-4">How Your Donation Will Be Used</h2>
+              <h2 className="text-xl font-bold text-dark font-heading mb-4">{t("projectDetail.howDonationUsed")}</h2>
               <div className="space-y-3">
-                {project.fundUsage
+                {projectFundUsage
                   .split(/[.•\-\*]\s*/)
                   .filter(point => point.trim().length > 0)
                   .map((point, idx) => {
@@ -538,49 +562,49 @@ ${url}
         <div className="lg:col-span-4 lg:mt-6 space-y-6">
           {/* Project Snapshot Box */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-            <h3 className="font-bold text-dark mb-4">Project Snapshot</h3>
+            <h3 className="font-bold text-dark mb-4">{t("projectDetail.projectSnapshot")}</h3>
             <div className="space-y-2">
               {/* Impact created - special green background */}
-              {project.keyImpact && (
+              {projectKeyImpact && (
                 <div className="p-3 bg-green-50 rounded-lg">
                   <div className="text-sm text-neutral">
-                    {project.keyImpact}
+                    {projectKeyImpact}
                   </div>
                 </div>
               )}
               
               {project.category && (
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <span className="text-sm font-medium text-neutral">Category:</span>
+                  <span className="text-sm font-medium text-neutral">{t("projectDetail.category")}</span>
                   <span className={`px-2 py-1 ${getCategoryColors(project.category).badge} rounded-full text-xs`}>
                     {project.category}
                   </span>
                 </div>
               )}
               
-              {project.country && (
+              {projectCountry && (
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <span className="text-sm font-medium text-neutral">Location:</span>
-                  <span className="text-sm text-neutral">{project.country}</span>
+                  <span className="text-sm font-medium text-neutral">{t("projectDetail.location")}</span>
+                  <span className="text-sm text-neutral">{projectCountry}</span>
                 </div>
               )}
               
               {project.founderName && (
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <span className="text-sm font-medium text-neutral">Founder:</span>
+                  <span className="text-sm font-medium text-neutral">{t("projectDetail.founder")}</span>
                   <span className="text-sm text-neutral">{project.founderName}</span>
                 </div>
               )}
               
               {project.impactPointsMultiplier && (
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <span className="text-sm font-medium text-neutral">Impact Multiplier:</span>
+                  <span className="text-sm font-medium text-neutral">{t("projectDetail.impactMultiplier")}:</span>
                   <div className="flex items-center">
                     <span className="text-sm text-neutral">{project.impactPointsMultiplier}x</span>
                     <button 
                       className="ml-2 text-gray-400 hover:text-gray-600 transition-colors"
                       onClick={() => setShowImpactInfo(true)}
-                      title="Learn more about Impact Multiplier"
+                      title={t("projectDetail.learnAboutImpactMultiplier")}
                     >
                       <FaInfoCircle className="h-3 w-3" />
                     </button>
@@ -592,7 +616,7 @@ ${url}
           
           {/* Get in Touch Box */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-            <h3 className="font-bold text-dark mb-4">Get in Touch</h3>
+            <h3 className="font-bold text-dark mb-4">{t("projectDetail.getInTouch")}</h3>
             <div className="space-y-2">
               {project.email && (
                 <a 
@@ -696,32 +720,30 @@ ${url}
           <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
             {/* Impact points info */}
             <div style={{ backgroundColor: '#F9FAFB' }} className="rounded-lg p-4 mb-6">
-              <h3 className="font-bold text-dark mb-2">Earn Impact Points</h3>
+              <h3 className="font-bold text-dark mb-2">{t("projectDetail.earnImpactPoints")}</h3>
               <p className="text-sm text-neutral mb-3">
-                Earn {project.impactPointsMultiplier || 10}x impact points for every dollar donated to this project!
+                {t("projectDetail.earnImpactPointsDescription", { multiplier: project.impactPointsMultiplier || 10 })}
               </p>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-gray-200">
-                      <th className="text-left py-2 text-gray-600 font-medium">Donation</th>
-                      <th className="text-left py-2 text-gray-600 font-medium">Points</th>
-                      <th className="text-left py-2 text-gray-600 font-medium">Bonus Points</th>
+                      <th className="text-left py-2 text-gray-600 font-medium">{t("projectDetail.donation")}</th>
+                      <th className="text-left py-2 text-gray-600 font-medium">{t("projectDetail.points")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {[
-                      { donation: 10, points: (project.impactPointsMultiplier || 10) * 10, bonus: 10, level: "Supporter" },
-                      { donation: 50, points: (project.impactPointsMultiplier || 10) * 50, bonus: 50, level: "Advocate" },
-                      { donation: 100, points: (project.impactPointsMultiplier || 10) * 100, bonus: 100, level: "Changemaker" },
-                      { donation: 250, points: (project.impactPointsMultiplier || 10) * 250, bonus: 250, level: "Impact Hero" },
-                      { donation: 500, points: (project.impactPointsMultiplier || 10) * 500, bonus: 500, level: "Impact Legend" },
-                      { donation: 1000, points: (project.impactPointsMultiplier || 10) * 1000, bonus: 1000, level: "Hall of Fame" }
+                      { donation: 10, points: (project.impactPointsMultiplier || 10) * 10 },
+                      { donation: 50, points: (project.impactPointsMultiplier || 10) * 50 },
+                      { donation: 100, points: (project.impactPointsMultiplier || 10) * 100 },
+                      { donation: 250, points: (project.impactPointsMultiplier || 10) * 250 },
+                      { donation: 500, points: (project.impactPointsMultiplier || 10) * 500 },
+                      { donation: 1000, points: (project.impactPointsMultiplier || 10) * 1000 }
                     ].map((tier, idx) => (
                       <tr key={idx} className="border-b border-gray-100">
-                        <td className="py-2">${tier.donation.toLocaleString()}</td>
+                        <td className="py-2">{language === 'de' ? `${tier.donation.toLocaleString()} $` : `$${tier.donation.toLocaleString()}`}</td>
                         <td className="py-2 font-medium text-primary">{tier.points.toLocaleString()}</td>
-                        <td className="py-2 font-medium text-orange-600">+{tier.bonus}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -734,7 +756,7 @@ ${url}
               project={project}
               className="w-full py-6 text-lg font-bold"
             >
-              Support This Project
+              {t("projectDetail.supportThisProject")}
             </DonationButton>
           </div>
         </div>
@@ -753,7 +775,7 @@ ${url}
                 title="Share"
               >
                 <FaShareAlt className="h-4 w-4" />
-                <span className="font-semibold">Share</span>
+                <span className="font-semibold">{t("projectDetail.share")}</span>
               </button>
             )}
             
@@ -762,33 +784,33 @@ ${url}
               project={project}
               className="flex-1 bg-primary hover:bg-primary/90 text-white font-semibold h-12"
             >
-              Support This Project
+              {t("projectDetail.supportThisProject")}
             </DonationButton>
           </div>
 
           {/* Desktop: Share icons + Support button */}
           <div className="hidden md:flex justify-between items-center">
             <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium text-gray-900">Share this project</span>
+              <span className="text-sm font-medium text-gray-900">{t("projectDetail.shareThisProject")}</span>
               
               <button
                 onClick={() => handleShare('email')}
                 className="p-2 text-gray-900 hover:text-primary transition-colors"
-                title="Share via Email"
+                title={t("projectDetail.shareViaEmail")}
               >
                 <FaEnvelope className="h-5 w-5" />
               </button>
               <button
                 onClick={() => handleShare('facebook')}
                 className="p-2 text-gray-900 hover:text-blue-600 transition-colors"
-                title="Share on Facebook"
+                title={t("projectDetail.shareOnFacebook")}
               >
                 <FaFacebook className="h-5 w-5" />
               </button>
               <button
                 onClick={() => handleShare('instagram')}
                 className="p-2 text-gray-900 hover:text-pink-500 transition-colors"
-                title="Share on Instagram"
+                title={t("projectDetail.shareOnInstagram")}
               >
                 <FaInstagram className="h-5 w-5" />
               </button>
@@ -798,7 +820,7 @@ ${url}
               project={project}
               className="bg-primary hover:bg-primary/90 text-white font-bold px-6 py-2"
             >
-              Support This Project
+              {t("projectDetail.supportThisProject")}
             </DonationButton>
           </div>
         </div>
@@ -808,14 +830,14 @@ ${url}
       <Dialog open={showImpactInfo} onOpenChange={setShowImpactInfo}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Impact Multiplier</DialogTitle>
+            <DialogTitle>{t("projectDetail.impactMultiplier")}</DialogTitle>
             <DialogDescription>
-              When you donate to this social enterprise, we multiply your Impact Points with {project.impactPointsMultiplier || 10}.
+              {t("projectDetail.impactMultiplierDescription", { multiplier: project.impactPointsMultiplier || 10 })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button onClick={() => setShowImpactInfo(false)}>
-              Got it!
+              {t("projectDetail.gotIt")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -825,9 +847,9 @@ ${url}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Support {project.title}</DialogTitle>
+            <DialogTitle>{t("projectDetail.supportProject")} {projectTitle}</DialogTitle>
             <DialogDescription>
-              Choose an amount to donate. You'll earn {project.impactPointsMultiplier || 10}x impact points for every dollar!
+              {t("projectDetail.chooseAmountDonate", { multiplier: project.impactPointsMultiplier || 10 })}
             </DialogDescription>
           </DialogHeader>
           
@@ -842,13 +864,13 @@ ${url}
                 }`}
                 onClick={() => setDonationAmount(amount)}
               >
-                ${amount.toLocaleString()}
+                {language === 'de' ? `${amount.toLocaleString()} $` : `$${amount.toLocaleString()}`}
               </button>
             ))}
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="custom-amount">Or enter a custom amount:</Label>
+            <Label htmlFor="custom-amount">{t("projectDetail.orEnterCustomAmount")}</Label>
             <Input
               id="custom-amount"
               type="number"
@@ -860,7 +882,7 @@ ${url}
           
           <div className="bg-orange-50 p-3 rounded-md mt-4">
             <p className="text-sm">
-              <span className="font-bold">Impact points you'll earn: </span> 
+              <span className="font-bold">{t("projectDetail.impactPointsYoullEarn")} </span> 
               <span className="text-primary font-bold">
                 {donationAmount * (project.impactPointsMultiplier || 10)}
               </span>
