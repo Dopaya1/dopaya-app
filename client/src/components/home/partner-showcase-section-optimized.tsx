@@ -97,7 +97,7 @@ export function PartnerShowcaseSection() {
   // Rewards slider page state
   const [rewardsPage, setRewardsPage] = useState(0);
   // Touch handling for mobile brand selection - use ref to avoid state issues
-  const touchDataRef = useRef<{ x: number; y: number; time: number; isSwipe: boolean } | null>(null);
+  const touchDataRef = useRef<{ x: number; y: number; time: number; isSwipe: boolean; targetBrandId: number | null } | null>(null);
 
   // Fetch ALL brands (not just featured) to ensure we have logos for all rewards
   const { data: allBrandsData = [] } = useQuery<Brand[]>({
@@ -464,9 +464,16 @@ export function PartnerShowcaseSection() {
           {/* Mobile: 1 at a time with slider */}
           <div 
             className="md:hidden relative overflow-hidden"
+            style={{ touchAction: 'pan-x' }}
             onTouchStart={(e) => {
               const touch = e.touches[0];
-              touchDataRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now(), isSwipe: false };
+              touchDataRef.current = { 
+                x: touch.clientX, 
+                y: touch.clientY, 
+                time: Date.now(), 
+                isSwipe: false,
+                targetBrandId: null
+              };
             }}
             onTouchMove={(e) => {
               if (!touchDataRef.current) return;
@@ -475,16 +482,38 @@ export function PartnerShowcaseSection() {
               const deltaX = Math.abs(touch.clientX - start.x);
               const deltaY = Math.abs(touch.clientY - start.y);
               
-              // If movement is significant, mark as swipe
-              if (deltaX > 15 || deltaY > 15) {
+              // Mark as swipe if ANY significant movement (horizontal or vertical)
+              // Prioritize horizontal movement for slider
+              if (deltaX > 8 || deltaY > 15) {
                 touchDataRef.current.isSwipe = true;
+                touchDataRef.current.targetBrandId = null; // Clear target on swipe
               }
             }}
-            onTouchEnd={() => {
-              // Reset after a delay to allow card handlers to check
+            onTouchEnd={(e) => {
+              if (!touchDataRef.current) return;
+              
+              const touch = e.changedTouches[0];
+              const start = touchDataRef.current;
+              const deltaX = Math.abs(touch.clientX - start.x);
+              const deltaY = Math.abs(touch.clientY - start.y);
+              const deltaTime = Date.now() - start.time;
+              
+              // Only open popup if:
+              // 1. NOT a swipe
+              // 2. Very small movement (true tap)
+              // 3. Short duration
+              // 4. Has target brand ID
+              const isClearTap = !start.isSwipe && deltaX < 6 && deltaY < 6 && deltaTime < 200 && start.targetBrandId !== null;
+              
+              if (isClearTap) {
+                setSelectedBrand(selectedBrand === start.targetBrandId ? null : start.targetBrandId);
+                setIsPaused(true);
+              }
+              
+              // Reset after delay
               setTimeout(() => {
                 touchDataRef.current = null;
-              }, 100);
+              }, 200);
             }}
           >
             <div 
@@ -495,70 +524,18 @@ export function PartnerShowcaseSection() {
                 <div 
                   key={`${brand.id}-mobile-${idx}`} 
                   className="w-full flex-shrink-0 px-3 flex flex-col"
-                  onTouchStart={(e) => {
-                    const touch = e.touches[0];
-                    if (!touchDataRef.current) {
-                      touchDataRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now(), isSwipe: false };
-                    }
-                    // Stop slider when touching card
-                    setIsPaused(true);
-                  }}
-                  onTouchEnd={(e) => {
-                    if (!touchDataRef.current) return;
-                    
-                    const touch = e.changedTouches[0];
-                    const start = touchDataRef.current;
-                    const deltaX = Math.abs(touch.clientX - start.x);
-                    const deltaY = Math.abs(touch.clientY - start.y);
-                    const deltaTime = Date.now() - start.time;
-                    
-                    // Only trigger if it's a tap (not a swipe) - small movement, short duration, and not marked as swipe
-                    const isTap = !start.isSwipe && deltaX < 10 && deltaY < 10 && deltaTime < 300;
-                    
-                    if (isTap) {
-                      setSelectedBrand(selectedBrand === brand.id ? null : brand.id);
-                    }
-                    
-                    // Keep slider paused
-                    setIsPaused(true);
-                  }}
-                  onClick={() => {
-                    // Stop slider when clicking card
-                    setIsPaused(true);
-                    if (!touchDataRef.current) {
-                      setSelectedBrand(selectedBrand === brand.id ? null : brand.id);
-                    }
-                  }}
                 >
                   <div 
                     className="cursor-pointer"
                     onTouchStart={(e) => {
-                      e.stopPropagation();
-                      const touch = e.touches[0];
-                      if (!touchDataRef.current) {
-                        touchDataRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now(), isSwipe: false };
+                      // Set target brand when touching starts
+                      if (touchDataRef.current) {
+                        touchDataRef.current.targetBrandId = brand.id;
                       }
-                    }}
-                    onTouchEnd={(e) => {
-                      e.stopPropagation();
-                      if (!touchDataRef.current) return;
-                      
-                      const touch = e.changedTouches[0];
-                      const start = touchDataRef.current;
-                      const deltaX = Math.abs(touch.clientX - start.x);
-                      const deltaY = Math.abs(touch.clientY - start.y);
-                      const deltaTime = Date.now() - start.time;
-                      
-                      // Only trigger if it's a tap (not a swipe) - small movement, short duration, and not marked as swipe
-                      const isTap = !start.isSwipe && deltaX < 10 && deltaY < 10 && deltaTime < 300;
-                      
-                      if (isTap) {
-                        setSelectedBrand(selectedBrand === brand.id ? null : brand.id);
-                        setIsPaused(true);
-                      }
+                      // Stop slider when touching card
+                      setIsPaused(true);
                     }}
                     onClick={(e) => {
-                      e.stopPropagation();
                       // Only handle click if it's not from a touch event (desktop)
                       if (!touchDataRef.current) {
                         setSelectedBrand(selectedBrand === brand.id ? null : brand.id);
