@@ -171,7 +171,7 @@ export default function HomePage() {
       
       <div className="min-h-screen bg-white">
         {/* 1. Hero Section with Connection Arrow */}
-        <section className="pt-20 md:pt-40 pb-[50px] md:pb-56 bg-white">
+        <section className="pt-14 md:pt-40 pb-[50px] md:pb-56 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Desktop: 3-column grid layout */}
             <div className="hidden md:grid md:grid-cols-3 gap-10 items-center relative">

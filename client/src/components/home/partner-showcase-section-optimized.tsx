@@ -97,7 +97,7 @@ export function PartnerShowcaseSection() {
   // Rewards slider page state
   const [rewardsPage, setRewardsPage] = useState(0);
   // Touch handling for mobile brand selection - use ref to avoid state issues
-  const touchDataRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const touchDataRef = useRef<{ x: number; y: number; time: number; isSwipe: boolean } | null>(null);
 
   // Fetch ALL brands (not just featured) to ensure we have logos for all rewards
   const { data: allBrandsData = [] } = useQuery<Brand[]>({
@@ -462,20 +462,85 @@ export function PartnerShowcaseSection() {
             ))}
           </div>
           {/* Mobile: 1 at a time with slider */}
-          <div className="md:hidden relative overflow-hidden">
+          <div 
+            className="md:hidden relative overflow-hidden"
+            onTouchStart={(e) => {
+              const touch = e.touches[0];
+              touchDataRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now(), isSwipe: false };
+            }}
+            onTouchMove={(e) => {
+              if (!touchDataRef.current) return;
+              const touch = e.touches[0];
+              const start = touchDataRef.current;
+              const deltaX = Math.abs(touch.clientX - start.x);
+              const deltaY = Math.abs(touch.clientY - start.y);
+              
+              // If movement is significant, mark as swipe
+              if (deltaX > 15 || deltaY > 15) {
+                touchDataRef.current.isSwipe = true;
+              }
+            }}
+            onTouchEnd={() => {
+              // Reset after a delay to allow card handlers to check
+              setTimeout(() => {
+                touchDataRef.current = null;
+              }, 100);
+            }}
+          >
             <div 
               className="flex transition-transform duration-500 ease-in-out"
               style={{ transform: `translateX(-${page * 100}%)` }}
             >
               {brands.map((brand, idx) => (
-                <div key={`${brand.id}-mobile-${idx}`} className="w-full flex-shrink-0 px-3">
+                <div 
+                  key={`${brand.id}-mobile-${idx}`} 
+                  className="w-full flex-shrink-0 px-3 flex flex-col"
+                  onTouchStart={(e) => {
+                    const touch = e.touches[0];
+                    if (!touchDataRef.current) {
+                      touchDataRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now(), isSwipe: false };
+                    }
+                    // Stop slider when touching card
+                    setIsPaused(true);
+                  }}
+                  onTouchEnd={(e) => {
+                    if (!touchDataRef.current) return;
+                    
+                    const touch = e.changedTouches[0];
+                    const start = touchDataRef.current;
+                    const deltaX = Math.abs(touch.clientX - start.x);
+                    const deltaY = Math.abs(touch.clientY - start.y);
+                    const deltaTime = Date.now() - start.time;
+                    
+                    // Only trigger if it's a tap (not a swipe) - small movement, short duration, and not marked as swipe
+                    const isTap = !start.isSwipe && deltaX < 10 && deltaY < 10 && deltaTime < 300;
+                    
+                    if (isTap) {
+                      setSelectedBrand(selectedBrand === brand.id ? null : brand.id);
+                    }
+                    
+                    // Keep slider paused
+                    setIsPaused(true);
+                  }}
+                  onClick={() => {
+                    // Stop slider when clicking card
+                    setIsPaused(true);
+                    if (!touchDataRef.current) {
+                      setSelectedBrand(selectedBrand === brand.id ? null : brand.id);
+                    }
+                  }}
+                >
                   <div 
                     className="cursor-pointer"
                     onTouchStart={(e) => {
+                      e.stopPropagation();
                       const touch = e.touches[0];
-                      touchDataRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
+                      if (!touchDataRef.current) {
+                        touchDataRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now(), isSwipe: false };
+                      }
                     }}
                     onTouchEnd={(e) => {
+                      e.stopPropagation();
                       if (!touchDataRef.current) return;
                       
                       const touch = e.changedTouches[0];
@@ -484,17 +549,16 @@ export function PartnerShowcaseSection() {
                       const deltaY = Math.abs(touch.clientY - start.y);
                       const deltaTime = Date.now() - start.time;
                       
-                      // Only trigger if it's a tap (not a swipe) - small movement and short duration
-                      const isTap = deltaX < 10 && deltaY < 10 && deltaTime < 300;
+                      // Only trigger if it's a tap (not a swipe) - small movement, short duration, and not marked as swipe
+                      const isTap = !start.isSwipe && deltaX < 10 && deltaY < 10 && deltaTime < 300;
                       
                       if (isTap) {
                         setSelectedBrand(selectedBrand === brand.id ? null : brand.id);
                         setIsPaused(true);
                       }
-                      
-                      touchDataRef.current = null;
                     }}
                     onClick={(e) => {
+                      e.stopPropagation();
                       // Only handle click if it's not from a touch event (desktop)
                       if (!touchDataRef.current) {
                         setSelectedBrand(selectedBrand === brand.id ? null : brand.id);
@@ -517,39 +581,53 @@ export function PartnerShowcaseSection() {
                         <ArrowUpRight className="h-4 w-4" />
                       </a>
                     </div>
-                    <p className="text-lg leading-relaxed" style={{ color: BRAND_COLORS.textSecondary }}>
+                    <p className="text-base leading-relaxed" style={{ color: BRAND_COLORS.textSecondary }}>
                       {brand.hoverDescription}
                     </p>
                   </div>
+                  
+                  {/* Mobile Navigation - Directly under each card */}
+                  {brands.length > 1 && (
+                    <div className="flex justify-center items-center gap-1 mt-4">
+                      <button
+                        onClick={() => {
+                          setPage((p) => (p - 1 + brands.length) % brands.length);
+                          setIsPaused(true);
+                        }}
+                        className="p-1.5 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
+                        aria-label="Previous brand"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
+                      <div className="flex gap-1 mx-2">
+                        {brands.map((_, index) => (
+                          <button
+                            key={index}
+                            onClick={() => setPage(index)}
+                            className={`w-2 h-2 rounded-full transition-colors duration-200 ${
+                              index === page 
+                                ? 'bg-orange-500' 
+                                : 'bg-gray-300'
+                            }`}
+                            aria-label={`Go to brand ${index + 1}`}
+                          />
+                        ))}
+                      </div>
+                      <button
+                        onClick={() => {
+                          setPage((p) => (p + 1) % brands.length);
+                          setIsPaused(true);
+                        }}
+                        className="p-1.5 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
+                        aria-label="Next brand"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
-            
-            {/* Mobile Navigation - Subtle arrows below (only if more than 1 brand) */}
-            {brands.length > 1 && (
-              <div className="flex justify-center items-center gap-1 mt-4">
-                <button
-                  onClick={() => {
-                    setPage((p) => (p - 1 + brands.length) % brands.length);
-                    setIsPaused(true);
-                  }}
-                  className="p-1.5 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
-                  aria-label="Previous brand"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => {
-                    setPage((p) => (p + 1) % brands.length);
-                    setIsPaused(true);
-                  }}
-                  className="p-1.5 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
-                  aria-label="Next brand"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-            )}
           </div>
         </div>
         )}
