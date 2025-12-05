@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { ExternalLink, Shield, CheckCircle, Leaf, Heart, ArrowLeft, ArrowRight, ArrowUpRight, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -7,7 +7,6 @@ import type { Reward, Brand } from "@shared/schema";
 import { TYPOGRAPHY } from "@/constants/typography";
 import { BRAND_COLORS } from "@/constants/colors";
 import { MOBILE } from "@/constants/mobile";
-import { MobileSlider } from "@/components/ui/mobile-slider";
 import { getLogoUrl } from "@/lib/image-utils";
 import bonjiLogo from '@assets/Brand_backers/Bonji sustainable brand - logo.png';
 import aaparLogo from '@assets/Brand_backers/Aapar sustainable brand - logo.png';
@@ -95,6 +94,10 @@ export function PartnerShowcaseSection() {
   // Page-based slider (4 items per page on lg, 3 on md, 2 on sm)
   const [page, setPage] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  // Rewards slider page state
+  const [rewardsPage, setRewardsPage] = useState(0);
+  // Touch handling for mobile brand selection - use ref to avoid state issues
+  const touchDataRef = useRef<{ x: number; y: number; time: number } | null>(null);
 
   // Fetch ALL brands (not just featured) to ensure we have logos for all rewards
   const { data: allBrandsData = [] } = useQuery<Brand[]>({
@@ -451,7 +454,7 @@ export function PartnerShowcaseSection() {
                       <ArrowUpRight className="h-4 w-4" />
                     </a>
                   </div>
-                  <p className="text-xs leading-relaxed" style={{ color: BRAND_COLORS.textSecondary }}>
+                  <p className="text-sm leading-relaxed" style={{ color: BRAND_COLORS.textSecondary }}>
                     {brand.hoverDescription}
                   </p>
                 </div>
@@ -466,7 +469,39 @@ export function PartnerShowcaseSection() {
             >
               {brands.map((brand, idx) => (
                 <div key={`${brand.id}-mobile-${idx}`} className="w-full flex-shrink-0 px-3">
-                  <div className="cursor-pointer" onClick={() => { setSelectedBrand(selectedBrand === brand.id ? null : brand.id); setIsPaused(true); }}>
+                  <div 
+                    className="cursor-pointer"
+                    onTouchStart={(e) => {
+                      const touch = e.touches[0];
+                      touchDataRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
+                    }}
+                    onTouchEnd={(e) => {
+                      if (!touchDataRef.current) return;
+                      
+                      const touch = e.changedTouches[0];
+                      const start = touchDataRef.current;
+                      const deltaX = Math.abs(touch.clientX - start.x);
+                      const deltaY = Math.abs(touch.clientY - start.y);
+                      const deltaTime = Date.now() - start.time;
+                      
+                      // Only trigger if it's a tap (not a swipe) - small movement and short duration
+                      const isTap = deltaX < 10 && deltaY < 10 && deltaTime < 300;
+                      
+                      if (isTap) {
+                        setSelectedBrand(selectedBrand === brand.id ? null : brand.id);
+                        setIsPaused(true);
+                      }
+                      
+                      touchDataRef.current = null;
+                    }}
+                    onClick={(e) => {
+                      // Only handle click if it's not from a touch event (desktop)
+                      if (!touchDataRef.current) {
+                        setSelectedBrand(selectedBrand === brand.id ? null : brand.id);
+                        setIsPaused(true);
+                      }
+                    }}
+                  >
                     <div className="flex items-center justify-center p-6 h-24 rounded-lg" style={{ backgroundColor: BRAND_COLORS.bgWhite }}>
                       <img src={brand.logo} alt={brand.name} className="max-h-12 max-w-full object-contain" />
                     </div>
@@ -475,14 +510,14 @@ export function PartnerShowcaseSection() {
                     <div className="flex items-start gap-3 mb-2">
                       <img src={brand.logo} alt={brand.name} className="w-6 h-6 object-contain" />
                       <div className="flex-1">
-                        <h4 className="font-semibold text-sm" style={{ color: BRAND_COLORS.textPrimary }}>{renderBrandName(brand)}</h4>
+                        <h4 className="font-semibold text-base" style={{ color: BRAND_COLORS.textPrimary }}>{renderBrandName(brand)}</h4>
                         <span className="text-xs" style={{ color: BRAND_COLORS.textMuted }}>{brand.category}</span>
                       </div>
                       <a href={brand.website} target="_blank" rel="noopener noreferrer" className="text-xs" style={{ color: BRAND_COLORS.textMuted }}>
                         <ArrowUpRight className="h-4 w-4" />
                       </a>
                     </div>
-                    <p className="text-xs leading-relaxed" style={{ color: BRAND_COLORS.textSecondary }}>
+                    <p className="text-lg leading-relaxed" style={{ color: BRAND_COLORS.textSecondary }}>
                       {brand.hoverDescription}
                     </p>
                   </div>
@@ -607,62 +642,102 @@ export function PartnerShowcaseSection() {
                 })}
               </div>
 
-              {/* Mobile: Slider */}
-              <div className="lg:hidden">
-                <MobileSlider
-                  items={rewards}
-                  renderItem={(reward) => {
+              {/* Mobile: Slider - Same approach as Brands slider */}
+              <div className="lg:hidden relative overflow-hidden">
+                <div 
+                  className="flex transition-transform duration-500 ease-in-out"
+                  style={{ transform: `translateX(-${rewardsPage * 100}%)` }}
+                >
+                  {rewards.map((reward, idx) => {
                     const brandId = (reward as any).brandId || (reward as any).brand_id;
                     const brandInfo = brandId ? brandMap.get(Number(brandId)) : null;
                     
                     return (
-                    <div
-                      key={reward.id}
-                      className="rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group cursor-pointer"
-                      style={{ backgroundColor: BRAND_COLORS.bgWhite, border: `1px solid ${BRAND_COLORS.borderSubtle}` }}
-                    >
-                      {/* Reward Image - Smaller Height */}
-                        <div className="aspect-[16/9] bg-gray-100 overflow-hidden relative">
-                        <img
-                          src={reward.imageUrl}
-                          alt={getRewardTitle(reward, language)}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                          {/* Brand Logo - Small badge in top-right corner */}
-                          {brandInfo?.logoUrl && (
-                            <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-md p-1.5 shadow-sm">
-                              <img
-                                src={brandInfo.logoUrl}
-                                alt={brandInfo.name}
-                                className="h-6 w-auto object-contain"
-                              />
-                            </div>
-                          )}
-                      </div>
+                      <div key={`${reward.id}-mobile-${idx}`} className="w-full flex-shrink-0 px-3">
+                        <div
+                          className="rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group cursor-pointer"
+                          style={{ backgroundColor: BRAND_COLORS.bgWhite, border: `1px solid ${BRAND_COLORS.borderSubtle}` }}
+                        >
+                          {/* Reward Image - Smaller Height */}
+                          <div className="aspect-[16/9] bg-gray-100 overflow-hidden relative">
+                            <img
+                              src={reward.imageUrl}
+                              alt={getRewardTitle(reward, language)}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
+                            {/* Brand Logo - Small badge in top-right corner */}
+                            {brandInfo?.logoUrl && (
+                              <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-md p-1.5 shadow-sm">
+                                <img
+                                  src={brandInfo.logoUrl}
+                                  alt={brandInfo.name}
+                                  className="h-6 w-auto object-contain"
+                                />
+                              </div>
+                            )}
+                          </div>
 
-                      {/* Reward Info */}
-                      <div className="p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-medium px-2 py-1 rounded" 
-                                style={{ backgroundColor: BRAND_COLORS.bgCool, color: BRAND_COLORS.textMuted }}>
-                            {reward.category}
-                          </span>
-                          {reward.discount && (
-                            <span className="text-xs font-medium" style={{ color: BRAND_COLORS.primaryOrange }}>
-                              {reward.discount}
-                            </span>
-                          )}
+                          {/* Reward Info */}
+                          <div className="p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-xs font-medium px-2 py-1 rounded" 
+                                    style={{ backgroundColor: BRAND_COLORS.bgCool, color: BRAND_COLORS.textMuted }}>
+                                {reward.category}
+                              </span>
+                              {reward.discount && (
+                                <span className="text-xs font-medium" style={{ color: BRAND_COLORS.primaryOrange }}>
+                                  {reward.discount}
+                                </span>
+                              )}
+                            </div>
+                            
+                            <h4 className="font-semibold line-clamp-2 mb-5" style={{ color: BRAND_COLORS.textPrimary }}>
+                              {getRewardTitle(reward, language)}
+                            </h4>
+                          </div>
                         </div>
-                        
-                          <h4 className="font-semibold line-clamp-2 mb-5" style={{ color: BRAND_COLORS.textPrimary }}>
-                          {getRewardTitle(reward, language)}
-                        </h4>
                       </div>
-                    </div>
                     );
-                  }}
-                  gap="gap-6"
-                />
+                  })}
+                </div>
+                
+                {/* Mobile Navigation - Subtle arrows below (only if more than 1 reward) */}
+                {rewards.length > 1 && (
+                  <div className="flex justify-center items-center gap-1 mt-4">
+                    <button
+                      onClick={() => {
+                        setRewardsPage((p) => (p - 1 + rewards.length) % rewards.length);
+                      }}
+                      className="p-1.5 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
+                      aria-label="Previous reward"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    <div className="flex gap-1 mx-2">
+                      {rewards.map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setRewardsPage(index)}
+                          className={`w-2 h-2 rounded-full transition-colors duration-200 ${
+                            index === rewardsPage 
+                              ? 'bg-orange-500' 
+                              : 'bg-gray-300'
+                          }`}
+                          aria-label={`Go to reward ${index + 1}`}
+                        />
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => {
+                        setRewardsPage((p) => (p + 1) % rewards.length);
+                      }}
+                      className="p-1.5 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
+                      aria-label="Next reward"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
               </div>
             </>
           )}

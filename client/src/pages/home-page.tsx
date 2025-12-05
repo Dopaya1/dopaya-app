@@ -470,7 +470,7 @@ export default function HomePage() {
         </section>
 
         {/* Info bar under hero */}
-        <section className="py-6 flex items-center" style={{ backgroundColor: '#ebe8df' }}>
+        <section className="py-3 md:py-6 md:flex md:items-center" style={{ backgroundColor: '#ebe8df' }}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
             {/* Desktop: 3 columns */}
             <div className="hidden md:grid md:grid-cols-3 gap-4 lg:gap-8 items-center">
@@ -495,7 +495,7 @@ export default function HomePage() {
             </div>
             
             {/* Mobile: Auto-slider (1 item at a time) */}
-            <div className="md:hidden relative overflow-hidden min-h-[60px] flex items-center w-full">
+            <div className="md:hidden relative overflow-hidden w-full py-1">
               <div 
                 className="flex transition-transform duration-500 ease-in-out"
                 style={{ transform: `translateX(-${infoBarIndex * 100}%)` }}
@@ -505,10 +505,10 @@ export default function HomePage() {
                   return (
                     <div 
                       key={index}
-                      className="w-full flex-shrink-0 flex items-center justify-center gap-2 px-4"
+                      className="w-full flex-shrink-0 flex items-center justify-center gap-2 px-3 min-w-0"
                     >
                       <IconComponent className="w-5 h-5 text-gray-800 opacity-70 flex-shrink-0" />
-                      <p className="text-base text-gray-800 text-center flex-1">
+                      <p className="text-base text-gray-800 text-center flex-1 break-words whitespace-normal leading-relaxed">
                         {item}
                       </p>
                     </div>
