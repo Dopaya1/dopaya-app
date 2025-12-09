@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useRef } from "react";
+import type { TouchEvent as ReactTouchEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { ExternalLink, Shield, CheckCircle, Leaf, Heart, ArrowLeft, ArrowRight, ArrowUpRight, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -98,6 +99,9 @@ export function PartnerShowcaseSection() {
   const [rewardsPage, setRewardsPage] = useState(0);
   // Touch handling for mobile brand selection - use ref to avoid state issues
   const touchDataRef = useRef<{ x: number; y: number; time: number; isSwipe: boolean; targetBrandId: number | null; hasMoved: boolean; scrollStartY: number } | null>(null);
+  // Touch handling to avoid accidental taps opening the popup while scrolling
+  const infoTouchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const infoTouchMovedRef = useRef(false);
   // Track if page is currently scrolling
   const isScrollingRef = useRef(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -216,6 +220,37 @@ export function PartnerShowcaseSection() {
     staleTime: 0, // Always fetch fresh data from database
     cacheTime: 0, // Don't cache - always get latest data
   });
+
+  const toggleBrandDetails = (brandId: number) => {
+    setSelectedBrand((prev) => (prev === brandId ? null : brandId));
+    setIsPaused(true);
+  };
+
+  const handleInfoTouchStart = (e: ReactTouchEvent) => {
+    const touch = e.touches[0];
+    infoTouchStartRef.current = { x: touch.clientX, y: touch.clientY };
+    infoTouchMovedRef.current = false;
+  };
+
+  const handleInfoTouchMove = (e: ReactTouchEvent) => {
+    if (!infoTouchStartRef.current) return;
+    const touch = e.touches[0];
+    const dx = Math.abs(touch.clientX - infoTouchStartRef.current.x);
+    const dy = Math.abs(touch.clientY - infoTouchStartRef.current.y);
+    if (dx > 8 || dy > 8) {
+      infoTouchMovedRef.current = true;
+    }
+  };
+
+  const handleInfoTouchEnd = (brandId: number, e: ReactTouchEvent) => {
+    if (!infoTouchMovedRef.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleBrandDetails(brandId);
+    }
+    infoTouchStartRef.current = null;
+    infoTouchMovedRef.current = false;
+  };
 
   // Map database brands to component format, with fallback
   const brands = brandsData.length > 0
@@ -508,9 +543,11 @@ export function PartnerShowcaseSection() {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        setSelectedBrand(selectedBrand === brand.id ? null : brand.id);
-                        setIsPaused(true);
+                        toggleBrandDetails(brand.id);
                       }}
+                      onTouchStart={handleInfoTouchStart}
+                      onTouchMove={handleInfoTouchMove}
+                      onTouchEnd={(e) => handleInfoTouchEnd(brand.id, e)}
                       className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm shadow-md flex items-center justify-center hover:bg-white transition-colors"
                       aria-label={`View ${brand.name} details`}
                       style={{ zIndex: 10 }}
