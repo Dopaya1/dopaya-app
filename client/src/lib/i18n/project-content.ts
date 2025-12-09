@@ -110,11 +110,27 @@ export function getProjectFundUsage(project: Project, language: Language): strin
  */
 export function getProjectSelectionReasoning(project: Project, language: Language): string | null {
   // Handle both camelCase (schema) and snake_case (database)
-  const selectionReasoningDe = project.selectionReasoningDe || (project as any).selection_reasoning_de;
+  const selectionReasoningDe =
+    project.selectionReasoningDe ||
+    (project as any).selection_reasoning_de ||
+    (project as any).SelectionReasoningDe;
+
+  const selectionReasoningEn =
+    project.selectionReasoning ||
+    (project as any).selection_reasoning ||
+    (project as any).SelectionReasoning;
+
   if (language === 'de' && selectionReasoningDe) {
     return selectionReasoningDe;
   }
-  return project.selectionReasoning || (project as any).selection_reasoning;
+
+  // EN (or default) – return English if present
+  if (selectionReasoningEn) return selectionReasoningEn;
+
+  // Final fallback: if only DE exists, return it
+  if (selectionReasoningDe) return selectionReasoningDe;
+
+  return null;
 }
 
 /**

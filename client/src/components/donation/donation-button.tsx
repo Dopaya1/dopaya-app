@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Heart, Info, ShieldCheck, Gift, Share2, X, Trophy } from "lucide-react";
+import { Heart, Info, ShieldCheck, Trophy } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useQuery } from "@tanstack/react-query";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { BRAND_COLORS } from "@/constants/colors";
 import { ProcessingImpact } from "./processing-impact";
+import { SupportMiniJourney } from "./support-mini-journey";
 import { 
   Dialog, 
   DialogContent, 
@@ -116,8 +117,7 @@ export function DonationButton({
   const [authError, setAuthError] = useState<string>("");
   const [isSignUp, setIsSignUp] = useState<boolean>(false);
   const [showProcessingImpact, setShowProcessingImpact] = useState<boolean>(false);
-  const [showSuccess, setShowSuccess] = useState<boolean>(false);
-  const [showReferral, setShowReferral] = useState<boolean>(false);
+  const [showMiniJourney, setShowMiniJourney] = useState<boolean>(false);
   
   // Check if this is user's first support (has 50 IP from welcome bonus)
   const { data: impact } = useQuery<UserImpact>({
@@ -153,45 +153,24 @@ export function DonationButton({
 
   const handleProcessingComplete = () => {
     setShowProcessingImpact(false);
-    // In preview mode, just show a success message
-    // In production, this would trigger actual payment processing
-    setShowSuccess(true);
-    
-    // Check if referral has been shown before (one-time show)
-    const referralShown = sessionStorage.getItem('referralPromptShown');
-    if (!referralShown) {
-      setShowReferral(true);
+    // Show the mini-journey modal
+    setShowMiniJourney(true);
+  };
+
+  const handleMiniJourneyOption = (option: "rewards" | "impact" | "invite") => {
+    setShowMiniJourney(false);
+    if (option === "rewards") {
+      navigate(`/rewards?unlock=1&maxPoints=100`);
+    } else if (option === "impact") {
+      navigate('/dashboard');
+    } else if (option === "invite") {
+      // Handle invite logic if needed
+      navigate('/dashboard');
     }
-    
-    // Determine if this is first support (support-first user) or existing user
-    // Check impact BEFORE payment: if user had 50 IP (welcome bonus) and 0 projects, this is first support
-    const currentImpactPoints = impact?.impactPoints || 0;
-    const currentProjectsSupported = impact?.projectsSupported || 0;
-    const isFirstSupport = currentImpactPoints === 50 && currentProjectsSupported === 0;
-    const isExistingUser = currentImpactPoints > 50 || currentProjectsSupported > 0;
-    
-    // Auto-route logic per PRD:
-    // - Support-first (first-time): Auto-route to Rewards (≤100 IP) after 2-3s
-    // - Existing user: Auto-route to Dashboard after 2-3s
-    if (isFirstSupport) {
-      // First support → Auto-route to Rewards (≤100 IP) after 2-3s
-      setTimeout(() => {
-        handleSuccessClose();
-        navigate(`/rewards?unlock=1&maxPoints=100`);
-      }, 2500); // 2.5s delay
-    } else if (isExistingUser) {
-      // Existing user → Auto-route to Dashboard after 2-3s
-      setTimeout(() => {
-        handleSuccessClose();
-        navigate('/dashboard');
-      }, 2500); // 2.5s delay
-    }
-    // If we can't determine, let user choose manually
   };
 
   const handleSuccessClose = () => {
-    setShowSuccess(false);
-    setShowReferral(false);
+    setShowMiniJourney(false);
     // Reset form when closing - start with 0 (no amount selected)
     setSupportAmount(null);
     setIsCustomAmount(false);
@@ -218,34 +197,6 @@ export function DonationButton({
     setIsDialogOpen(open);
   };
   
-  const handleDismissReferral = () => {
-    setShowReferral(false);
-    sessionStorage.setItem('referralPromptShown', 'true');
-  };
-  
-  const handleShareImpact = () => {
-    // Prepare share text
-    const shareText = `I just supported ${project?.title || 'a social enterprise'} on Dopaya and earned ${impactPoints} Impact Points! Join me in creating real impact. 🌍✨`;
-    const shareUrl = `${window.location.origin}${project ? `/project/${project.slug}` : ''}`;
-    
-    // Try native share if available
-    if (navigator.share) {
-      navigator.share({
-        title: 'Share Your Impact',
-        text: shareText,
-        url: shareUrl,
-      }).catch(() => {
-        // User cancelled or error - do nothing
-      });
-    } else {
-      // Fallback: Copy to clipboard
-      navigator.clipboard.writeText(`${shareText}\n${shareUrl}`).then(() => {
-        alert('Share link copied to clipboard!');
-      });
-    }
-    
-    handleDismissReferral();
-  };
 
   const handleGoogleSignIn = async () => {
     try {
@@ -365,158 +316,25 @@ export function DonationButton({
         />
       )}
 
-      {/* Success Message (Preview) */}
-      {previewEnabled && (
-        <Dialog open={showSuccess} onOpenChange={() => {
-          // Prevent any automatic closing - only close via buttons
-          // Do nothing here, state is controlled by handleSuccessClose only
-        }}>
-          <DialogContent 
-            className="sm:max-w-md text-center [&>button]:hidden" 
-            onInteractOutside={(e) => {
-              // Prevent closing when clicking outside
-              e.preventDefault();
-            }} 
-            onEscapeKeyDown={(e) => {
-              // Prevent closing with Escape key
-              e.preventDefault();
-            }}
+      {/* Mini-journey overlay (3-step modal) */}
+      {showMiniJourney && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+          <button
+            type="button"
+            onClick={() => setShowMiniJourney(false)}
+            className="absolute top-5 right-5 text-sm text-gray-200 hover:text-white"
           >
-            <DialogHeader>
-              <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                <Heart className="w-10 h-10 text-green-600 fill-green-600" />
-              </div>
-              <DialogTitle className="text-2xl font-bold text-gray-900">
-                Your impact is happening!
-              </DialogTitle>
-              <DialogDescription className="text-lg text-gray-600 pt-2">
-                You've earned {impactPoints} Impact Points
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-6 py-4">
-              {/* Impaktera Trust Badge */}
-              <div className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg">
-                <ShieldCheck className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                <p className="text-xs text-blue-900 leading-relaxed">
-                  Your support is verified through Impaktera, our Swiss nonprofit partner.
-                </p>
-              </div>
-
-              {/* Referral Prompt (shown once, dismissible) */}
-              {showReferral && (
-                <div className="bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200 rounded-lg p-4 space-y-3 relative">
-                  <button
-                    onClick={handleDismissReferral}
-                    className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
-                    aria-label="Dismiss"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                  <div className="flex items-center gap-2">
-                    <Share2 className="w-5 h-5 text-purple-600" />
-                    <h4 className="font-semibold text-gray-900">Share your impact</h4>
-                  </div>
-                  <p className="text-sm text-gray-700 pr-6">
-                    Invite friends to join the movement. When they support a project, you both create more impact together!
-                  </p>
-                  <Button
-                    onClick={handleShareImpact}
-                    className="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold"
-                  >
-                    <Share2 className="w-4 h-4 mr-2" />
-                    Invite a Friend
-                  </Button>
-                </div>
-              )}
-
-              {/* Conditional CTAs based on user type */}
-              {(() => {
-                // Check impact BEFORE payment to determine user type
-                const currentImpactPoints = impact?.impactPoints || 0;
-                const currentProjectsSupported = impact?.projectsSupported || 0;
-                const isFirstSupport = currentImpactPoints === 50 && currentProjectsSupported === 0;
-                const isExistingUser = currentImpactPoints > 50 || currentProjectsSupported > 0;
-                
-                if (isFirstSupport) {
-                  // Support-first: Show Rewards CTA (will auto-route in 2-3s)
-                  return (
-                    <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-lg p-4 space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Gift className="w-5 h-5 text-yellow-600" />
-                        <h4 className="font-semibold text-gray-900">Unlock your first reward!</h4>
-                      </div>
-                      <p className="text-sm text-gray-700">
-                        You've earned {impactPoints} Impact Points. Browse rewards you can unlock right now.
-                      </p>
-                      <Button
-                        onClick={() => {
-                          handleSuccessClose();
-                          navigate(`/rewards?unlock=1&maxPoints=100`);
-                        }}
-                        className="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold"
-                        style={{ backgroundColor: '#FFC107', color: '#1a1a3a' }}
-                      >
-                        <Gift className="w-4 h-4 mr-2" />
-                        View Rewards
-                      </Button>
-                    </div>
-                  );
-                } else if (isExistingUser) {
-                  // Existing user: Show Dashboard CTA (will auto-route in 2-3s)
-                  return (
-                    <Button
-                      onClick={() => {
-                        handleSuccessClose();
-                        navigate('/dashboard');
-                      }}
-                      className="w-full bg-[#f2662d] hover:bg-[#d9551f] text-white font-semibold"
-                      style={{ backgroundColor: '#f2662d' }}
-                    >
-                      Go to Dashboard
-                    </Button>
-                  );
-                } else {
-                  // Fallback: Show both options if we can't determine
-                  return (
-                    <>
-                      <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-lg p-4 space-y-3">
-                        <div className="flex items-center gap-2">
-                          <Gift className="w-5 h-5 text-yellow-600" />
-                          <h4 className="font-semibold text-gray-900">Unlock rewards!</h4>
-                        </div>
-                        <p className="text-sm text-gray-700">
-                          You've earned {impactPoints} Impact Points. Browse rewards you can unlock right now.
-                        </p>
-                        <Button
-                          onClick={() => {
-                            handleSuccessClose();
-                            navigate(`/rewards?unlock=1&maxPoints=100`);
-                          }}
-                          className="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold"
-                          style={{ backgroundColor: '#FFC107', color: '#1a1a3a' }}
-                        >
-                          <Gift className="w-4 h-4 mr-2" />
-                          View Rewards
-                        </Button>
-                      </div>
-                      <Button
-                        onClick={() => {
-                          handleSuccessClose();
-                          navigate("/dashboard");
-                        }}
-                        variant="outline"
-                        className="w-full"
-                      >
-                        Go to Dashboard
-                      </Button>
-                    </>
-                  );
-                }
-              })()}
-            </div>
-          </DialogContent>
-        </Dialog>
+            ✕
+          </button>
+          <SupportMiniJourney
+            projectTitle={project?.title || 'this project'}
+            supportAmount={currentSupportAmount}
+            impactPoints={impactPoints}
+            userLevel={"Impact Aspirer"}
+            onSelectOption={handleMiniJourneyOption}
+            onClose={() => setShowMiniJourney(false)}
+          />
+        </div>
       )}
 
       <Button

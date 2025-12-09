@@ -48,7 +48,7 @@ const GoogleIcon = () => (
 export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalProps) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<string>(defaultTab);
-  const { loginMutation, registerMutation } = useAuth();
+  const { loginMutation, registerMutation, resendVerificationMutation } = useAuth();
   const [loginError, setLoginError] = useState<string | null>(null);
   const [registerError, setRegisterError] = useState<string | null>(null);
   const previewEnabled = isOnboardingPreviewEnabled();
@@ -60,6 +60,7 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
   const [authLoading, setAuthLoading] = useState<boolean>(false);
   const [authError, setAuthError] = useState<string>("");
   const [isSignUp, setIsSignUp] = useState<boolean>(defaultTab === "register");
+  const [showResendEmail, setShowResendEmail] = useState<boolean>(false);
 
   // Create schemas with translated messages
   const loginSchema = z.object({
@@ -83,6 +84,8 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
       setActiveTab(defaultTab);
       setLoginError(null);
       setRegisterError(null);
+      setShowResendEmail(false);
+      setAuthError("");
     }
   }, [isOpen, defaultTab]);
 
@@ -205,19 +208,36 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
           data: {
             username: username,
           },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase signUp error:', error);
+        throw error;
+      }
       
       if (data?.user) {
         // User profile is automatically created by database trigger (handle_new_user)
         console.log('User signed up successfully, profile will be created automatically by database trigger');
+        console.log('User data:', {
+          id: data.user.id,
+          email: data.user.email,
+          email_confirmed_at: data.user.email_confirmed_at,
+          confirmed_at: data.user.confirmed_at,
+        });
         
-        if (!data.user.email_confirmed_at) {
+        // Check if email confirmation is required
+        // In development, if emails aren't working, we can check the session
+        const session = data.session;
+        console.log('Session after signup:', session ? 'Session exists (email might be auto-confirmed)' : 'No session (email confirmation required)');
+        
+        if (!data.user.email_confirmed_at && !session) {
           // Email confirmation required
+          console.warn('Email confirmation required. Check Supabase dashboard for email logs.');
           setAuthError(t("auth.errors.checkEmailToConfirm"));
           setIsSignUp(false);
+          setShowResendEmail(true);
           
           if (previewEnabled) {
             sessionStorage.setItem('isNewUser', 'true');
@@ -261,7 +281,7 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
               onClick={handleGoogleSignIn}
               disabled={authLoading}
               variant="outline"
-              className="w-full flex items-center justify-center hover:bg-gray-50"
+              className="w-full flex items-center justify-center bg-white hover:bg-gray-50"
             >
               {authLoading ? (
                 <Loader2 className="w-5 h-5 mr-2 animate-spin" />
@@ -284,8 +304,35 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
             {/* Email/Password Form */}
             <div className="space-y-4">
               {authError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-800">
-                  {authError}
+                <div className="space-y-2">
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-800 space-y-2">
+                    <div>{authError}</div>
+                  </div>
+                  {showResendEmail && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={async () => {
+                        try {
+                          await resendVerificationMutation.mutateAsync(authEmail.trim());
+                          setAuthError(t("auth.errors.emailResent"));
+                        } catch (error: any) {
+                          setAuthError(error.message || t("auth.errors.resendFailed"));
+                        }
+                      }}
+                      disabled={resendVerificationMutation.isPending || !authEmail.trim()}
+                      className="w-full bg-white"
+                    >
+                      {resendVerificationMutation.isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          {t("auth.errors.resendingEmail")}
+                        </>
+                      ) : (
+                        t("auth.errors.resendConfirmationEmail")
+                      )}
+                    </Button>
+                  )}
                 </div>
               )}
 
@@ -298,6 +345,7 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
                   value={authEmail}
                   onChange={(e) => setAuthEmail(e.target.value)}
                   disabled={authLoading}
+                  className="bg-white"
                 />
               </div>
 
@@ -310,49 +358,46 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
                   value={authPassword}
                   onChange={(e) => setAuthPassword(e.target.value)}
                   disabled={authLoading}
+                  className="bg-white"
                 />
               </div>
 
-              <Button
-                onClick={isSignUp ? handleEmailSignUp : handleEmailLogin}
-                disabled={authLoading || !authEmail || !authPassword}
-                className="w-full bg-[#f2662d] hover:bg-[#d9551f]"
-                style={{ backgroundColor: '#f2662d' }}
-              >
-                {authLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                {isSignUp ? t("auth.signUp") : t("auth.signIn")}
-              </Button>
-            </div>
-
-            {/* Toggle between Sign In / Sign Up */}
-            <div className="text-center text-sm text-gray-600">
-              {isSignUp ? (
-                <>
-                  {t("auth.alreadyHaveAccount")}{" "}
-                  <button
-                    onClick={() => {
-                      setIsSignUp(false);
-                      setAuthError("");
-                    }}
-                    className="text-[#f2662d] hover:underline font-medium"
-                  >
-                    {t("auth.signIn")}
-                  </button>
-                </>
-              ) : (
-                <>
-                  {t("auth.dontHaveAccount")}{" "}
-                  <button
+              {/* Buttons: Primary Sign In, Secondary Create account */}
+              <div className="flex flex-col md:flex-row gap-2">
+                <Button
+                  onClick={isSignUp ? handleEmailSignUp : handleEmailLogin}
+                  disabled={authLoading || !authEmail || !authPassword}
+                  className={`${isSignUp ? 'w-full' : 'flex-1'} bg-[#f2662d] hover:bg-[#d9551f]`}
+                  style={{ backgroundColor: '#f2662d' }}
+                >
+                  {authLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  {isSignUp ? t("auth.signUp") : t("auth.signIn")}
+                </Button>
+                {!isSignUp && (
+                  <Button
+                    variant="outline"
                     onClick={() => {
                       setIsSignUp(true);
                       setAuthError("");
                     }}
-                    className="text-[#f2662d] hover:underline font-medium"
+                    className="flex-1 bg-white"
                   >
-                    {t("auth.signUp")}
-                  </button>
-                </>
-              )}
+                    {t("auth.createAccount")}
+                  </Button>
+                )}
+                {isSignUp && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsSignUp(false);
+                      setAuthError("");
+                    }}
+                    className="flex-1 bg-white"
+                  >
+                    {t("auth.signIn")}
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </DialogContent>
@@ -399,7 +444,7 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
                           <FormItem>
                             <FormLabel>{t("auth.email")}</FormLabel>
                             <FormControl>
-                              <Input placeholder={t("auth.enterYourEmail")} {...field} />
+                              <Input placeholder={t("auth.enterYourEmail")} className="bg-white" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -412,27 +457,30 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
                           <FormItem>
                             <FormLabel>{t("auth.password")}</FormLabel>
                             <FormControl>
-                              <Input type="password" placeholder={t("auth.enterYourPassword")} {...field} />
+                              <Input type="password" placeholder={t("auth.enterYourPassword")} className="bg-white" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                      <Button type="submit" className="w-full" disabled={loginMutation.isPending}>
-                        {loginMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        {t("auth.signIn")}
-                      </Button>
+                      {/* Buttons: Primary Sign In, Secondary Create account */}
+                      <div className="flex flex-col md:flex-row gap-2">
+                        <Button type="submit" className="flex-1 bg-[#f2662d] hover:bg-[#d9551f]" disabled={loginMutation.isPending}>
+                          {loginMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          {t("auth.signIn")}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="flex-1 bg-white"
+                          onClick={() => setActiveTab("register")}
+                        >
+                          {t("auth.createAccount")}
+                        </Button>
+                      </div>
                     </form>
                   </Form>
                 </CardContent>
-                <CardFooter>
-                  <p className="text-sm text-center w-full">
-                    {t("auth.dontHaveAccount")}{" "}
-                    <Button variant="link" className="p-0" onClick={() => setActiveTab("register")}>
-                      {t("auth.signUpHere")}
-                    </Button>
-                  </p>
-                </CardFooter>
               </Card>
             </TabsContent>
             
@@ -461,7 +509,7 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
                             <FormItem>
                               <FormLabel>{t("auth.firstName")}</FormLabel>
                               <FormControl>
-                                <Input placeholder={t("auth.placeholders.firstName")} {...field} />
+                                <Input placeholder={t("auth.placeholders.firstName")} className="bg-white" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -474,7 +522,7 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
                             <FormItem>
                               <FormLabel>{t("auth.lastName")}</FormLabel>
                               <FormControl>
-                                <Input placeholder={t("auth.placeholders.lastName")} {...field} />
+                                <Input placeholder={t("auth.placeholders.lastName")} className="bg-white" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -489,7 +537,7 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
                           <FormItem>
                             <FormLabel>{t("auth.email")}</FormLabel>
                             <FormControl>
-                              <Input placeholder={t("auth.placeholders.email")} {...field} />
+                              <Input placeholder={t("auth.placeholders.email")} className="bg-white" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -502,7 +550,7 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
                           <FormItem>
                             <FormLabel>{t("auth.password")}</FormLabel>
                             <FormControl>
-                              <Input type="password" placeholder={t("auth.placeholders.password")} {...field} />
+                              <Input type="password" placeholder={t("auth.placeholders.password")} className="bg-white" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -516,12 +564,13 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
                   </Form>
                 </CardContent>
                 <CardFooter>
-                  <p className="text-sm text-center w-full">
-                    {t("auth.alreadyHaveAccount")}{" "}
-                    <Button variant="link" className="p-0" onClick={() => setActiveTab("login")}>
-                      {t("auth.signInHere")}
-                    </Button>
-                  </p>
+                  <Button
+                    variant="outline"
+                    className="w-full bg-white"
+                    onClick={() => setActiveTab("login")}
+                  >
+                    {t("auth.signIn")}
+                  </Button>
                 </CardFooter>
               </Card>
             </TabsContent>

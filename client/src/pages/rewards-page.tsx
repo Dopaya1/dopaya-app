@@ -6,7 +6,7 @@ import { UserImpact } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, Search, X, Gift, XCircle, Lock, Sparkles, ChevronLeft, ChevronRight, AlertCircle, Copy, Check } from "lucide-react";
+import { Loader2, Search, X, Gift, XCircle, Lock, Sparkles, ChevronLeft, ChevronRight, AlertCircle, Copy, Check, Info } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -93,6 +93,7 @@ export default function RewardsPage() {
   const [confirmReward, setConfirmReward] = useState<Reward | null>(null);
   const [unlockedReward, setUnlockedReward] = useState<Reward | null>(null);
   const [codeCopied, setCodeCopied] = useState<boolean>(false);
+  const [showValidityExplanation, setShowValidityExplanation] = useState<boolean>(false);
   const brandSliderRef = useRef<HTMLDivElement>(null);
   const brandSliderRefV2 = useRef<HTMLDivElement>(null);
   const rewardsSectionRef = useRef<HTMLElement>(null);
@@ -128,20 +129,20 @@ export default function RewardsPage() {
     console.log('unlockedReward state changed:', unlockedReward);
   }, [unlockedReward]);
 
-  // Check for unlock query parameters
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const unlock = urlParams.get('unlock');
-    const maxPoints = urlParams.get('maxPoints');
-    
-    if (unlock === '1' && maxPoints) {
-      setShowUnlockBanner(true);
-      setMaxPointsFilter(parseInt(maxPoints, 10));
-      // Clean up URL after showing banner (but keep filter state)
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, '', newUrl);
-    }
-  }, [location]);
+  // Check for unlock query parameters - REMOVED: No longer showing banner or setting filter automatically
+  // useEffect(() => {
+  //   const urlParams = new URLSearchParams(window.location.search);
+  //   const unlock = urlParams.get('unlock');
+  //   const maxPoints = urlParams.get('maxPoints');
+  //   
+  //   if (unlock === '1' && maxPoints) {
+  //     setShowUnlockBanner(true);
+  //     setMaxPointsFilter(parseInt(maxPoints, 10));
+  //     // Clean up URL after showing banner (but keep filter state)
+  //     const newUrl = window.location.pathname;
+  //     window.history.replaceState({}, '', newUrl);
+  //   }
+  // }, [location]);
 
   // Fetch brands - need ALL brands that are referenced in rewards, not just featured
   const { data: brands = [], isLoading: brandsLoading } = useQuery<Brand[]>({
@@ -537,6 +538,10 @@ export default function RewardsPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/user/impact"] });
       console.log('[handleConfirmUnlock] ✅ Invalidated impact query - navbar will update');
       
+      // Invalidate redemptions query to update dashboard immediately
+      queryClient.invalidateQueries({ queryKey: ["/api/user/redemptions-with-rewards"] });
+      console.log('[handleConfirmUnlock] ✅ Invalidated redemptions query - dashboard will update');
+      
       // Open success dialog after successful redemption
       setTimeout(() => {
         console.log('Opening success dialog with reward:', rewardToUnlock);
@@ -635,8 +640,8 @@ export default function RewardsPage() {
       <div className="container mx-auto py-24 px-4">
         <div className="max-w-7xl mx-auto">
 
-          {/* Unlock Banner (shown when coming from payment success) */}
-          {showUnlockBanner && (
+          {/* Unlock Banner - REMOVED per user request */}
+          {/* {showUnlockBanner && (
             <Alert className="mb-8 bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-200">
               <Gift className="h-5 w-5 text-yellow-600" />
               <AlertDescription className="flex items-center justify-between">
@@ -656,7 +661,7 @@ export default function RewardsPage() {
                 </Button>
               </AlertDescription>
             </Alert>
-          )}
+          )} */}
 
           {/* Locked State (preview only, first-time users) */}
           {previewEnabled && isFirstTimeUser && !showUnlockBanner && (
@@ -708,9 +713,6 @@ export default function RewardsPage() {
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
                             <h4 className="font-semibold text-gray-900">{getRewardTitle(reward, language)}</h4>
-                            <span className="text-sm font-medium text-[#f2662d]">
-                              {reward.pointsCost} {t("rewardsPage.impactPoints")}
-                            </span>
                           </div>
                           <p className="text-sm text-gray-600 line-clamp-2">
                             {reward.description}
@@ -1230,22 +1232,23 @@ export default function RewardsPage() {
                                   </p>
                                 )}
 
-                                {/* Impact Points Badge */}
-                                <div className="flex justify-center mb-3">
-                                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-amber-50 text-black border border-amber-200">
-                                    {reward.pointsCost} {t("rewardsPage.impactPoints")}
-                                  </span>
-                                </div>
-
                                 {/* CTA Button */}
-                                <Button
-                                  variant="outline"
-                                  className="w-full mt-auto bg-gray-100 hover:bg-orange-600 hover:text-white hover:border-orange-600 transition-colors"
-                                  onClick={() => handleRedeemReward(reward)}
-                                  aria-label={`Unlock reward: ${getRewardTitle(reward, language)}`}
-                                >
-                                  {t("rewardsPage.unlockRewardButton")}
-                                </Button>
+                                <div className="mt-auto space-y-2">
+                                  {/* Impact Points Badge - directly above button */}
+                                  <div className="flex justify-center">
+                                    <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-amber-50 text-black border border-amber-200">
+                                      {reward.pointsCost} {t("rewardsPage.impactPoints")}
+                                    </span>
+                                  </div>
+                                  <Button
+                                    variant="outline"
+                                    className="w-full bg-gray-100 hover:bg-orange-600 hover:text-white hover:border-orange-600 transition-colors"
+                                    onClick={() => handleRedeemReward(reward)}
+                                    aria-label={`Unlock reward: ${getRewardTitle(reward, language)}`}
+                                  >
+                                    {t("rewardsPage.unlockRewardButton")}
+                                  </Button>
+                                </div>
                               </div>
                             </div>
                           );
@@ -1442,6 +1445,7 @@ export default function RewardsPage() {
             console.log('Closing success dialog');
             setUnlockedReward(null);
             setCodeCopied(false); // Reset copied state when dialog closes
+            setShowValidityExplanation(false); // Reset explanation state when dialog closes
           }
         }}
       >
@@ -1540,17 +1544,54 @@ export default function RewardsPage() {
                         )}
                       </button>
                     </div>
-                    <p className="text-sm font-semibold text-black mt-3">
-                      {t("rewardsPage.importantNote")}
-                    </p>
                     {codeCopied && (
-                      <p className="text-sm text-green-600 font-medium flex items-center justify-center gap-1">
+                      <p className="text-sm text-green-600 font-medium flex items-center justify-center gap-1 mt-3">
                         <Check className="h-4 w-4" />
                         {t("rewardsPage.codeCopiedToClipboard")}
                       </p>
                     )}
                   </div>
                 )}
+
+                {/* Important Notes Box */}
+                <div className="bg-[#F8F6EF] border border-gray-200 rounded-lg p-4 space-y-3">
+                  <h4 className="text-sm font-semibold text-gray-900">
+                    {t("rewardsPage.importantNotes")}
+                  </h4>
+                  
+                  {/* Note 1: Copy code before leaving */}
+                  <div className="flex items-start gap-2">
+                    <span className="text-sm text-gray-700">•</span>
+                    <p className="text-sm text-gray-700 flex-1">
+                      {t("rewardsPage.importantNote")}
+                    </p>
+                  </div>
+                  
+                  {/* Note 2: 14 days validity with clickable info icon */}
+                  <div className="flex items-start gap-2">
+                    <span className="text-sm text-gray-700">•</span>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm text-gray-700">
+                          {t("rewardsPage.codeValidityNotice")}
+                        </p>
+                        <button
+                          onClick={() => setShowValidityExplanation(!showValidityExplanation)}
+                          className="text-gray-600 hover:text-gray-900 transition-colors"
+                          aria-label={t("rewardsPage.showExplanation")}
+                        >
+                          <Info className="h-4 w-4" />
+                        </button>
+                      </div>
+                      {/* Explanation - shown when clicked */}
+                      {showValidityExplanation && (
+                        <p className="text-xs text-gray-600 mt-2 pl-6">
+                          {t("rewardsPage.codeValidityExplanation")}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
 
                 {/* Product Link */}
                 {unlockedReward.rewardLink && (

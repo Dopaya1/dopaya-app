@@ -78,19 +78,48 @@ export default function AuthCallback() {
                 });
                 if (impactRes.ok) {
                   const impact = await impactRes.json();
-                  if (impact.impactPoints === 50) {
-                    // User has exactly 50 IP (from trigger), likely new user
+                  const impactPoints = impact.impactPoints ?? 0;
+                  const projectsSupported = impact.projectsSupported ?? 0;
+                  
+                  // Check if user qualifies for welcome bonus:
+                  // 1. Has exactly 50 points (from trigger) - record transaction
+                  // 2. Has 0 points and 0 donations - new user, give bonus and record transaction
+                  const isNewUser = impactPoints === 0 && projectsSupported === 0;
+                  const hasWelcomeBonus = impactPoints === 50;
+                  
+                  // Set new user flags for onboarding modals (for email confirmation flow)
+                  if (isNewUser || hasWelcomeBonus) {
+                    sessionStorage.setItem('isNewUser', 'true');
+                    sessionStorage.setItem('checkNewUser', 'true');
                     // Call welcome bonus endpoint (idempotent - safe to call multiple times)
+                    console.log('[auth-callback] 🔍 Calling welcome-bonus endpoint...', { isNewUser, hasWelcomeBonus, impactPoints, projectsSupported });
                     fetch('/api/user/welcome-bonus', { 
                       method: 'POST', 
                       credentials: 'include',
                       headers: {
                         'Authorization': `Bearer ${token}`
                       }
-                    }).catch(err => {
-                      // Non-critical - log but don't block user flow
-                      console.warn('[auth-callback] Welcome bonus call failed:', err);
+                    })
+                    .then(async res => {
+                      const responseText = await res.text();
+                      let responseData;
+                      try {
+                        responseData = JSON.parse(responseText);
+                      } catch {
+                        responseData = responseText;
+                      }
+                      
+                      if (res.ok) {
+                        console.log('[auth-callback] ✅ Welcome bonus applied successfully:', responseData);
+                      } else {
+                        console.error('[auth-callback] ❌ Welcome bonus failed:', res.status, res.statusText, responseData);
+                      }
+                    })
+                    .catch(err => {
+                      console.error('[auth-callback] ❌ Welcome bonus call error:', err);
                     });
+                  } else {
+                    console.log('[auth-callback] ⚠️ User does not qualify for welcome bonus:', { impactPoints, projectsSupported, isNewUser, hasWelcomeBonus });
                   }
                 } else {
                   console.warn('[auth-callback] Failed to fetch impact data:', impactRes.status, impactRes.statusText);
@@ -103,6 +132,25 @@ export default function AuthCallback() {
             
             // Check if preview mode is enabled
             const previewEnabled = isOnboardingPreviewEnabled();
+            
+            // Set flags BEFORE redirect to ensure they're available when dashboard loads
+            // Check if isNewUser flag was already set during signup (for email confirmation flow)
+            const existingIsNewUser = sessionStorage.getItem('isNewUser') === 'true';
+            if (existingIsNewUser) {
+              // Keep the flag and also set checkNewUser
+              sessionStorage.setItem('checkNewUser', 'true');
+              console.log('[auth-callback] ✅ Using existing isNewUser flag, also setting checkNewUser');
+            } else {
+              // Set both flags for email confirmation flow (flags were set above when welcome bonus was checked)
+              // If flags weren't set above (e.g., impact check failed), set them here as fallback
+              if (!sessionStorage.getItem('isNewUser')) {
+                sessionStorage.setItem('isNewUser', 'true');
+                sessionStorage.setItem('checkNewUser', 'true');
+                console.log('[auth-callback] ✅ Setting new user flags as fallback');
+              } else {
+                console.log('[auth-callback] ✅ New user flags already set from welcome bonus check');
+              }
+            }
             
             setStatus('success');
             setMessage('Email verified successfully! Redirecting...');
@@ -128,10 +176,13 @@ export default function AuthCallback() {
                 sessionStorage.removeItem('authReturnUrl');
                 window.location.href = returnUrl;
               } else if (previewEnabled) {
-                // In preview mode, check if new user (dashboard will determine based on impact data)
-                // Set flag to let dashboard check if user has 50 points and 0 donations
-                sessionStorage.setItem('checkNewUser', 'true');
-                navigate('/dashboard?previewOnboarding=1');
+                // Log flags before redirect for debugging
+                console.log('[auth-callback] 🔍 Redirecting to dashboard with flags:', {
+                  isNewUser: sessionStorage.getItem('isNewUser'),
+                  checkNewUser: sessionStorage.getItem('checkNewUser'),
+                  previewEnabled
+                });
+                navigate('/dashboard?newUser=1&previewOnboarding=1');
               } else {
                 navigate('/dashboard');
               }
@@ -154,7 +205,7 @@ export default function AuthCallback() {
         if (sessionData.session?.user) {
           console.log('User already authenticated');
           
-          // User profile is automatically created by database trigger
+          // User profile will be created by /api/user/impact if it doesn't exist (fallback)
           // Invalidate queries to refresh navbar and dashboard
           await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
           await queryClient.invalidateQueries({ queryKey: ["/api/user/impact"] });
@@ -168,6 +219,7 @@ export default function AuthCallback() {
             if (!token) {
               console.warn('[auth-callback] No auth token available for welcome bonus check');
             } else {
+              // First, fetch impact data - this will create the user if they don't exist
               const impactRes = await fetch('/api/user/impact', { 
                 credentials: 'include',
                 headers: {
@@ -176,9 +228,18 @@ export default function AuthCallback() {
               });
               if (impactRes.ok) {
                 const impact = await impactRes.json();
-                if (impact.impactPoints === 50) {
-                  // User has exactly 50 IP (from trigger), likely new user
+                const impactPoints = impact.impactPoints ?? 0;
+                const projectsSupported = impact.projectsSupported ?? 0;
+                
+                // Check if user qualifies for welcome bonus:
+                // 1. Has exactly 50 points (from trigger or creation) - record transaction
+                // 2. Has 0 points and 0 donations - new user, give bonus and record transaction
+                const isNewUser = impactPoints === 0 && projectsSupported === 0;
+                const hasWelcomeBonus = impactPoints === 50;
+                
+                if (isNewUser || hasWelcomeBonus) {
                   // Call welcome bonus endpoint (idempotent - safe to call multiple times)
+                  // This will create the user if they don't exist, then apply the bonus
                   fetch('/api/user/welcome-bonus', { 
                     method: 'POST', 
                     credentials: 'include',
@@ -266,19 +327,48 @@ export default function AuthCallback() {
                 });
                 if (impactRes.ok) {
                   const impact = await impactRes.json();
-                  if (impact.impactPoints === 50) {
-                    // User has exactly 50 IP (from trigger), likely new user
+                  const impactPoints = impact.impactPoints ?? 0;
+                  const projectsSupported = impact.projectsSupported ?? 0;
+                  
+                  // Check if user qualifies for welcome bonus:
+                  // 1. Has exactly 50 points (from trigger) - record transaction
+                  // 2. Has 0 points and 0 donations - new user, give bonus and record transaction
+                  const isNewUser = impactPoints === 0 && projectsSupported === 0;
+                  const hasWelcomeBonus = impactPoints === 50;
+                  
+                  // Set new user flags for onboarding modals (for email confirmation flow)
+                  if (isNewUser || hasWelcomeBonus) {
+                    sessionStorage.setItem('isNewUser', 'true');
+                    sessionStorage.setItem('checkNewUser', 'true');
                     // Call welcome bonus endpoint (idempotent - safe to call multiple times)
+                    console.log('[auth-callback] 🔍 Calling welcome-bonus endpoint...', { isNewUser, hasWelcomeBonus, impactPoints, projectsSupported });
                     fetch('/api/user/welcome-bonus', { 
                       method: 'POST', 
                       credentials: 'include',
                       headers: {
                         'Authorization': `Bearer ${token}`
                       }
-                    }).catch(err => {
-                      // Non-critical - log but don't block user flow
-                      console.warn('[auth-callback] Welcome bonus call failed:', err);
+                    })
+                    .then(async res => {
+                      const responseText = await res.text();
+                      let responseData;
+                      try {
+                        responseData = JSON.parse(responseText);
+                      } catch {
+                        responseData = responseText;
+                      }
+                      
+                      if (res.ok) {
+                        console.log('[auth-callback] ✅ Welcome bonus applied successfully:', responseData);
+                      } else {
+                        console.error('[auth-callback] ❌ Welcome bonus failed:', res.status, res.statusText, responseData);
+                      }
+                    })
+                    .catch(err => {
+                      console.error('[auth-callback] ❌ Welcome bonus call error:', err);
                     });
+                  } else {
+                    console.log('[auth-callback] ⚠️ User does not qualify for welcome bonus:', { impactPoints, projectsSupported, isNewUser, hasWelcomeBonus });
                   }
                 } else {
                   console.warn('[auth-callback] Failed to fetch impact data:', impactRes.status, impactRes.statusText);

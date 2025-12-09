@@ -8,13 +8,13 @@ import { getLocale } from './utils';
 /**
  * Format currency value
  * @param value - Amount to format
- * @param currency - Currency code (default: CHF)
  * @param language - Language for locale (default: 'en')
+ * @param currency - Currency code (default: USD)
  */
 export function formatCurrency(
   value: number,
-  currency: string = 'CHF',
-  language: Language = 'en'
+  language: Language = 'en',
+  currency: string = 'USD'
 ): string {
   const locale = getLocale(language);
   

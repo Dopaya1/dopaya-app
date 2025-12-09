@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { trackEvent } from "@/lib/simple-analytics";
 import { isOnboardingPreviewEnabled } from "@/lib/feature-flags";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Sparkles, Heart, Search, BarChart3, ChevronDown, Target, GraduationCap, Droplets, Leaf, Wind, Users, ArrowRight, Gift, Mail, Loader2 } from "lucide-react";
+import { Sparkles, Heart, Search, BarChart3, ChevronDown, Target, GraduationCap, Droplets, Leaf, Wind, Users, ArrowRight, Gift, Mail, Loader2, Share2, Info, Globe } from "lucide-react";
 import { triggerConfetti } from "@/lib/confetti";
 import ExpandableGallery from "@/components/ui/gallery-animation";
 import { getProjectImageUrl, getLogoUrl } from "@/lib/image-utils";
@@ -27,6 +27,9 @@ import { useTranslation } from "@/lib/i18n/use-translation";
 import { useI18n } from "@/lib/i18n/i18n-context";
 import { formatCurrency, formatNumber } from "@/lib/i18n/formatters";
 import { getProjectImpactUnit, getProjectImpactNoun, getProjectImpactVerb, getRewardTitle } from "@/lib/i18n/project-content";
+import { calculateImpact } from "@/lib/impact-calculator";
+import { ImpactSummaryModal } from "@/components/dashboard/impact-summary-modal";
+import { ImpactShareCard } from "@/components/dashboard/impact-share-card";
 
 
 export default function DashboardV2() {
@@ -53,6 +56,11 @@ export default function DashboardV2() {
   const [isNewsletterSubscribed, setIsNewsletterSubscribed] = useState(false);
   const [isNewsletterLoading, setIsNewsletterLoading] = useState(false);
   
+  // Impact Summary Modal state
+  const [showImpactSummaryModal, setShowImpactSummaryModal] = useState(false);
+  const [showShareCard, setShowShareCard] = useState(false);
+  const [selectedStat, setSelectedStat] = useState<any>(null);
+  
   // Tooltip state management - COMMENTED OUT (not needed)
   // const [currentTooltip, setCurrentTooltip] = useState<number | null>(null);
   // const tooltip1Shown = useRef(false);
@@ -78,6 +86,14 @@ export default function DashboardV2() {
       const newUrl = window.location.pathname + (previewEnabled ? '?previewOnboarding=1' : '');
       window.history.replaceState({}, '', newUrl);
     }
+    
+    // DEBUG: Log sessionStorage flags for troubleshooting
+    console.log('[Dashboard V2] SessionStorage flags:', {
+      checkNewUser: sessionStorage.getItem('checkNewUser'),
+      isNewUser: sessionStorage.getItem('isNewUser'),
+      newUserParam: newUser,
+      previewEnabled
+    });
     
     if (status === 'success' && amount) {
       setDonationAmount(parseFloat(amount));
@@ -121,9 +137,15 @@ export default function DashboardV2() {
     if (!user || !safeImpact) return;
     
     const impactPoints = safeImpact.impactPoints ?? 0;
+    const projectsSupported = safeImpact.projectsSupported ?? 0;
     
-    // Only check if user has exactly 50 points (from trigger) and hasn't checked before
-    if (impactPoints === 50) {
+    // Check if user qualifies for welcome bonus:
+    // 1. Has exactly 50 points (from trigger) - record transaction
+    // 2. Has 0 points and 0 donations - new user, give bonus and record transaction
+    const isNewUser = impactPoints === 0 && projectsSupported === 0;
+    const hasWelcomeBonus = impactPoints === 50;
+    
+    if (isNewUser || hasWelcomeBonus) {
       const welcomeBonusChecked = sessionStorage.getItem('welcomeBonusChecked');
       
       if (!welcomeBonusChecked) {
@@ -135,7 +157,7 @@ export default function DashboardV2() {
           const token = session?.access_token;
           
           if (token) {
-            console.log('[Dashboard V2] User has 50 IP, checking welcome bonus transaction...');
+            console.log('[Dashboard V2] User qualifies for welcome bonus (points:', impactPoints, ', donations:', projectsSupported, '), checking welcome bonus transaction...');
             
             fetch('/api/user/welcome-bonus', {
               method: 'POST',
@@ -154,8 +176,9 @@ export default function DashboardV2() {
               
               if (res.ok) {
                 console.log('[Dashboard V2] Welcome bonus response:', responseData);
-                // NOTE: Do NOT invalidate queries here - it causes infinite loop
-                // The query will refresh automatically on next mount or when user navigates
+                // Invalidate queries to refresh impact data after bonus is applied
+                // DON'T reload - let the modal stay open and user can close it manually
+                // The impact query will refresh automatically via React Query
               } else {
                 console.warn('[Dashboard V2] Welcome bonus check failed:', res.status, res.statusText, responseData);
               }
@@ -541,14 +564,14 @@ export default function DashboardV2() {
   });
 
   // Load More state for Projects
-  const [visibleCount, setVisibleCount] = useState(4);
-  const INITIAL_COUNT = 4;
-  const LOAD_MORE_COUNT = 4;
+  const [visibleCount, setVisibleCount] = useState(3);
+  const INITIAL_COUNT = 3;
+  const LOAD_MORE_COUNT = 3;
 
   // Load More state for Rewards
-  const [visibleRewardsCount, setVisibleRewardsCount] = useState(4);
-  const INITIAL_REWARDS_COUNT = 4;
-  const LOAD_MORE_REWARDS_COUNT = 4;
+  const [visibleRewardsCount, setVisibleRewardsCount] = useState(3);
+  const INITIAL_REWARDS_COUNT = 3;
+  const LOAD_MORE_REWARDS_COUNT = 3;
 
   // Fetch impact history to check if chart should be shown
   const { data: impactHistory } = useQuery<UserImpactHistory[]>({
@@ -567,9 +590,11 @@ export default function DashboardV2() {
   const { data: redemptionsWithRewards, isLoading: isLoadingRedemptions } = useQuery<RedemptionWithReward[]>({
     queryKey: ["/api/user/redemptions-with-rewards"],
     enabled: !!user, // Only fetch if user is logged in
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    retry: false,
   });
 
-  // Check if user has redemptions
+  // Check if user has redemptions (similar to hasSupported for projects)
   const hasRedemptions = redemptionsWithRewards && redemptionsWithRewards.length > 0;
 
   // Fetch all brands (for reward logos)
@@ -688,6 +713,16 @@ export default function DashboardV2() {
       data: featuredRewards
     });
   }, [featuredRewards, isLoadingFeaturedRewards, hasRedemptions]);
+
+  // Debug: Log redemptions state
+  useEffect(() => {
+    console.log('[Dashboard] Redemptions State:', {
+      isLoading: isLoadingRedemptions,
+      hasRedemptions,
+      redemptionsCount: redemptionsWithRewards?.length || 0,
+      redemptionsData: redemptionsWithRewards
+    });
+  }, [redemptionsWithRewards, isLoadingRedemptions, hasRedemptions]);
 
   // Prepare gallery data for Featured Rewards (like Projects) - MAX 3 for 3 columns
   const topRewards = useMemo(() => {
@@ -908,7 +943,7 @@ export default function DashboardV2() {
               {/* Updated microcopy for Impact Aspirers */}
               <div className="relative inline-block mb-3">
                 <p className="text-sm font-semibold text-gray-700 mb-1">
-                  {t("dashboard.receivedImpactPoints", { points: formatNumber(impactPoints), value: formatCurrency(pointsValue) })}
+                  {t("dashboard.receivedImpactPoints", { points: formatNumber(impactPoints), value: formatCurrency(pointsValue, language) })}
                 </p>
                 <p className="text-xs text-gray-500">
                   {t("dashboard.supportToUnlock")}
@@ -1033,173 +1068,169 @@ export default function DashboardV2() {
         <ImpactStats />
       </div>
 
-      {/* Social Enterprises Section */}
+      {/* Section 1: Social Enterprises - Two Column Layout */}
       <div className="mb-6" style={{ marginTop: '24px' }}>
-        {/* Main Headline */}
-        <h2 className="text-xl font-bold text-dark font-heading mb-6">{t("dashboard.socialEnterprises")}</h2>
+        {/* Main Headline - Outside the box */}
+        <h2 className="text-2xl font-bold text-dark font-heading mb-6 uppercase">{t("dashboard.socialEnterprises")}</h2>
         
-        {!hasSupported ? (
-          // NEW USERS: Show only Highlighted Social Enterprises (full width)
-          <div>
-            {isLoadingFeatured ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {Array(3).fill(0).map((_, i) => (
-                  <Card key={i} className="impact-card overflow-hidden">
-                    <Skeleton className="w-full h-48" />
-                    <div className="p-4">
-                      <Skeleton className="h-4 w-20 mb-2" />
-                      <Skeleton className="h-6 w-full mb-2" />
-                      <Skeleton className="h-4 w-full mb-4" />
-                      <Skeleton className="h-10 w-full" />
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            ) : featuredProjects && featuredProjects.length > 0 ? (
-              <div className="flex justify-center">
-                <ExpandableGallery
-                  images={galleryImages}
-                  taglines={galleryTaglines}
-                  className="w-full max-w-4xl"
-                  icons={galleryIcons}
-                  onImageClick={(index) => {
-                    if (index < topProjects.length) {
-                      setSelectedProject(topProjects[index]);
-                      handleFeaturedClick(topProjects[index].slug || '');
-                    }
-                  }}
-                />
-              </div>
-            ) : (
-              <div className="text-center py-6 bg-white rounded-lg shadow-sm">
-                <p className="text-neutral">{t("dashboard.noFeaturedAvailable")}</p>
-              </div>
-            )}
-          </div>
-        ) : (
-          // RETURNING USERS: Show two side-by-side sections
+        {/* White background box */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          {/* Two Column Grid: Left (50%) - Personal Content, Right (50%) - Highlighted */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Left: Social Enterprises you have supported */}
-            <div>
-              <h3 className="text-lg font-semibold text-dark font-heading mb-6">{t("dashboard.socialEnterprisesSupported")}</h3>
-            {isLoadingSupported ? (
-              <div className="space-y-3">
-                {Array(2).fill(0).map((_, i) => (
-                  <div key={i} className="flex items-stretch rounded-lg border border-gray-200 bg-white overflow-hidden">
-                    <Skeleton className="w-24 h-full flex-shrink-0" />
-                    <div className="flex-1 min-w-0 p-4 flex flex-col justify-center">
-                      <Skeleton className="h-5 w-32 mb-2" />
-                      <Skeleton className="h-4 w-40" />
-                    </div>
-                    <div className="flex-shrink-0 p-6 flex flex-col justify-center items-end border-l border-gray-200 min-w-[180px]">
-                      <Skeleton className="h-9 w-24 mb-2" />
-                      <Skeleton className="h-5 w-32" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : supportedProjectsWithDonations && supportedProjectsWithDonations.length > 0 ? (
-              <div className="space-y-3">
-                {/* Show only visibleCount projects */}
-                {supportedProjectsWithDonations.slice(0, visibleCount).map((item) => {
-                  const { project, totalAmount, totalImpactPoints, donationCount, lastDonationDate } = item;
-                  
-                  // Calculate impact description from project
-                  // Use impactUnit, impact_verb, impact_noun from project with language support
-                  const impactUnit = getProjectImpactUnit(project, language) || 'impact';
-                  const impactVerb = getProjectImpactVerb(project, language) || 'created';
-                  const impactNoun = getProjectImpactNoun(project, language) || impactUnit;
-                  
-                  // Calculate impact amount based on totalImpactPoints
-                  // For now, we'll use a simple calculation: totalImpactPoints / 10 as a rough estimate
-                  // This could be improved by using the project's donation tiers
-                  const impactAmount = Math.round(totalImpactPoints / 10); // Rough estimate
-                  
-                  const projectImageUrl = getProjectImageUrl(project) || project.imageUrl || '/placeholder-project.png';
-                  const formattedDate = lastDonationDate 
-                    ? new Date(lastDonationDate).toLocaleDateString(language === 'de' ? 'de-CH' : 'en-US', { 
-                        month: 'short', 
-                        day: 'numeric', 
-                        year: 'numeric' 
-                      })
-                    : t("dashboard.notAvailable");
-                  
-                  return (
-                    <div 
-                      key={project.id}
-                      className="flex items-stretch rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all bg-white group overflow-hidden"
-                    >
-                      {/* Image - Left Side (wider, no padding, flush to edges) */}
-                      <div className="flex-shrink-0">
-                        <img 
-                          src={projectImageUrl}
-                          alt={project.title}
-                          className="w-24 h-full object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = '/placeholder-project.png';
-                          }}
-                        />
-                      </div>
-                      
-                      {/* Middle Section - Name, Amount & Date */}
-                      <div className="flex-1 min-w-0 p-4 flex flex-col justify-center">
-                        {/* Project Name - Clickable Link */}
-                        <LanguageLink href={`/project/${project.slug || project.id}`} className="mb-2">
-                          <h4 className="text-base font-semibold text-gray-900 hover:text-[#f2662d] transition-colors group-hover:text-[#f2662d]">
-                            {project.title}
-                          </h4>
-                        </LanguageLink>
-                        
-                        {/* Amount & Date - Small */}
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                          <span>{formatCurrency(totalAmount)}</span>
-                          {donationCount > 1 && (
-                            <>
-                              <span>•</span>
-                              <span>{formatNumber(donationCount)} {t("dashboard.donations")}</span>
-                            </>
-                          )}
-                          <span>•</span>
-                          <span>{formattedDate}</span>
-                        </div>
-                      </div>
-                      
-                      {/* Right Section - Impact Information (Wider & Prominent) */}
-                      <div className="flex-shrink-0 p-6 flex flex-col justify-center items-end border-l border-gray-200 min-w-[180px]">
-                        <div className="text-right">
-                          <div className="mb-2">
-                            <span className="text-3xl font-bold text-[#f2662d]">
-                              {impactAmount}
-                            </span>
-                          </div>
-                          <div className="text-base text-gray-600 font-medium">
-                            {impactNoun} {impactVerb}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-                
-                {/* Load More Button */}
-                {visibleCount < supportedProjectsWithDonations.length && (
+          {/* LEFT COLUMN (50%) - User-centric / Primary Content */}
+          <div>
+            <h3 className="text-lg font-semibold text-dark font-heading mb-6">{t("dashboard.yourSupport")}</h3>
+            {!hasSupported ? (
+              // NEW USERS: Empty state (matching Rewards section style exactly)
+              <div className="p-8 text-center bg-gray-50 rounded-lg border border-gray-200">
+                <div className="max-w-sm mx-auto">
+                  <Globe className="w-10 h-10 mx-auto text-gray-400 mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    {t("dashboard.noStartupsSupported")}
+                  </h3>
+                  <p className="text-gray-600 text-sm mb-4">
+                    {t("dashboard.supportToUnlock")}
+                  </p>
                   <Button
-                    variant="outline"
-                    onClick={() => setVisibleCount(prev => prev + LOAD_MORE_COUNT)}
-                    className="w-full mt-4"
+                    className="bg-[#f2662d] hover:bg-[#d9551f] text-white font-semibold"
+                    style={{ backgroundColor: '#f2662d' }}
+                    onClick={() => handleSupportClick('empty-state')}
                   >
-                    {t("dashboard.loadMore", { remaining: supportedProjectsWithDonations.length - visibleCount })}
+                    {t("dashboard.supportAProject")}
                   </Button>
-                )}
+                </div>
               </div>
             ) : (
-              <div className="text-center py-6 bg-white rounded-lg shadow-sm">
-                <p className="text-neutral">{t("dashboard.noStartupsSupported")}</p>
+              // RETURNING USERS: Personal activity list
+              <div>
+                {isLoadingSupported ? (
+                  <div className="space-y-3">
+                    {Array(3).fill(0).map((_, i) => (
+                      <div key={i} className="flex items-stretch rounded-lg border border-gray-200 bg-white overflow-hidden">
+                        <Skeleton className="w-24 h-full flex-shrink-0" />
+                        <div className="flex-1 min-w-0 p-4 flex flex-col justify-center">
+                          <Skeleton className="h-5 w-32 mb-2" />
+                          <Skeleton className="h-4 w-40" />
+                        </div>
+                        <div className="flex-shrink-0 p-6 flex flex-col justify-center items-end border-l border-gray-200 min-w-[180px]">
+                          <Skeleton className="h-9 w-24 mb-2" />
+                          <Skeleton className="h-5 w-32" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : supportedProjectsWithDonations && supportedProjectsWithDonations.length > 0 ? (
+                  <div className="space-y-3">
+                    {supportedProjectsWithDonations.slice(0, visibleCount).map((item) => {
+                      const { project, totalAmount, totalImpactPoints, donationCount, lastDonationDate, donations } = item;
+                      
+                      const impactUnit = getProjectImpactUnit(project, language) || 'impact';
+                      const impactVerb = getProjectImpactVerb(project, language) || 'created';
+                      const impactNoun = getProjectImpactNoun(project, language) || impactUnit;
+                      
+                      // Calculate real impact by summing impact from each donation
+                      // Use the project's donation tiers to calculate actual impact
+                      let totalRealImpact = 0;
+                      if (donations && donations.length > 0) {
+                        // Sum impact from each individual donation
+                        totalRealImpact = donations.reduce((sum, donation) => {
+                          const donationAmount = donation.amount || 0;
+                          if (donationAmount > 0) {
+                            const impact = calculateImpact(project, donationAmount);
+                            return sum + (impact.impact || 0);
+                          }
+                          return sum;
+                        }, 0);
+                      } else {
+                        // Fallback: use totalAmount to calculate impact (if donations array not available)
+                        const impact = calculateImpact(project, totalAmount);
+                        totalRealImpact = impact.impact || 0;
+                      }
+                      
+                      const impactAmount = Math.round(totalRealImpact);
+                      
+                      const projectImageUrl = getProjectImageUrl(project) || project.imageUrl || '/placeholder-project.png';
+                      const formattedDate = lastDonationDate 
+                        ? new Date(lastDonationDate).toLocaleDateString(language === 'de' ? 'de-CH' : 'en-US', { 
+                            month: 'short', 
+                            day: 'numeric', 
+                            year: 'numeric' 
+                          })
+                        : t("dashboard.notAvailable");
+                      
+                      return (
+                        <div 
+                          key={project.id}
+                          className="flex items-stretch rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all bg-white group overflow-hidden"
+                        >
+                          {/* Left side: Main image (no space on top, bottom, left) */}
+                          <div className="flex-shrink-0">
+                            <img 
+                              src={projectImageUrl}
+                              alt={project.title}
+                              className="w-36 h-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = '/placeholder-project.png';
+                              }}
+                            />
+                          </div>
+                          
+                          {/* Right side: Name + 3 columns */}
+                          <div className="flex-1 min-w-0 flex flex-col gap-2.5 p-3">
+                            {/* Top: Name with link (spans whole width) */}
+                            <LanguageLink href={`/project/${project.slug || project.id}`}>
+                              <h4 className="text-base font-semibold text-gray-900 hover:text-[#f2662d] transition-colors group-hover:text-[#f2662d] w-full">
+                                {project.title}
+                              </h4>
+                            </LanguageLink>
+                            
+                            {/* Bottom: 2 columns with small headlines and numbers */}
+                            <div className="grid grid-cols-2 gap-6">
+                              {/* Column 1: Support Amount */}
+                              <div>
+                                <div className="text-xs text-gray-500 mb-1.5">
+                                  {t("dashboard.supportAmount")}
+                                </div>
+                                <div className="text-lg font-bold text-gray-900">
+                                  ${formatNumber(totalAmount)}
+                                </div>
+                              </div>
+                              
+                              {/* Column 2: Impact Points */}
+                              <div>
+                                <div className="text-xs text-gray-500 mb-1.5">
+                                  {t("dashboard.impactPoints")}
+                                </div>
+                                <div className="text-lg font-bold text-[#f2662d]">
+                                  {formatNumber(totalImpactPoints)}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    
+                    {visibleCount < supportedProjectsWithDonations.length && (
+                      <Button
+                        variant="outline"
+                        onClick={() => setVisibleCount(prev => prev + LOAD_MORE_COUNT)}
+                        className="w-full mt-4"
+                      >
+                        {t("dashboard.loadMore", { remaining: supportedProjectsWithDonations.length - visibleCount })}
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 bg-white rounded-lg shadow-sm">
+                    <p className="text-neutral">{t("dashboard.noStartupsSupported")}</p>
+                  </div>
+                )}
               </div>
             )}
           </div>
 
-          {/* Right: Highlighted Social Enterprises */}
+          {/* RIGHT COLUMN (50%) - Highlighted Social Enterprises */}
           <div>
             <h3 className="text-lg font-semibold text-dark font-heading mb-6">{t("dashboard.highlightedSocialEnterprises")}</h3>
             {isLoadingFeatured ? (
@@ -1238,20 +1269,217 @@ export default function DashboardV2() {
             )}
           </div>
         </div>
-        )}
+        </div>
       </div>
 
-      {/* Rewards Section */}
+      {/* Section 2: Rewards - Two Column Layout */}
       <div className="mb-6" style={{ marginTop: '24px' }}>
-        {/* Main Headline */}
-        <h2 className="text-xl font-bold text-dark font-heading mb-6">{t("dashboard.rewards")}</h2>
+        {/* Main Headline - Outside the box */}
+        <h2 className="text-2xl font-bold text-dark font-heading mb-6 uppercase">{t("dashboard.rewards")}</h2>
         
-        {!hasRedemptions ? (
-          // NEW USERS (no redemptions): Show only Featured Rewards (full width) with ExpandableGallery
+        {/* White background box */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          {/* Two Column Grid: Left (50%) - Empty/Placeholder, Right (50%) - Featured Rewards */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* LEFT COLUMN (50%) - User's redeemed rewards */}
           <div>
+            <h3 className="text-lg font-semibold text-dark font-heading mb-6">{t("dashboard.unlockedSurprises")}</h3>
+            {isLoadingRedemptions ? (
+              <div className="space-y-3">
+                {Array(2).fill(0).map((_, i) => (
+                  <div key={i} className="flex items-stretch rounded-lg border border-gray-200 bg-white overflow-hidden">
+                    <Skeleton className="w-24 h-full flex-shrink-0" />
+                    <div className="flex-1 min-w-0 p-4 flex flex-col justify-center">
+                      <Skeleton className="h-5 w-32 mb-2" />
+                      <Skeleton className="h-4 w-40" />
+                    </div>
+                    <div className="flex-shrink-0 p-6 flex flex-col justify-center items-end border-l border-gray-200 min-w-[180px]">
+                      <Skeleton className="h-9 w-24 mb-2" />
+                      <Skeleton className="h-5 w-32" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : hasRedemptions && redemptionsWithRewards && redemptionsWithRewards.length > 0 ? (
+              <div className="space-y-3">
+                {redemptionsWithRewards.slice(0, visibleRewardsCount).map((item, index) => {
+                  const { reward, pointsSpent, redemptionDate, status } = item;
+                  
+                  if (!reward) return null;
+                  
+                  const rewardImageUrl = reward.imageUrl || reward.image_url || '/placeholder-reward.png';
+                  const formattedDate = redemptionDate 
+                    ? new Date(redemptionDate).toLocaleDateString(language === 'de' ? 'de-CH' : 'en-US', { 
+                        month: 'short', 
+                        day: 'numeric', 
+                        year: 'numeric' 
+                      })
+                    : t("dashboard.notAvailable");
+                  
+                  // Calculate days since redemption (14 days expiry)
+                  const daysSinceRedemption = redemptionDate 
+                    ? Math.floor((new Date().getTime() - new Date(redemptionDate).getTime()) / (1000 * 60 * 60 * 24))
+                    : null;
+                  const isCodeExpired = daysSinceRedemption !== null && daysSinceRedemption >= 14;
+                  const daysRemaining = daysSinceRedemption !== null ? Math.max(0, 14 - daysSinceRedemption) : null;
+                  
+                  return (
+                    <div 
+                      key={`${item.redemption.id || index}`}
+                      className="flex flex-col md:flex-row items-stretch rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all bg-white group overflow-hidden"
+                    >
+                      <div className="flex-shrink-0 md:w-28 w-full h-32 md:h-auto">
+                        <img 
+                          src={rewardImageUrl}
+                          alt={getRewardTitle(reward, language)}
+                          className="w-full h-full md:w-28 md:h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = '/placeholder-reward.png';
+                          }}
+                        />
+                      </div>
+                      
+                      <div className="flex-1 min-w-0 p-3 flex flex-col justify-center">
+                        {(() => {
+                          const rewardAny = reward as any;
+                          const brand = rewardAny.brands || rewardAny.brand;
+                          if (brand) {
+                            const rawBrand = brand as any;
+                            const logoPath = rawBrand.logo_path || rawBrand.logoPath || rawBrand.logo_url || rawBrand.logoUrl;
+                            const logoUrl = logoPath ? getLogoUrl(logoPath) : null;
+                            
+                            if (logoUrl) {
+                              return (
+                                <div className="mb-2">
+                                  <img 
+                                    src={logoUrl}
+                                    alt={brand.name || 'Brand logo'}
+                                    className="h-6 w-auto object-contain"
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).style.display = 'none';
+                                    }}
+                                  />
+                                </div>
+                              );
+                            }
+                          }
+                          return null;
+                        })()}
+                        
+                        <h4 className="text-base font-semibold text-gray-900 mb-2">
+                          {getRewardTitle(reward, language)}
+                        </h4>
+                        
+                        <div className="flex items-center gap-2 text-xs text-gray-500 mb-3 md:mb-0">
+                          <span>{pointsSpent} points</span>
+                          <span>•</span>
+                          <span>{formattedDate}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex-shrink-0 p-3 md:p-4 flex flex-row md:flex-col justify-between md:justify-center items-center md:items-end border-t md:border-t-0 md:border-l border-gray-200 md:min-w-[180px] w-full md:w-auto">
+                        <div className="text-left md:text-right">
+                          {/* Only show code if less than 14 days old */}
+                          {!isCodeExpired ? (
+                            <>
+                              <div className="mb-2">
+                                <span className="text-lg md:text-xl font-bold text-gray-900 font-mono">
+                                  {(reward as any).promo_code || (reward as any).promoCode || 'N/A'}
+                                </span>
+                              </div>
+                              <div className="text-sm text-gray-600 font-medium mb-1">
+                                {t("dashboard.code")}
+                              </div>
+                              {/* Show days remaining - always show if code is not expired */}
+                              {daysRemaining !== null && daysRemaining > 0 && daysRemaining <= 14 && (
+                                <div className="text-xs text-gray-500 mb-1">
+                                  {t("dashboard.codeExpiresIn", { days: daysRemaining })}
+                                </div>
+                              )}
+                              {/* Company Link - only show if code is not expired */}
+                              {((reward as any).rewardLink || (reward as any).reward_link) && (
+                                <a
+                                  href={(reward as any).rewardLink || (reward as any).reward_link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs text-[#f2662d] hover:text-[#d9551f] hover:underline inline-block"
+                                >
+                                  {t("dashboard.redeem")}
+                                </a>
+                              )}
+                            </>
+                          ) : (
+                            /* Code expired - show notice with info icon */
+                            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 flex items-start gap-2">
+                              <Info className="h-4 w-4 text-gray-600 flex-shrink-0 mt-0.5" />
+                              <div className="flex-1">
+                                <p className="text-xs font-medium text-gray-900 mb-1">
+                                  {t("dashboard.codeNotAvailable")}
+                                </p>
+                                <p className="text-xs text-gray-600">
+                                  {t("dashboard.codeNotAvailableExplanation")}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                
+                {visibleRewardsCount < redemptionsWithRewards.length && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setVisibleRewardsCount(prev => prev + LOAD_MORE_REWARDS_COUNT)}
+                    className="w-full mt-4"
+                  >
+                    Load More ({redemptionsWithRewards.length - visibleRewardsCount} remaining)
+                  </Button>
+                )}
+              </div>
+            ) : !hasRedemptions && impactPoints > 0 ? (
+              // User has points but hasn't unlocked any rewards yet
+              <div className="p-8 text-center bg-gray-50 rounded-lg border border-gray-200">
+                <div className="max-w-sm mx-auto">
+                  <Gift className="w-10 h-10 mx-auto text-gray-400 mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    {t("dashboard.noRewardsUnlocked")}
+                  </h3>
+                  <p className="text-gray-600 text-sm mb-4">
+                    {t("dashboard.useImpactPointsToUnlock")}
+                  </p>
+                  <Button
+                    className="bg-[#f2662d] hover:bg-[#d9551f] text-white font-semibold"
+                    style={{ backgroundColor: '#f2662d' }}
+                    onClick={handleRedeemClick}
+                  >
+                    {t("dashboard.getRewards")}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              // New user with no points
+              <div className="p-8 text-center bg-gray-50 rounded-lg border border-gray-200">
+                <div className="max-w-sm mx-auto">
+                  <Gift className="w-10 h-10 mx-auto text-gray-400 mb-4" />
+                  <p className="text-gray-600 text-sm">
+                    {t("dashboard.noRewardsRedeemed")}
+                  </p>
+                  <p className="text-gray-500 text-xs mt-2">
+                    {t("dashboard.supportToUnlock")}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* RIGHT COLUMN (50%) - Featured Rewards */}
+          <div>
+            <h3 className="text-lg font-semibold text-dark font-heading mb-6">{t("dashboard.featuredRewards")}</h3>
             {isLoadingFeaturedRewards ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {Array(3).fill(0).map((_, i) => (
+              <div className="grid grid-cols-1 gap-6">
+                {Array(2).fill(0).map((_, i) => (
                   <Card key={i} className="impact-card overflow-hidden">
                     <Skeleton className="w-full h-48" />
                     <div className="p-4">
@@ -1268,7 +1496,7 @@ export default function DashboardV2() {
                 <ExpandableGallery
                   images={rewardGalleryImages}
                   taglines={rewardGalleryTaglines}
-                  className="w-full max-w-4xl"
+                  className="w-full"
                   icons={rewardGalleryIcons}
                   logos={rewardGalleryLogos}
                   onImageClick={() => {
@@ -1283,193 +1511,23 @@ export default function DashboardV2() {
               </div>
             )}
           </div>
-        ) : (
-          // RETURNING USERS (with redemptions): Show two side-by-side sections
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Left: Sustainable rewards you have unlocked */}
-            <div>
-              <h3 className="text-lg font-semibold text-dark font-heading mb-6">{t("dashboard.sustainableRewardsUnlocked")}</h3>
-              {isLoadingRedemptions ? (
-                <div className="space-y-3">
-                  {Array(2).fill(0).map((_, i) => (
-                    <div key={i} className="flex items-stretch rounded-lg border border-gray-200 bg-white overflow-hidden">
-                      <Skeleton className="w-24 h-full flex-shrink-0" />
-                      <div className="flex-1 min-w-0 p-4 flex flex-col justify-center">
-                        <Skeleton className="h-5 w-32 mb-2" />
-                        <Skeleton className="h-4 w-40" />
-                      </div>
-                      <div className="flex-shrink-0 p-6 flex flex-col justify-center items-end border-l border-gray-200 min-w-[180px]">
-                        <Skeleton className="h-9 w-24 mb-2" />
-                        <Skeleton className="h-5 w-32" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : redemptionsWithRewards && redemptionsWithRewards.length > 0 ? (
-                <div className="space-y-3">
-                  {/* Show only visibleRewardsCount redemptions */}
-                  {redemptionsWithRewards.slice(0, visibleRewardsCount).map((item, index) => {
-                    const { reward, pointsSpent, redemptionDate, status } = item;
-                    
-                    if (!reward) return null; // Skip if reward data is missing
-                    
-                    const rewardImageUrl = reward.imageUrl || reward.image_url || '/placeholder-reward.png';
-                    const formattedDate = redemptionDate 
-                      ? new Date(redemptionDate).toLocaleDateString(language === 'de' ? 'de-CH' : 'en-US', { 
-                          month: 'short', 
-                          day: 'numeric', 
-                          year: 'numeric' 
-                        })
-                      : t("dashboard.notAvailable");
-                    
-                    return (
-                      <div 
-                        key={`${item.redemption.id || index}`}
-                        className="flex items-stretch rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all bg-white group overflow-hidden"
-                      >
-                        {/* Image - Left Side (wider, no padding, flush to edges) */}
-                        <div className="flex-shrink-0">
-                          <img 
-                            src={rewardImageUrl}
-                            alt={reward.title}
-                            className="w-24 h-full object-cover"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = '/placeholder-reward.png';
-                            }}
-                          />
-                        </div>
-                        
-                        {/* Middle Section - Name, Points & Date */}
-                        <div className="flex-1 min-w-0 p-4 flex flex-col justify-center">
-                          {/* Brand Logo - Above Title */}
-                          {(() => {
-                            const rewardAny = reward as any;
-                            const brand = rewardAny.brands || rewardAny.brand;
-                            if (brand) {
-                              const rawBrand = brand as any;
-                              const logoPath = rawBrand.logo_path || rawBrand.logoPath || rawBrand.logo_url || rawBrand.logoUrl;
-                              const logoUrl = logoPath ? getLogoUrl(logoPath) : null;
-                              
-                              if (logoUrl) {
-                                return (
-                                  <div className="mb-2">
-                                    <img 
-                                      src={logoUrl}
-                                      alt={brand.name || 'Brand logo'}
-                                      className="h-6 w-auto object-contain"
-                                      onError={(e) => {
-                                        (e.target as HTMLImageElement).style.display = 'none';
-                                      }}
-                                    />
-                                  </div>
-                                );
-                              }
-                            }
-                            return null;
-                          })()}
-                          
-                          {/* Reward Name - Clickable Link */}
-                          <Link href="/rewards" className="mb-2">
-                            <h4 className="text-base font-semibold text-gray-900 hover:text-[#f2662d] transition-colors group-hover:text-[#f2662d]">
-                              {getRewardTitle(reward, language)}
-                            </h4>
-                          </Link>
-                          
-                          {/* Points & Date - Small */}
-                          <div className="flex items-center gap-2 text-xs text-gray-500">
-                            <span>{pointsSpent} points</span>
-                            <span>•</span>
-                            <span>{formattedDate}</span>
-                            {status && status !== 'fulfilled' && (
-                              <>
-                                <span>•</span>
-                                <span className="text-orange-600">{status}</span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                        
-                        {/* Right Section - Points Information (Wider & Prominent) */}
-                        <div className="flex-shrink-0 p-6 flex flex-col justify-center items-end border-l border-gray-200 min-w-[180px]">
-                          <div className="text-right">
-                            <div className="mb-2">
-                              <span className="text-3xl font-bold text-[#f2662d]">
-                                {pointsSpent}
-                              </span>
-                            </div>
-                            <div className="text-base text-gray-600 font-medium">
-                              points spent
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  
-                  {/* Load More Button */}
-                  {visibleRewardsCount < redemptionsWithRewards.length && (
-                    <Button
-                      variant="outline"
-                      onClick={() => setVisibleRewardsCount(prev => prev + LOAD_MORE_REWARDS_COUNT)}
-                      className="w-full mt-4"
-                    >
-                      Load More ({redemptionsWithRewards.length - visibleRewardsCount} remaining)
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                <div className="text-center py-6 bg-white rounded-lg shadow-sm">
-                  <p className="text-neutral">{t("dashboard.noRewardsRedeemed")}</p>
-                </div>
-              )}
-            </div>
-
-            {/* Right: Highlighted sustainable rewards */}
-            <div>
-              <h3 className="text-lg font-semibold text-dark font-heading mb-6">Highlighted sustainable rewards</h3>
-              {isLoadingFeaturedRewards ? (
-                <div className="grid grid-cols-1 gap-6">
-                  {Array(2).fill(0).map((_, i) => (
-                    <Card key={i} className="impact-card overflow-hidden">
-                      <Skeleton className="w-full h-48" />
-                      <div className="p-4">
-                        <Skeleton className="h-4 w-20 mb-2" />
-                        <Skeleton className="h-6 w-full mb-2" />
-                        <Skeleton className="h-4 w-full mb-4" />
-                        <Skeleton className="h-10 w-full" />
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              ) : featuredRewards && featuredRewards.length > 0 ? (
-                <div className="flex justify-center">
-                  <ExpandableGallery
-                    images={rewardGalleryImages}
-                    taglines={rewardGalleryTaglines}
-                    className="w-full"
-                    icons={rewardGalleryIcons}
-                    logos={rewardGalleryLogos}
-                    onImageClick={() => {
-                      // Always navigate to rewards page
-                      navigate('/rewards');
-                    }}
-                  />
-                </div>
-              ) : (
-                <div className="text-center py-6 bg-white rounded-lg shadow-sm">
-                  <p className="text-neutral">{t("dashboard.noFeaturedRewards")}</p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        </div>
+        </div>
       </div>
 
-      {/* Impact Over Time - Graph with overlay placeholder for all users */}
-      <Card className="mb-12 relative">
-        <CardHeader className="relative z-10 bg-white">
-          <CardTitle>{t("dashboard.yourImpactOverTime")}</CardTitle>
-          <div className="flex items-center space-x-6 text-sm mt-2">
+
+      {/* Impact Dashboard Section */}
+      <div className="mb-6" style={{ marginTop: '24px' }}>
+        {/* Main Headline - Outside the box */}
+        <h2 className="text-xl font-bold text-dark font-heading mb-6">Impact Dashboard</h2>
+        
+        {/* White background box */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          {/* Impact Over Time - Graph with overlay placeholder for all users */}
+          <Card className="relative">
+        <CardHeader className="relative z-10 bg-white pb-6 px-4 md:px-6">
+          <CardTitle className="text-xl md:text-2xl">{t("dashboard.yourImpactOverTime")}</CardTitle>
+          <div className="flex flex-wrap items-center gap-3 md:gap-6 text-xs md:text-sm mt-2">
             <div className="flex items-center space-x-2">
               <div className="w-3 h-0.5 bg-primary"></div>
               <span className="text-gray-600">{t("dashboard.impactPoints")}</span>
@@ -1484,30 +1542,26 @@ export default function DashboardV2() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="relative">
-          <div className="relative z-0">
+        <CardContent className="relative p-4 md:p-6">
+          <div className="relative z-0" style={{ minHeight: '400px' }}>
             <ImpactChart />
           </div>
           
           {/* Overlay placeholder - 75% opacity */}
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/75 backdrop-blur-sm rounded-lg" style={{ top: 0, left: 0, right: 0, bottom: 0 }}>
-            <div className="flex flex-col items-center justify-center py-12 text-center max-w-md px-4">
-            <h3 className="text-lg font-semibold text-gray-700 mb-3">
+            <div className="flex flex-col items-center justify-center py-8 md:py-16 text-center max-w-md px-4">
+            <h3 className="text-base md:text-lg font-semibold text-gray-700 mb-3">
               {t("dashboard.comingSoon")}
             </h3>
-            <p className="text-base text-gray-500 mb-6">
+            <p className="text-sm md:text-base text-gray-500 mb-6 px-2">
               {t("dashboard.personalImpactDashboard")}
             </p>
             
             {/* Newsletter Signup Section - Replaces "Keep me updated" button */}
-            <div className="w-full">
-              <p className="text-sm text-gray-500 mb-4">
-                {t("dashboard.getNotifiedWhenReady")}
-              </p>
-              
+            <div className="w-full px-2">
               {isNewsletterSubscribed ? (
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <p className="text-sm text-green-700 font-medium">
+                <div className="p-3 md:p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-xs md:text-sm text-green-700 font-medium">
                     ✓ Thank you for subscribing! We'll keep you updated.
                   </p>
                 </div>
@@ -1559,21 +1613,21 @@ export default function DashboardV2() {
                       setIsNewsletterLoading(false);
                     }
                   }}
-                  className="flex gap-2"
+                  className="flex flex-col sm:flex-row gap-2"
                 >
                   <input
                     type="email"
                     value={newsletterEmail}
                     onChange={(e) => setNewsletterEmail(e.target.value)}
                     placeholder="Enter your email"
-                    className="flex-1 px-4 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#f2662d] focus:border-transparent"
+                    className="flex-1 px-3 md:px-4 py-2 rounded-lg border border-gray-300 text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-[#f2662d] focus:border-transparent"
                     required
                     disabled={isNewsletterLoading}
                   />
                   <Button
                     type="submit"
                     disabled={isNewsletterLoading}
-                    className="px-6 py-2 bg-[#f2662d] hover:bg-[#d9551f] text-white text-sm font-medium"
+                    className="px-4 md:px-6 py-2 bg-[#f2662d] hover:bg-[#d9551f] text-white text-xs md:text-sm font-medium whitespace-nowrap"
                   >
                     {isNewsletterLoading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -1583,11 +1637,18 @@ export default function DashboardV2() {
                   </Button>
                 </form>
               )}
+              
+              {/* Text below newsletter subscription */}
+              <p className="text-xs md:text-sm text-gray-500 mt-4 text-center">
+                {t("dashboard.getNotifiedWhenReady")}
+              </p>
             </div>
             </div>
           </div>
         </CardContent>
       </Card>
+        </div>
+      </div>
       
       <DonationSuccessModal 
         isOpen={showSuccessModal}
@@ -1734,15 +1795,28 @@ export default function DashboardV2() {
                 {/* Step 1 — Your Journey Begins */}
                 <div className="mx-auto w-20 h-20 mb-6">
                   <div className="w-20 h-20 bg-gradient-to-br from-yellow-100 to-orange-100 rounded-full flex items-center justify-center animate-pulse">
-                    <Sparkles className="w-10 h-10 text-[#f2662d]" />
+                    <span className="text-5xl">🎉</span>
                   </div>
                 </div>
                 <DialogTitle className="text-2xl font-bold text-gray-900">
-                  🎉 Welcome to Dopaya!
+                  {t("dashboard.welcomeModalHeadline")}
                 </DialogTitle>
-                <DialogDescription className="text-base text-gray-600 pt-4 pb-8">
-                  <p className="text-sm text-gray-700 leading-relaxed">
-                    To celebrate that you are part of our community, we've added <span className="font-semibold">50 Impact Points</span> to your account - worth about $5 to use toward future rewards :)
+                <DialogDescription className="text-base text-gray-600 pt-2 pb-4">
+                  <p className="text-base font-medium text-gray-800 mb-4">
+                    {t("dashboard.welcomeModalSubheadline")}
+                  </p>
+                  <p className="text-base text-gray-700 leading-relaxed">
+                    {(() => {
+                      const text = t("dashboard.welcomeModalText");
+                      // Split text by "50 Impact Points" and "$5" to make them bold
+                      const parts = text.split(/(50 Impact Points|\$5)/);
+                      return parts.map((part, i) => {
+                        if (part === "50 Impact Points" || part === "$5") {
+                          return <strong key={i}>{part}</strong>;
+                        }
+                        return <span key={i}>{part}</span>;
+                      });
+                    })()}
                   </p>
                 </DialogDescription>
                 <div className="mt-0">
@@ -1760,10 +1834,10 @@ export default function DashboardV2() {
                 <DialogHeader>
                   {/* Step 2 — Choose Your Path */}
                   <DialogTitle className="text-2xl font-bold text-gray-900 mb-2">
-                    Ready to make your first impact?
+                    {t("dashboard.welcomeModalStep2Headline")}
                   </DialogTitle>
                   <DialogDescription className="text-sm text-gray-700 pt-1 mb-6">
-                    Choose how you'd like to start:
+                    {t("dashboard.welcomeModalStep2Subheadline")}
                   </DialogDescription>
                 </DialogHeader>
 
@@ -1785,7 +1859,7 @@ export default function DashboardV2() {
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-gray-900">
-                        {t("dashboard.supportAProject")}
+                        {t("dashboard.welcomeModalStep2Option1")}
                       </p>
                       <p className="text-xs text-gray-700 mt-1">
                         Start with a small amount and unlock your first reward.
@@ -1810,7 +1884,7 @@ export default function DashboardV2() {
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-gray-900">
-                        Discover inspiring social enterprises
+                        {t("dashboard.welcomeModalStep2Option2")}
                       </p>
                       <p className="text-xs text-gray-700 mt-1">
                         {t("dashboard.exploreVerifiedInnovators")}
@@ -1834,7 +1908,7 @@ export default function DashboardV2() {
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-gray-900">
-                        View your dashboard
+                        {t("dashboard.welcomeModalStep2Option3")}
                       </p>
                       <p className="text-xs text-gray-700 mt-1">
                         Track your points, rank, and progress.
@@ -1844,12 +1918,54 @@ export default function DashboardV2() {
                 </div>
 
                 <p className="mt-3 text-[11px] text-gray-500 text-center">
-                  Recommended: <span className="font-semibold">Support a project</span> →
+                  {t("dashboard.welcomeModalStep2Recommended")}
                 </p>
               </>
             )}
           </DialogContent>
         </Dialog>
+      )}
+
+      {/* Sticky Impact Share Button - Circular, orange, bottom-right */}
+      {/* Only show if user has supported projects with actual impact data AND not in checkout/donation flow */}
+      {hasSupported && safeImpact && supportedProjectsWithDonations && supportedProjectsWithDonations.length > 0 && 
+       supportedProjectsWithDonations.some(item => item.donations && item.donations.length > 0 && item.donations.some((d: any) => (d.amount || 0) > 0)) &&
+       !selectedProject && !showDonationDropdown && (
+        <div className="fixed bottom-6 right-6 z-40">
+          <button
+            onClick={() => setShowImpactSummaryModal(true)}
+            className="bg-[#f2662d] hover:bg-[#d9551f] text-white rounded-full shadow-[0_4px_16px_rgba(0,0,0,0.15)] flex items-center gap-2 transition-all hover:scale-110 group px-4 py-3 md:px-5 md:py-3"
+            aria-label={t("impactSummary.openSummary")}
+          >
+            <Sparkles className="w-5 h-5 flex-shrink-0" />
+            <span className="hidden md:inline-block text-sm font-medium whitespace-nowrap">
+              {t("impactSummary.yourImpact")}
+            </span>
+          </button>
+        </div>
+      )}
+
+      {/* Impact Summary Modal */}
+      {hasSupported && (
+        <>
+          <ImpactSummaryModal
+            isOpen={showImpactSummaryModal}
+            onClose={() => setShowImpactSummaryModal(false)}
+            impact={safeImpact}
+            onShareStat={(stat) => {
+              setSelectedStat(stat);
+              setShowShareCard(true);
+            }}
+          />
+          <ImpactShareCard
+            isOpen={showShareCard}
+            onClose={() => {
+              setShowShareCard(false);
+              setSelectedStat(null);
+            }}
+            stat={selectedStat}
+          />
+        </>
       )}
     </div>
   );

@@ -291,7 +291,6 @@ export default function SupportPage() {
         {/* Mini-journey overlay */}
         {showMiniJourney && (
           <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
-
             {/* External close / skip button */}
             <button
               type="button"
@@ -311,6 +310,7 @@ export default function SupportPage() {
             />
           </div>
         )}
+
         {/* Custom header: back button left, Dopaya logo centered, no other elements */}
         <header className="bg-white border-b border-gray-100">
           <div className="max-w-5xl mx-auto flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">

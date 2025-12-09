@@ -32,7 +32,7 @@ const MemoryStore = createMemoryStore(session);
 // This ensures environment variables are loaded before initialization
 let supabase: ReturnType<typeof createClient> | null = null;
 
-function getSupabaseClient(): ReturnType<typeof createClient> {
+export function getSupabaseClient(): ReturnType<typeof createClient> {
   if (supabase) {
     return supabase;
   }
@@ -719,6 +719,19 @@ export class SupabaseStorage implements IStorage {
         const currentBalance = (user as any).impactPoints ?? 0;
         const newBalance = currentBalance + pointsChange;
         
+        // CRITICAL FIX: Update balance FIRST, then create transaction
+        // This ensures that if balance update fails, no orphaned transaction is created
+        // Update cached balance in users table (use camelCase for users table)
+        const { error: updateError } = await supabaseClient
+          .from('users')
+          .update({ impactPoints: newBalance })
+          .eq('id', userId);
+        
+        if (updateError) {
+          throw new Error(`Failed to update balance: ${updateError.message}`);
+        }
+        
+        // Only create transaction AFTER balance update succeeds
         // Insert transaction record (use snake_case for user_transactions table)
         const { error: transactionError } = await supabaseClient
           .from('user_transactions')
@@ -737,17 +750,20 @@ export class SupabaseStorage implements IStorage {
           }]);
         
         if (transactionError) {
+          // CRITICAL: If transaction creation fails, rollback the balance update
+          console.error(`[applyPointsChange] ❌ Transaction creation failed, rolling back balance update...`);
+          const { error: rollbackError } = await supabaseClient
+            .from('users')
+            .update({ impactPoints: currentBalance })
+            .eq('id', userId);
+          
+          if (rollbackError) {
+            console.error(`[applyPointsChange] ❌ CRITICAL: Failed to rollback balance update!`, rollbackError);
+          } else {
+            console.log(`[applyPointsChange] ✅ Balance rollback successful`);
+          }
+          
           throw new Error(`Failed to create transaction: ${transactionError.message}`);
-        }
-        
-        // Update cached balance in users table (use camelCase for users table)
-        const { error: updateError } = await supabaseClient
-          .from('users')
-          .update({ impactPoints: newBalance })
-          .eq('id', userId);
-        
-        if (updateError) {
-          throw new Error(`Failed to update balance: ${updateError.message}`);
         }
         
         console.log(`[applyPointsChange] ✅ Fallback method (attempt ${attempt}). User ${userId}: ${pointsChange > 0 ? '+' : ''}${pointsChange} points. Balance: ${currentBalance} → ${newBalance}`);
@@ -1005,22 +1021,110 @@ export class SupabaseStorage implements IStorage {
     
     try {
       // Step 1: Insert redemption record
-      const { data, error } = await getSupabaseClient()
+      console.log('[createRedemption] ========== REDEMPTION INSERT ATTEMPT ==========');
+      console.log('[createRedemption] Input data:', JSON.stringify(redemption, null, 2));
+      
+      // Try camelCase first (as per user's table structure)
+      let redemptionData: any = {
+        userId: redemption.userId,
+        rewardId: redemption.rewardId,
+        pointsSpent: redemption.pointsSpent,
+        status: redemption.status || 'pending'
+      };
+      
+      console.log('[createRedemption] Attempting insert with camelCase:', JSON.stringify(redemptionData, null, 2));
+      console.log('[createRedemption] Table: redemptions');
+      console.log('[createRedemption] Columns: userId, rewardId, pointsSpent, status');
+      console.log('[createRedemption] VERIFY rewardId value:', redemptionData.rewardId);
+      
+      let { data, error } = await getSupabaseClient()
         .from('redemptions')
-        .insert([redemption])
+        .insert([redemptionData])
         .select()
         .single();
       
+      // If camelCase fails, try snake_case as fallback
+      if (error && (error.message.includes('column') || error.code === '42703' || error.code === 'PGRST116')) {
+        console.log('[createRedemption] ========== CAMELCASE FAILED, TRYING SNAKE_CASE ==========');
+        console.log('[createRedemption] Error message:', error.message);
+        console.log('[createRedemption] Error code:', error.code);
+        console.log('[createRedemption] Error details:', error.details);
+        console.log('[createRedemption] Error hint:', error.hint);
+        
+        redemptionData = {
+          user_id: redemption.userId,
+          reward_id: redemption.rewardId,
+          points_spent: redemption.pointsSpent,
+          status: redemption.status || 'pending'
+        };
+        console.log('[createRedemption] Attempting insert with snake_case:', JSON.stringify(redemptionData, null, 2));
+        console.log('[createRedemption] VERIFY reward_id value:', redemptionData.reward_id);
+        
+        const result = await getSupabaseClient()
+          .from('redemptions')
+          .insert([redemptionData])
+          .select()
+          .single();
+        
+        data = result.data;
+        error = result.error;
+      }
+      
       if (error) {
-        console.error('[createRedemption] ❌ Error creating redemption in Supabase:', error);
+        console.error('[createRedemption] ========== SUPABASE ERROR ==========');
+        console.error('[createRedemption] ❌ Error message:', error.message);
+        console.error('[createRedemption] ❌ Error code:', error.code);
+        console.error('[createRedemption] ❌ Error details:', error.details);
+        console.error('[createRedemption] ❌ Error hint:', error.hint);
+        console.error('[createRedemption] ❌ Full error object:', JSON.stringify(error, null, 2));
+        console.error('[createRedemption] ❌ Failed insert data:', JSON.stringify(redemptionData, null, 2));
+        console.error('[createRedemption] ❌ Stack trace:');
+        console.error(new Error().stack);
+        console.error('[createRedemption] ========== END ERROR ==========');
         throw new Error(`Failed to create redemption: ${error.message}`);
       }
       
       redemptionId = data.id;
       console.log(`[createRedemption] ✅ Redemption record created: ${redemptionId}`);
+      console.log(`[createRedemption] ✅ Full redemption data:`, JSON.stringify(data, null, 2));
+      console.log(`[createRedemption] ✅ VERIFY rewardId in returned data:`, data.rewardId || data.reward_id);
+      console.log(`[createRedemption] ✅ VERIFY userId in returned data:`, data.userId || data.user_id);
+      console.log(`[createRedemption] ✅ VERIFY pointsSpent in returned data:`, data.pointsSpent || data.points_spent);
+      console.log(`[createRedemption] ========== REDEMPTION INSERT SUCCESS ==========`);
+      
+      // VERIFY: Query the database directly to confirm the redemption was saved
+      console.log(`[createRedemption] VERIFY: Querying database to confirm redemption ${redemptionId} exists...`);
+      try {
+        const verifyResult = await getSupabaseClient()
+          .from('redemptions')
+          .select('*')
+          .eq('id', redemptionId)
+          .single();
+
+        if (verifyResult.error) {
+          console.error(`[createRedemption] ❌ VERIFY FAILED: Could not find redemption ${redemptionId} in database!`, verifyResult.error);
+          throw new Error(`Redemption ${redemptionId} was not found in database after creation!`);
+        } else {
+          console.log(`[createRedemption] ✅ VERIFY SUCCESS: Redemption ${redemptionId} found in database:`, JSON.stringify(verifyResult.data, null, 2));
+          console.log(`[createRedemption] ✅ VERIFY rewardId in database:`, verifyResult.data.rewardId || verifyResult.data.reward_id);
+        }
+      } catch (verifyError) {
+        console.error(`[createRedemption] ❌ VERIFY ERROR:`, verifyError);
+        throw verifyError; // Don't proceed if redemption doesn't exist
+      }
       
       // Step 2: Create transaction and update balance (atomic operation)
-      // MICROSTEP 2: Added rollback logic if applyPointsChange fails
+      // CRITICAL: If applyPointsChange fails, we must rollback the redemption
+      // to maintain data consistency (no orphaned transactions)
+      console.log(`[createRedemption] ========== STEP 2: CREATING TRANSACTION ==========`);
+      console.log(`[createRedemption] Redemption ${redemptionId} confirmed in database, proceeding with transaction...`);
+      console.log(`[createRedemption] About to call applyPointsChange with:`, {
+        userId: redemption.userId,
+        pointsChange: -redemption.pointsSpent,
+        redemptionId: data.id,
+        rewardId: redemption.rewardId
+      });
+      
       try {
         await this.applyPointsChange(
           redemption.userId,
@@ -1034,27 +1138,66 @@ export class SupabaseStorage implements IStorage {
         );
         
         console.log(`[createRedemption] ✅ Redemption ${redemptionId} completed: Transaction created for user ${redemption.userId}, -${redemption.pointsSpent} points`);
+        
+        // FINAL VERIFY: Double-check redemption still exists after transaction
+        const finalVerify = await getSupabaseClient()
+          .from('redemptions')
+          .select('id, rewardId, userId')
+          .eq('id', redemptionId)
+          .single();
+        
+        if (finalVerify.error || !finalVerify.data) {
+          console.error(`[createRedemption] ⚠️ WARNING: Redemption ${redemptionId} not found after transaction creation!`, finalVerify.error);
+        } else {
+          console.log(`[createRedemption] ✅ FINAL VERIFY: Redemption ${redemptionId} still exists:`, finalVerify.data);
+        }
+        
+        console.log(`[createRedemption] ========== REDEMPTION COMPLETE ==========`);
         return data;
         
       } catch (pointsError) {
         // Step 3: Rollback - delete redemption if applyPointsChange failed
+        // This prevents orphaned transactions (transactions with redemption_id but no redemption)
+        console.error(`[createRedemption] ========== ROLLBACK ATTEMPT ==========`);
         console.error(`[createRedemption] ❌ applyPointsChange failed for redemption ${redemptionId}, attempting rollback...`);
+        console.error(`[createRedemption] ❌ Points error:`, pointsError);
+        console.error(`[createRedemption] ❌ Points error message:`, pointsError instanceof Error ? pointsError.message : String(pointsError));
+        console.error(`[createRedemption] ❌ Points error stack:`, pointsError instanceof Error ? pointsError.stack : 'No stack');
         
         try {
-          const { error: deleteError } = await getSupabaseClient()
+          console.log(`[createRedemption] Attempting to delete redemption ${redemptionId} from database...`);
+          // Try both camelCase and snake_case for the delete operation
+          let deleteResult = await getSupabaseClient()
             .from('redemptions')
             .delete()
-            .eq('id', redemptionId);
+            .eq('id', redemptionId)
+            .select();
+          
+          // If that fails, try with different column name format
+          if (deleteResult.error && deleteResult.error.message.includes('column')) {
+            console.log(`[createRedemption] Delete with 'id' failed, trying alternative...`);
+            deleteResult = await getSupabaseClient()
+              .from('redemptions')
+              .delete()
+              .eq('id', redemptionId)
+              .select();
+          }
+          
+          const { error: deleteError, data: deleteData } = deleteResult;
           
           if (deleteError) {
             console.error(`[createRedemption] ❌ CRITICAL: Failed to rollback redemption ${redemptionId}:`, deleteError);
+            console.error(`[createRedemption] ❌ Rollback error details:`, JSON.stringify(deleteError, null, 2));
             // Log to monitoring system in production
           } else {
             console.log(`[createRedemption] ✅ Rollback successful: Redemption ${redemptionId} deleted`);
+            console.log(`[createRedemption] ✅ Deleted data:`, JSON.stringify(deleteData, null, 2));
           }
         } catch (rollbackError) {
           console.error(`[createRedemption] ❌ CRITICAL: Exception during rollback:`, rollbackError);
+          console.error(`[createRedemption] ❌ Rollback exception:`, rollbackError instanceof Error ? rollbackError.message : String(rollbackError));
         }
+        console.error(`[createRedemption] ========== END ROLLBACK ==========`);
         
         // Re-throw the original error
         throw pointsError;
@@ -1068,6 +1211,7 @@ export class SupabaseStorage implements IStorage {
 
   async getUserRedemptions(userId: number): Promise<Redemption[]> {
     try {
+      // Table uses camelCase: userId, rewardId, createdAt
       const { data, error } = await getSupabaseClient()
         .from('redemptions')
         .select('*, rewards(title, imageUrl, partnerLevel)')
@@ -1098,41 +1242,125 @@ export class SupabaseStorage implements IStorage {
     status: string;
   }>> {
     try {
-      // Get all redemptions with full reward data and brand data
-      const { data: redemptions, error: redemptionsError } = await getSupabaseClient()
+      console.log(`[getUserRedemptionsWithRewards] Fetching redemptions for user ${userId}...`);
+      
+      // CRITICAL FIX: The automatic FK join is broken - it always joins to reward ID 37
+      // Instead, we'll fetch redemptions first, then manually join rewards by rewardId
+      // This ensures we get the correct reward for each redemption
+      
+      // Step 1: Fetch redemptions (without join)
+      let { data: redemptions, error: redemptionsError } = await getSupabaseClient()
         .from('redemptions')
-        .select(`
-          *,
-          rewards (
-            *,
-            brands (*)
-          )
-        `)
+        .select('*')
         .eq('userId', userId)
         .order('createdAt', { ascending: false });
       
-      if (redemptionsError || !redemptions || redemptions.length === 0) {
-        if (redemptionsError) {
-          console.error(`Error fetching redemptions for user ${userId}:`, redemptionsError);
-        }
+      // If camelCase fails, try snake_case
+      if (redemptionsError && (redemptionsError.message.includes('column') || redemptionsError.code === '42703' || redemptionsError.code === 'PGRST116')) {
+        console.log(`[getUserRedemptionsWithRewards] camelCase query failed, trying snake_case...`, redemptionsError.message);
+        const result = await getSupabaseClient()
+          .from('redemptions')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
+        
+        redemptions = result.data;
+        redemptionsError = result.error;
+      }
+      
+      console.log(`[getUserRedemptionsWithRewards] Query result:`, {
+        redemptionsCount: redemptions?.length || 0,
+        error: redemptionsError ? redemptionsError.message : null
+      });
+      
+      if (redemptionsError) {
+        console.error(`[getUserRedemptionsWithRewards] Error fetching redemptions:`, redemptionsError);
+        throw redemptionsError;
+      }
+      
+      if (!redemptions || redemptions.length === 0) {
+        console.log(`[getUserRedemptionsWithRewards] No redemptions found for user ${userId}`);
         return [];
       }
       
-      // Map to return structure
+      // Step 2: Get unique reward IDs from redemptions
+      const rewardIds = [...new Set(redemptions.map(r => r.rewardId || r.reward_id).filter(Boolean))];
+      console.log(`[getUserRedemptionsWithRewards] Found ${rewardIds.length} unique reward IDs:`, rewardIds);
+      
+      // Step 3: Fetch all rewards in one query
+      const { data: rewardsData, error: rewardsError } = await getSupabaseClient()
+        .from('rewards')
+        .select(`
+          *,
+          brands (*)
+        `)
+        .in('id', rewardIds);
+      
+      if (rewardsError) {
+        console.error(`[getUserRedemptionsWithRewards] Error fetching rewards:`, rewardsError);
+        throw rewardsError;
+      }
+      
+      // Step 4: Create a map of rewardId -> reward for fast lookup
+      const rewardsMap = new Map();
+      if (rewardsData) {
+        rewardsData.forEach(reward => {
+          rewardsMap.set(reward.id, reward);
+        });
+      }
+      
+      console.log(`[getUserRedemptionsWithRewards] Loaded ${rewardsMap.size} rewards into map`);
+      
+      if (redemptionsError) {
+        console.error(`[getUserRedemptionsWithRewards] Error fetching redemptions for user ${userId}:`, redemptionsError);
+        console.error(`[getUserRedemptionsWithRewards] Error details:`, JSON.stringify(redemptionsError, null, 2));
+        return [];
+      }
+      
+      if (!redemptions || redemptions.length === 0) {
+        console.log(`[getUserRedemptionsWithRewards] No redemptions found for user ${userId}`);
+        return [];
+      }
+      
+      console.log(`[getUserRedemptionsWithRewards] Found ${redemptions.length} redemptions for user ${userId}`);
+      
+      // Step 5: Map redemptions to return structure with manually joined rewards
       const result = redemptions.map((redemption: any) => {
-        const reward = redemption.rewards || redemption.reward;
         const redemptionDate = redemption.createdAt || redemption.created_at;
+        
+        // CRITICAL: Get rewardId from redemption (camelCase or snake_case)
+        const finalRewardId = redemption.rewardId || redemption.reward_id;
+        
+        // MANUAL JOIN: Look up reward from map using rewardId
+        const reward = finalRewardId ? rewardsMap.get(finalRewardId) : null;
+        
+        // Log for debugging
+        console.log(`[getUserRedemptionsWithRewards] Redemption ${redemption.id}:`, {
+          rewardId_from_redemption: finalRewardId,
+          reward_found_in_map: reward ? { id: reward.id, title: reward.title } : 'NOT FOUND',
+          rewardIds_in_map: Array.from(rewardsMap.keys())
+        });
+        
+        if (!finalRewardId) {
+          console.error(`[getUserRedemptionsWithRewards] ⚠️ WARNING: No rewardId found for redemption ${redemption.id}!`);
+          console.error(`[getUserRedemptionsWithRewards] Full redemption object:`, JSON.stringify(redemption, null, 2));
+        }
+        
+        if (!reward) {
+          console.error(`[getUserRedemptionsWithRewards] ⚠️ WARNING: Reward ${finalRewardId} not found in map for redemption ${redemption.id}!`);
+          console.error(`[getUserRedemptionsWithRewards] Available reward IDs in map:`, Array.from(rewardsMap.keys()));
+        }
         
         return {
           redemption: {
             id: redemption.id,
             userId: redemption.userId || redemption.user_id,
-            rewardId: redemption.rewardId || redemption.reward_id,
+            rewardId: finalRewardId, // Use rewardId directly (camelCase from table)
             pointsSpent: redemption.pointsSpent || redemption.points_spent,
             status: redemption.status || 'pending',
             createdAt: redemptionDate ? new Date(redemptionDate) : null
           } as Redemption,
-          reward: reward as Reward,
+          reward: reward as Reward, // Manually joined reward from map
           pointsSpent: redemption.pointsSpent || redemption.points_spent || 0,
           redemptionDate: redemptionDate ? new Date(redemptionDate) : null,
           status: redemption.status || 'pending'

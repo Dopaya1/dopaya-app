@@ -5,7 +5,7 @@ import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { requireSupabaseAuth, getSupabaseUser } from "./supabase-auth-middleware";
 import { z } from "zod";
-import { insertDonationSchema, insertRedemptionSchema } from "@shared/schema";
+import { insertDonationSchema, insertRedemptionSchema, type User } from "@shared/schema";
 import { testDatabaseConnection, fetchDatabaseStats } from "./db-test";
 import { setupDatabase, createDatabaseHelperFunctions } from "./setup-db";
 import { logConnectionInfo, fixDatabaseConnection } from "./fix-db-connection";
@@ -993,38 +993,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Create redemption
+      console.log('[POST /api/rewards/:id/redeem] ========== REDEMPTION REQUEST ==========');
+      console.log('[POST /api/rewards/:id/redeem] Request params.id:', req.params.id);
+      console.log('[POST /api/rewards/:id/redeem] Parsed rewardId:', rewardId);
+      console.log('[POST /api/rewards/:id/redeem] Reward from DB:', { id: reward.id, title: reward.title, pointsCost: reward.pointsCost });
+      console.log('[POST /api/rewards/:id/redeem] Calling createRedemption with:', { userId, rewardId, pointsSpent: reward.pointsCost, status: "pending" });
+      console.log('[POST /api/rewards/:id/redeem] VERIFY rewardId before createRedemption:', rewardId);
+      
       const redemption = await storage.createRedemption({
         userId,
-        rewardId,
+        rewardId, // Make absolutely sure this is the correct rewardId
         pointsSpent: reward.pointsCost,
         status: "pending" // Set status to pending (will be fulfilled when user uses the code)
       });
       
-      console.log('[POST /api/rewards/:id/redeem] ✅ Redemption created successfully:', redemption.id);
+      console.log('[POST /api/rewards/:id/redeem] Redemption returned from createRedemption:', { id: redemption.id, rewardId: redemption.rewardId, userId: redemption.userId });
+      
+      console.log('[POST /api/rewards/:id/redeem] ✅ Redemption created successfully:', redemption);
+      console.log('[POST /api/rewards/:id/redeem] Redemption ID:', redemption.id);
       res.status(201).json(redemption);
     } catch (error) {
       console.error('[POST /api/rewards/:id/redeem] ❌ Error:', error);
-      res.status(500).json({ message: "Failed to redeem reward" });
+      console.error('[POST /api/rewards/:id/redeem] ❌ Error message:', error instanceof Error ? error.message : String(error));
+      console.error('[POST /api/rewards/:id/redeem] ❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+      res.status(500).json({ message: "Failed to redeem reward", error: error instanceof Error ? error.message : String(error) });
     }
   });
 
   // Welcome bonus transaction endpoint
   app.post("/api/user/welcome-bonus", async (req, res) => {
     console.log('[welcome-bonus] Endpoint called');
+    let userId: number | undefined;
     try {
       // Try Supabase auth first (same pattern as /api/user/impact)
       const supabaseUser = await getSupabaseUser(req);
       console.log('[welcome-bonus] Supabase user:', supabaseUser ? supabaseUser.email : 'none');
       
-      let userId: number | undefined;
-      
       if (supabaseUser) {
-        // Get database user by email (to get numeric ID)
-        const dbUser = await storage.getUserByEmail(supabaseUser.email || '');
-        if (!dbUser) {
-          console.log('[welcome-bonus] User not found in database:', supabaseUser.email);
-          return res.status(404).json({ message: "User not found in database" });
+        // ========== USER LOOKUP FLOW ==========
+        // Step 1: Try lookup by auth_user_id first (preferred - more reliable)
+        let dbUser: User | undefined;
+        console.log('[welcome-bonus] 🔍 Step 1: Looking up user by auth_user_id:', supabaseUser.id);
+        if (storage.getUserByAuthId && typeof storage.getUserByAuthId === 'function') {
+          dbUser = await storage.getUserByAuthId(supabaseUser.id);
+          if (dbUser) {
+            console.log('[welcome-bonus] ✅ Step 1 SUCCESS: User found by auth_user_id:', { id: dbUser.id, email: dbUser.email, auth_user_id: dbUser.auth_user_id });
+          } else {
+            console.log('[welcome-bonus] ⚠️ Step 1: User NOT found by auth_user_id');
+          }
+        } else {
+          console.warn('[welcome-bonus] ⚠️ Step 1 SKIPPED: getUserByAuthId method not available');
         }
+        
+        // Step 2: Fallback to email lookup if auth_user_id lookup fails
+        if (!dbUser && supabaseUser.email) {
+          console.log('[welcome-bonus] 🔍 Step 2: Fallback - Looking up user by email:', supabaseUser.email);
+          dbUser = await storage.getUserByEmail(supabaseUser.email);
+          if (dbUser) {
+            console.log('[welcome-bonus] ✅ Step 2 SUCCESS: User found by email:', { id: dbUser.id, email: dbUser.email, auth_user_id: dbUser.auth_user_id || 'NOT SET' });
+          } else {
+            console.log('[welcome-bonus] ⚠️ Step 2: User NOT found by email');
+          }
+        }
+        
+        // Step 3: If still not found, create minimal user on-the-fly
+        if (!dbUser) {
+          console.log('[welcome-bonus] 🔍 Step 3: User not found in database, creating user on-the-fly...');
+          try {
+            // Derive username from email prefix
+            const username = supabaseUser.email?.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '') || `user_${Date.now()}`;
+            
+            // Derive name from metadata (Google OAuth provides full_name)
+            const fullName = supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name || '';
+            const nameParts = fullName.split(' ').filter(Boolean);
+            const firstName = nameParts[0] || '';
+            const lastName = nameParts.slice(1).join(' ') || '';
+            
+            // Try createUserMinimal first (if available - SupabaseStorage)
+            if (storage.createUserMinimal && typeof storage.createUserMinimal === 'function') {
+              console.log('[welcome-bonus] Using createUserMinimal method');
+              dbUser = await storage.createUserMinimal({
+                username,
+                email: supabaseUser.email || '',
+                firstName,
+                lastName,
+                auth_user_id: supabaseUser.id
+              });
+              console.log('[welcome-bonus] ✅ Step 3 SUCCESS: User created via createUserMinimal:', { id: dbUser.id, email: dbUser.email, auth_user_id: dbUser.auth_user_id || 'NOT SET' });
+            } else {
+              console.log('[welcome-bonus] ❌ Step 3 FAILED: createUserMinimal not available, cannot create user');
+              return res.status(404).json({ message: "User not found in database and cannot be created" });
+            }
+          } catch (createError: any) {
+            console.error('[welcome-bonus] ❌ Step 3 FAILED: Failed to create user:', createError);
+            return res.status(500).json({ message: "Failed to create user", error: createError.message });
+          }
+        }
+        
         userId = dbUser.id;
         console.log('[welcome-bonus] Database user ID:', userId);
       } else {
@@ -1038,18 +1103,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if welcome bonus transaction already exists (duplicate prevention)
-      // Use service role key if available (bypasses RLS), otherwise use anon key
-      const { createClient } = await import('@supabase/supabase-js');
-      const { SUPABASE_URL, SUPABASE_ANON_KEY } = await import('./secrets');
-      const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || '';
-      
-      // Use service role key for backend operations (bypasses RLS)
-      const supabaseKey = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
-      if (!SUPABASE_SERVICE_ROLE_KEY) {
-        console.warn('[welcome-bonus] Using ANON_KEY - RLS policies may block inserts. Consider setting SUPABASE_SERVICE_ROLE_KEY.');
+      // Use getSupabaseClient from supabase-storage-new (already uses SERVICE_ROLE_KEY if available)
+      console.log('[welcome-bonus] 🔍 Importing getSupabaseClient from supabase-storage-new...');
+      let supabase;
+      try {
+        const supabaseStorageModule = await import('./supabase-storage-new');
+        console.log('[welcome-bonus] 🔍 Module imported, checking for getSupabaseClient...');
+        console.log('[welcome-bonus] 🔍 Module keys:', Object.keys(supabaseStorageModule));
+        
+        const getSupabaseClient = (supabaseStorageModule as any).getSupabaseClient;
+        
+        if (!getSupabaseClient || typeof getSupabaseClient !== 'function') {
+          console.error('[welcome-bonus] ❌ getSupabaseClient not found in supabase-storage-new module');
+          console.error('[welcome-bonus] ❌ Available exports:', Object.keys(supabaseStorageModule));
+          return res.status(500).json({ 
+            message: "Server configuration error: getSupabaseClient function not available",
+            error: "getSupabaseClient is required to create transactions"
+          });
+        }
+        
+        console.log('[welcome-bonus] 🔍 Calling getSupabaseClient()...');
+        supabase = getSupabaseClient();
+        console.log('[welcome-bonus] ✅ getSupabaseClient() returned successfully');
+        console.log('[welcome-bonus] ✅ Using getSupabaseClient (automatically uses SERVICE_ROLE_KEY if available)');
+      } catch (importError: any) {
+        console.error('[welcome-bonus] ❌ Failed to import or use getSupabaseClient:', {
+          error: importError,
+          message: importError?.message,
+          stack: importError?.stack
+        });
+        return res.status(500).json({ 
+          message: "Failed to initialize Supabase client",
+          error: importError?.message || String(importError)
+        });
       }
-      
-      const supabase = createClient(SUPABASE_URL, supabaseKey);
       
       const { data: existingTransaction, error: checkError } = await supabase
         .from('user_transactions')
@@ -1080,17 +1167,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userImpactPoints = (user as any).impactPoints ?? 0;
       console.log('[welcome-bonus] User impact points:', userImpactPoints);
       
-      if (userImpactPoints !== 50) {
-        // User doesn't have exactly 50 points, might not be a new user
-        console.log('[welcome-bonus] User does not qualify (has', userImpactPoints, 'points, expected 50)');
+      // Check if user qualifies for welcome bonus:
+      // 1. Has exactly 50 points (from trigger) - record transaction
+      // 2. Has 0 points and 0 donations - new user, give bonus and record transaction
+      const userTotalDonations = (user as any).totalDonations ?? 0;
+      const isNewUser = userImpactPoints === 0 && userTotalDonations === 0;
+      const hasWelcomeBonus = userImpactPoints === 50;
+      
+      if (!isNewUser && !hasWelcomeBonus) {
+        // User doesn't qualify - has points but not 50, or has donations
+        console.log('[welcome-bonus] User does not qualify (has', userImpactPoints, 'points,', userTotalDonations, 'donations)');
         return res.status(200).json({ message: "User does not qualify for welcome bonus" });
       }
       
-      // IMPORTANT: User already has 50 points from trigger, so we record the transaction
-      // with points_change = 50 but balance stays at 50 (not 100)
+      // IMPORTANT: Determine points_change BEFORE updating user points
+      // If user already has 50 points: points_change = 0 (just document, don't add points)
+      // If user has 0 points: points_change = 50 (give bonus)
+      const pointsChange = userImpactPoints === 50 ? 0 : 50;
+      const balanceAfter = 50; // Should always be 50 after welcome bonus
       
-      // Create welcome bonus transaction (record 50 points, but balance stays 50)
-      console.log('[welcome-bonus] Attempting to insert transaction for user', userId);
+      // If user has 0 points, give them 50 points first
+      if (isNewUser && userImpactPoints === 0) {
+        console.log('[welcome-bonus] New user detected (0 points, 0 donations), applying 50 Impact Points...');
+        // Update user's impact points to 50
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({ impactPoints: 50 })
+          .eq('id', userId);
+        
+        if (updateError) {
+          console.error('[welcome-bonus] Failed to update user impact points:', updateError);
+          throw new Error(`Failed to update user impact points: ${updateError.message}`);
+        }
+        console.log('[welcome-bonus] User impact points updated to 50');
+      }
+      
+      // IMPORTANT: User now has 50 points (either from trigger or from update above)
+      // Record the transaction with points_change = 0 if user already had 50, or 50 if they were new
+      
+      console.log('[welcome-bonus] Creating transaction:', {
+        userId,
+        currentPoints: userImpactPoints,
+        pointsChange,
+        balanceAfter,
+        reason: userImpactPoints === 50 ? 'User already has 50 points, documenting transaction only' : 'New user, giving 50 points'
+      });
+      
       const { data: insertedData, error: transactionError } = await supabase
         .from('user_transactions')
         .insert([{
@@ -1101,30 +1223,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
           support_amount: null,
           reward_id: null,
           redemption_id: null,
-          points_change: 50, // Record that they received 50 points
-          points_balance_after: 50, // Balance is 50 (already set by trigger)
+          points_change: pointsChange, // 0 if already has 50, 50 if new user
+          points_balance_after: balanceAfter, // Always 50 after welcome bonus
           description: 'Welcome bonus: 50 Impact Points for joining Dopaya',
           metadata: null
         }])
         .select(); // Return inserted row for verification
       
       if (transactionError) {
-        console.error('[welcome-bonus] Failed to create transaction:', {
+        console.error('[welcome-bonus] ❌ FAILED to create transaction:', {
           error: transactionError,
           message: transactionError.message,
           code: transactionError.code,
           details: transactionError.details,
+          hint: transactionError.hint,
+          userId: userId
+        });
+        // Don't throw - return error details so we can debug
+        return res.status(500).json({ 
+          message: "Failed to create welcome bonus transaction", 
+          error: transactionError.message,
+          code: transactionError.code,
+          details: transactionError.details,
           hint: transactionError.hint
         });
-        throw new Error(`Failed to create transaction: ${transactionError.message} (code: ${transactionError.code})`);
       }
       
-      console.log('[welcome-bonus] Transaction created successfully:', insertedData);
-      res.status(201).json({ message: "Welcome bonus applied successfully", transactionId: insertedData?.[0]?.id });
-    } catch (error) {
-      console.error('[welcome-bonus] Error applying welcome bonus:', error);
-      // Return 200 instead of 500 to prevent frontend errors - this is non-critical
-      res.status(200).json({ message: "Welcome bonus application failed, but user can continue" });
+      if (!insertedData || insertedData.length === 0) {
+        console.error('[welcome-bonus] ❌ Transaction insert returned no data');
+        return res.status(500).json({ message: "Transaction created but no data returned" });
+      }
+      
+      console.log('[welcome-bonus] ✅ Transaction created successfully:', {
+        transactionId: insertedData[0]?.id,
+        userId: userId,
+        transactionType: insertedData[0]?.transaction_type,
+        pointsChange: insertedData[0]?.points_change
+      });
+      res.status(201).json({ 
+        message: "Welcome bonus applied successfully", 
+        transactionId: insertedData[0]?.id,
+        transaction: insertedData[0]
+      });
+    } catch (error: any) {
+      console.error('[welcome-bonus] ❌ EXCEPTION applying welcome bonus:', {
+        error: error,
+        message: error?.message,
+        stack: error?.stack,
+        userId: userId
+      });
+      // Return 500 with error details for debugging
+      res.status(500).json({ 
+        message: "Welcome bonus application failed", 
+        error: error?.message || String(error),
+        stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined
+      });
     }
   });
 
@@ -1163,25 +1316,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const supabaseUser = await getSupabaseUser(req);
     
     if (supabaseUser) {
-      console.log('[GET /api/user/impact] Supabase user found:', supabaseUser.email);
-      // Get user from public.users by email
-      const dbUser = await storage.getUserByEmail(supabaseUser.email || '');
+      console.log('[GET /api/user/impact] Supabase user found:', supabaseUser.email, 'auth_user_id:', supabaseUser.id);
       
+      // ========== USER LOOKUP FLOW ==========
+      // Step 1: Try lookup by auth_user_id first (preferred - more reliable)
+      let dbUser: User | undefined;
+      console.log('[GET /api/user/impact] 🔍 Step 1: Looking up user by auth_user_id:', supabaseUser.id);
+      if (storage.getUserByAuthId && typeof storage.getUserByAuthId === 'function') {
+        dbUser = await storage.getUserByAuthId(supabaseUser.id);
+        if (dbUser) {
+          console.log('[GET /api/user/impact] ✅ Step 1 SUCCESS: User found by auth_user_id:', { id: dbUser.id, email: dbUser.email, auth_user_id: dbUser.auth_user_id });
+        } else {
+          console.log('[GET /api/user/impact] ⚠️ Step 1: User NOT found by auth_user_id');
+        }
+      } else {
+        console.warn('[GET /api/user/impact] ⚠️ Step 1 SKIPPED: getUserByAuthId method not available');
+      }
+      
+      // Step 2: Fallback to email lookup if auth_user_id lookup fails
+      if (!dbUser && supabaseUser.email) {
+        console.log('[GET /api/user/impact] 🔍 Step 2: Fallback - Looking up user by email:', supabaseUser.email);
+        dbUser = await storage.getUserByEmail(supabaseUser.email);
+        if (dbUser) {
+          console.log('[GET /api/user/impact] ✅ Step 2 SUCCESS: User found by email:', { id: dbUser.id, email: dbUser.email, auth_user_id: dbUser.auth_user_id || 'NOT SET' });
+        } else {
+          console.log('[GET /api/user/impact] ⚠️ Step 2: User NOT found by email');
+        }
+      }
+      
+      // Step 3: If still not found, create minimal user on-the-fly
       if (!dbUser) {
-        console.log('[GET /api/user/impact] User not found in database, returning default values:', supabaseUser.email);
-        // Return default values instead of 404 - user might be created by trigger soon
-        // This prevents dashboard errors while trigger creates the user
-        // 50 IP = aspirer (need 100+ for supporter)
-        return res.json({
-          impactPoints: 50, // Default welcome bonus
-          impactPointsChange: 0,
-          amountDonated: 0,
-          amountDonatedChange: 0,
-          projectsSupported: 0,
-          projectsSupportedChange: 0,
-          userLevel: 'aspirer',
-          userStatus: 'aspirer', // 50 < 100, so aspirer
-        });
+        console.log('[GET /api/user/impact] 🔍 Step 3: User not found in database, creating user on-the-fly...');
+        
+        // Create user on-the-fly (fallback if database trigger doesn't work)
+        try {
+          // Derive username from email prefix
+          const username = supabaseUser.email?.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '') || `user_${Date.now()}`;
+          
+          // Derive name from metadata (Google OAuth provides full_name)
+          const fullName = supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name || '';
+          const nameParts = fullName.split(' ').filter(Boolean);
+          const firstName = nameParts[0] || '';
+          const lastName = nameParts.slice(1).join(' ') || '';
+          
+          // Try createUserMinimal first (if available - SupabaseStorage)
+          if (storage.createUserMinimal && typeof storage.createUserMinimal === 'function') {
+            console.log('[GET /api/user/impact] Using createUserMinimal method');
+            dbUser = await storage.createUserMinimal({
+              username,
+              email: supabaseUser.email || '',
+              firstName,
+              lastName,
+              auth_user_id: supabaseUser.id
+            });
+            console.log('[GET /api/user/impact] ✅ Step 3 SUCCESS: User created via createUserMinimal:', { id: dbUser.id, email: dbUser.email, auth_user_id: dbUser.auth_user_id || 'NOT SET' });
+            
+            // User created with 50 Impact Points, now get impact data
+            const userImpact = await storage.getUserImpact(dbUser.id);
+            return res.json(userImpact);
+          } else {
+            // Fallback: Return default values
+            console.log('[GET /api/user/impact] ⚠️ Step 3 FAILED: createUserMinimal not available, returning default values');
+            return res.json({
+              impactPoints: 50, // Default welcome bonus
+              impactPointsChange: 0,
+              amountDonated: 0,
+              amountDonatedChange: 0,
+              projectsSupported: 0,
+              projectsSupportedChange: 0,
+              userLevel: 'aspirer',
+              userStatus: 'aspirer', // 50 < 100, so aspirer
+            });
+          }
+        } catch (createError: any) {
+          console.error('[GET /api/user/impact] ❌ Step 3 FAILED: Failed to create user:', createError);
+          // Return default values as fallback
+          return res.json({
+            impactPoints: 50, // Default welcome bonus
+            impactPointsChange: 0,
+            amountDonated: 0,
+            amountDonatedChange: 0,
+            projectsSupported: 0,
+            projectsSupportedChange: 0,
+            userLevel: 'aspirer',
+            userStatus: 'aspirer', // 50 < 100, so aspirer
+          });
+        }
       }
       
       console.log('[GET /api/user/impact] Database user found:', dbUser.id, 'impactPoints:', dbUser.impactPoints);

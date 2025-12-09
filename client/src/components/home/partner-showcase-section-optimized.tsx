@@ -97,7 +97,31 @@ export function PartnerShowcaseSection() {
   // Rewards slider page state
   const [rewardsPage, setRewardsPage] = useState(0);
   // Touch handling for mobile brand selection - use ref to avoid state issues
-  const touchDataRef = useRef<{ x: number; y: number; time: number; isSwipe: boolean; targetBrandId: number | null } | null>(null);
+  const touchDataRef = useRef<{ x: number; y: number; time: number; isSwipe: boolean; targetBrandId: number | null; hasMoved: boolean; scrollStartY: number } | null>(null);
+  // Track if page is currently scrolling
+  const isScrollingRef = useRef(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Track page scroll to detect if user is scrolling
+  useEffect(() => {
+    const handleScroll = () => {
+      isScrollingRef.current = true;
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+      scrollTimeoutRef.current = setTimeout(() => {
+        isScrollingRef.current = false;
+      }, 150);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Fetch ALL brands (not just featured) to ensure we have logos for all rewards
   const { data: allBrandsData = [] } = useQuery<Brand[]>({
@@ -462,59 +486,9 @@ export function PartnerShowcaseSection() {
             ))}
           </div>
           {/* Mobile: 1 at a time with slider */}
-          <div 
+          <div
             className="md:hidden relative overflow-hidden"
-            style={{ touchAction: 'pan-x' }}
-            onTouchStart={(e) => {
-              const touch = e.touches[0];
-              touchDataRef.current = { 
-                x: touch.clientX, 
-                y: touch.clientY, 
-                time: Date.now(), 
-                isSwipe: false,
-                targetBrandId: null
-              };
-            }}
-            onTouchMove={(e) => {
-              if (!touchDataRef.current) return;
-              const touch = e.touches[0];
-              const start = touchDataRef.current;
-              const deltaX = Math.abs(touch.clientX - start.x);
-              const deltaY = Math.abs(touch.clientY - start.y);
-              
-              // Mark as swipe if ANY significant movement (horizontal or vertical)
-              // Prioritize horizontal movement for slider
-              if (deltaX > 8 || deltaY > 15) {
-                touchDataRef.current.isSwipe = true;
-                touchDataRef.current.targetBrandId = null; // Clear target on swipe
-              }
-            }}
-            onTouchEnd={(e) => {
-              if (!touchDataRef.current) return;
-              
-              const touch = e.changedTouches[0];
-              const start = touchDataRef.current;
-              const deltaX = Math.abs(touch.clientX - start.x);
-              const deltaY = Math.abs(touch.clientY - start.y);
-              const deltaTime = Date.now() - start.time;
-              
-              // Only open popup if:
-              // 1. NOT a swipe
-              // 2. Very small movement (true tap)
-              // 3. Short duration
-              // 4. Has target brand ID
-              const isClearTap = !start.isSwipe && deltaX < 6 && deltaY < 6 && deltaTime < 200 && start.targetBrandId !== null;
-              
-              if (isClearTap) {
-                setSelectedBrand(selectedBrand === start.targetBrandId ? null : start.targetBrandId);
-                setIsPaused(true);
-              }
-              
-              // Reset after delay
-              setTimeout(() => {
-                touchDataRef.current = null;
-              }, 200);
-            }}
+            style={{ touchAction: 'pan-y' }} // allow vertical page scroll while sliding horizontally
           >
             <div 
               className="flex transition-transform duration-500 ease-in-out"
@@ -525,27 +499,26 @@ export function PartnerShowcaseSection() {
                   key={`${brand.id}-mobile-${idx}`} 
                   className="w-full flex-shrink-0 px-3 flex flex-col"
                 >
-                  <div 
-                    className="cursor-pointer"
-                    onTouchStart={(e) => {
-                      // Set target brand when touching starts
-                      if (touchDataRef.current) {
-                        touchDataRef.current.targetBrandId = brand.id;
-                      }
-                      // Stop slider when touching card
-                      setIsPaused(true);
-                    }}
-                    onClick={(e) => {
-                      // Only handle click if it's not from a touch event (desktop)
-                      if (!touchDataRef.current) {
-                        setSelectedBrand(selectedBrand === brand.id ? null : brand.id);
-                        setIsPaused(true);
-                      }
-                    }}
-                  >
+                  <div className="relative">
                     <div className="flex items-center justify-center p-6 h-24 rounded-lg" style={{ backgroundColor: BRAND_COLORS.bgWhite }}>
                       <img src={brand.logo} alt={brand.name} className="max-h-12 max-w-full object-contain" />
                     </div>
+                    {/* Info button - only way to open popup on mobile */}
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setSelectedBrand(selectedBrand === brand.id ? null : brand.id);
+                        setIsPaused(true);
+                      }}
+                      className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm shadow-md flex items-center justify-center hover:bg-white transition-colors"
+                      aria-label={`View ${brand.name} details`}
+                      style={{ zIndex: 10 }}
+                    >
+                      <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </button>
                   </div>
                   <div className="mt-3 w-full p-4 rounded-lg shadow-sm" style={{ backgroundColor: BRAND_COLORS.bgWhite, border: `1px solid ${BRAND_COLORS.borderSubtle}` }}>
                     <div className="flex items-start gap-3 mb-2">
@@ -698,7 +671,10 @@ export function PartnerShowcaseSection() {
               </div>
 
               {/* Mobile: Slider - Same approach as Brands slider */}
-              <div className="lg:hidden relative overflow-hidden">
+              <div
+                className="lg:hidden relative overflow-hidden"
+                style={{ touchAction: 'pan-y' }} // allow vertical page scroll while sliding horizontally
+              >
                 <div 
                   className="flex transition-transform duration-500 ease-in-out"
                   style={{ transform: `translateX(-${rewardsPage * 100}%)` }}

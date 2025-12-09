@@ -178,6 +178,15 @@ export type TranslationKeys = {
     comingSoon: string;
     personalImpactDashboard: string;
     getNotifiedWhenReady: string;
+    welcomeModalHeadline: string;
+    welcomeModalSubheadline: string;
+    welcomeModalText: string;
+    welcomeModalStep2Headline: string;
+    welcomeModalStep2Subheadline: string;
+    welcomeModalStep2Option1: string;
+    welcomeModalStep2Option2: string;
+    welcomeModalStep2Option3: string;
+    welcomeModalStep2Recommended: string;
   };
   rewards: {
     title: string;
@@ -280,6 +289,10 @@ export type TranslationKeys = {
       googleSignInFailed: string;
       emailSignInFailed: string;
       checkEmailToConfirm: string;
+      resendConfirmationEmail: string;
+      emailResent: string;
+      resendingEmail: string;
+      resendFailed: string;
     };
   };
   common: {
@@ -487,6 +500,22 @@ export type TranslationKeys = {
     projectNotFound: string;
     projectNotFoundDescription: string;
     redirecting: string;
+    supportMiniJourney: {
+      madeRealImpact: string;
+      helpedAndEarned: string;
+      willHelpChange: string;
+      keepMomentum: string;
+      chooseNextStep: string;
+      findReward: string;
+      findRewardDescription: string;
+      seeMyImpact: string;
+      seeMyImpactDescription: string;
+      shareYourImpact: string;
+      shareYourImpactDescription: string;
+      doGoodAndInspire: string;
+      skipForNow: string;
+      step: string;
+    };
   };
     socialEnterprises: {
       seoTitle: string;
