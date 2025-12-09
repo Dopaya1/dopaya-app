@@ -104,10 +104,9 @@ export default function DashboardV2() {
       window.history.replaceState({}, '', newUrl);
     }
     
-    // Check for new user welcome (preview only)
-    // Can be triggered by URL param or checkNewUser flag from auth callback
+    // Check for new user welcome (triggered by URL param or checkNewUser flag from auth callback)
     const checkNewUser = sessionStorage.getItem('checkNewUser') === 'true';
-    if (previewEnabled && (newUser === '1' || checkNewUser)) {
+    if (newUser === '1' || checkNewUser) {
       // DO NOT remove the flag here - it's needed for the modal check below
       // The flag will be removed in the modal useEffect after the modal is shown
       
@@ -1745,29 +1744,28 @@ export default function DashboardV2() {
       )}
       
       {/* Signup-only Mini Gamification (new user registration) */}
-      {previewEnabled && (
-        <Dialog 
-          open={showWelcomeModal} 
-          onOpenChange={(open) => {
-            setShowWelcomeModal(open);
-            if (!open) {
-              // When modal is closed, mark it as closed (persistent)
-              console.log('[Dashboard V2] Welcome modal closed');
-              sessionStorage.setItem('welcomeModalClosed', 'true');
-              
-              // PERSISTENT: Ensure flag is saved to localStorage (in case it wasn't set earlier)
-              if (user?.id) {
-                try {
-                  localStorage.setItem(`welcomeModalShown_${user.id}`, 'true');
-                } catch (e) {
-                  // FALLBACK: If localStorage fails, use sessionStorage
-                  console.warn('[Dashboard V2] localStorage failed on modal close, using sessionStorage:', e);
-                  sessionStorage.setItem('welcomeModalShown', 'true');
-                }
+      <Dialog 
+        open={showWelcomeModal} 
+        onOpenChange={(open) => {
+          setShowWelcomeModal(open);
+          if (!open) {
+            // When modal is closed, mark it as closed (persistent)
+            console.log('[Dashboard V2] Welcome modal closed');
+            sessionStorage.setItem('welcomeModalClosed', 'true');
+            
+            // PERSISTENT: Ensure flag is saved to localStorage (in case it wasn't set earlier)
+            if (user?.id) {
+              try {
+                localStorage.setItem(`welcomeModalShown_${user.id}`, 'true');
+              } catch (e) {
+                // FALLBACK: If localStorage fails, use sessionStorage
+                console.warn('[Dashboard V2] localStorage failed on modal close, using sessionStorage:', e);
+                sessionStorage.setItem('welcomeModalShown', 'true');
               }
             }
-          }}
-        >
+          }
+        }}
+      >
           {/* Simple, stable modal content (no outer confetti wrappers) */}
           {/* z-[10000] ensures modal appears above confetti (z-9999) */}
           <DialogContent className="sm:max-w-md text-center bg-white z-[10000]" style={{ backgroundColor: 'white' }}>
