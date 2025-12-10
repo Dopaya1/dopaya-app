@@ -40,9 +40,9 @@ export function DomainLanguageRedirect() {
     }
 
     // Don't redirect if there are auth tokens in hash (let AuthTokenRedirect handle it first)
-    const hash = window.location.hash.substring(1);
-    if (hash) {
-      const hashParams = new URLSearchParams(hash);
+    const hashString = window.location.hash.substring(1);
+    if (hashString) {
+      const hashParams = new URLSearchParams(hashString);
       if (hashParams.get('access_token') || hashParams.get('refresh_token')) {
         // Auth flow in progress, don't interfere
         return;
