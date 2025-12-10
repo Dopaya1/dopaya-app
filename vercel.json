@@ -6,25 +6,25 @@
   "devCommand": "npm run dev",
   "redirects": [
     {
-      "source": "/:path*",
+      "source": "/",
       "has": [
         {
           "type": "host",
           "value": "dopaya.ch"
         }
       ],
-      "destination": "/de/:path*",
+      "destination": "/de",
       "statusCode": 307
     },
     {
-      "source": "/:path*",
+      "source": "/",
       "has": [
         {
           "type": "host",
           "value": "www.dopaya.ch"
         }
       ],
-      "destination": "/de/:path*",
+      "destination": "/de",
       "statusCode": 307
     }
   ],

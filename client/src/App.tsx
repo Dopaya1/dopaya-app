@@ -34,14 +34,23 @@ import { AuthModal } from "@/components/auth/auth-modal";
 import { trackPageView } from "@/lib/simple-analytics";
 import { I18nProvider } from "@/lib/i18n/i18n-context";
 import { removeLanguagePrefix } from "@/lib/i18n/utils";
+import { DomainLanguageRedirect } from "@/components/layout/domain-language-redirect";
 
 // Global auth token detector - redirects to /auth/callback if tokens are in URL hash
 function AuthTokenRedirect() {
   const [location, navigate] = useLocation();
   
   useEffect(() => {
+    console.log('[AuthTokenRedirect] Checking for auth tokens...', {
+      location,
+      hash: window.location.hash,
+      fullUrl: window.location.href,
+      pendingSupportReturnUrl: sessionStorage.getItem('pendingSupportReturnUrl')
+    });
+    
     // Check if we're already on the auth callback page
     if (location === '/auth/callback') {
+      console.log('[AuthTokenRedirect] Already on /auth/callback, skipping redirect');
       return;
     }
     
@@ -52,13 +61,24 @@ function AuthTokenRedirect() {
       const accessToken = hashParams.get('access_token');
       const refreshToken = hashParams.get('refresh_token');
       
+      console.log('[AuthTokenRedirect] Hash found, checking for tokens:', {
+        hasAccessToken: !!accessToken,
+        hasRefreshToken: !!refreshToken,
+        hashLength: hash.length
+      });
+      
       if (accessToken && refreshToken) {
-        console.log('Auth tokens detected in URL hash, redirecting to /auth/callback');
+        console.log('[AuthTokenRedirect] ✅✅✅ Auth tokens detected in URL hash, redirecting to /auth/callback');
         // Preserve the hash and any query params when redirecting
         const searchParams = new URLSearchParams(window.location.search);
         const newUrl = `/auth/callback${searchParams.toString() ? `?${searchParams.toString()}` : ''}${hash ? `#${hash}` : ''}`;
+        console.log('[AuthTokenRedirect] Redirecting to:', newUrl);
         navigate(newUrl);
+      } else {
+        console.log('[AuthTokenRedirect] No tokens found in hash');
       }
+    } else {
+      console.log('[AuthTokenRedirect] No hash in URL');
     }
   }, [location, navigate]);
   
@@ -142,6 +162,7 @@ function App() {
       <I18nProvider>
         <AuthProvider>
           <AuthTokenRedirect />
+          <DomainLanguageRedirect />
           <div className="min-h-screen">
             {!isSupportPage && (
               <>
