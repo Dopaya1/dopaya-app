@@ -14,7 +14,6 @@
         }
       ],
       "destination": "/de/:path*",
-      "permanent": false,
       "statusCode": 307
     },
     {
@@ -26,7 +25,6 @@
         }
       ],
       "destination": "/de/:path*",
-      "permanent": false,
       "statusCode": 307
     }
   ],
