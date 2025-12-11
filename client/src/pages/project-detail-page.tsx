@@ -16,10 +16,6 @@ export default function ProjectDetailPage() {
   const { t } = useTranslation();
   const { language } = useI18n();
   
-  // Projects that should use the v3 template
-  const v3Slugs = ['openversum', 'ignis-careers', 'vision-friend', 'promeat', 'dump-in-bin', 'panjurli-labs'];
-  const useV3Template = slug && v3Slugs.includes(slug);
-  
   const { data: project, isLoading, error } = useQuery<Project | null>({
     queryKey: ["project-detail", slug],
     queryFn: async () => {
@@ -117,11 +113,9 @@ export default function ProjectDetailPage() {
         }}
       />
       
-      {useV3Template ? (
-        <ProjectDetailNewV3 project={project} />
-      ) : (
-        <ProjectDetailNew project={project} />
-      )}
+      {/* Always use V3 template for all projects. If fallback is ever needed,
+          swap back to ProjectDetailNew (legacy template). */}
+      <ProjectDetailNewV3 project={project} />
     </>
   );
 }
