@@ -73,7 +73,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const userId = dbUser.id;
 
-  // Check if welcome_bonus already applied
+  // Check welcome_bonus_applied flag first (more reliable than transaction check)
+  const { data: userRecord, error: userError } = await supabase
+    .from('users')
+    .select('impactPoints, welcome_bonus_applied')
+    .eq('id', userId)
+    .single();
+  
+  if (!userError && userRecord && userRecord.welcome_bonus_applied === true) {
+    // Welcome bonus already applied, return success (idempotent)
+    return res.status(200).json({ message: 'Welcome bonus already applied' });
+  }
+
+  // Fallback: Check transaction table (for backwards compatibility)
   const { data: txExists } = await supabase
     .from('user_transactions')
     .select('id')
@@ -83,33 +95,68 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     .maybeSingle();
 
   if (txExists) {
+    // Transaction exists but flag not set - set the flag now
+    await supabase
+      .from('users')
+      .update({ welcome_bonus_applied: true })
+      .eq('id', userId);
     return res.status(200).json({ message: 'Welcome bonus already applied' });
   }
 
-  // Apply bonus: update impactPoints to at least +50
+  // Get current points to calculate correct points_change
+  // This prevents double-adding if a database trigger exists
+  const currentPoints = userRecord?.impactPoints ?? 0;
+  const pointsToAdd = currentPoints >= 50 ? 0 : (50 - currentPoints);
+  const finalBalance = 50; // Always ends at 50
+
+  // Update impactPoints and welcome_bonus_applied flag
+  // Try RPC first, fallback to direct update
   try {
     await supabase.rpc('exec_sql', {
       sql: `
         update users
-        set "impactPoints" = greatest(coalesce("impactPoints", 0), 50),
+        set "impactPoints" = 50,
             welcome_bonus_applied = true
         where id = ${userId};
       `,
     });
-  } catch {
-    // ignore if rpc not present
+  } catch (rpcError) {
+    // Fallback: Direct update if RPC fails
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ 
+        impactPoints: finalBalance,
+        welcome_bonus_applied: true 
+      })
+      .eq('id', userId);
+    
+    if (updateError) {
+      console.error('[welcome-bonus] Failed to update user:', updateError);
+      return res.status(500).json({ 
+        message: 'Failed to apply welcome bonus', 
+        error: updateError.message 
+      });
+    }
   }
 
-  // Insert transaction
+  // Insert transaction with correct points_change
+  // CRITICAL: If user already had 50 points, points_change should be 0
+  // Otherwise, points_change is the difference (to avoid double-adding if trigger exists)
   const { error: txErr } = await supabase.from('user_transactions').insert({
     user_id: userId,
     transaction_type: 'welcome_bonus',
-    points_change: 50,
-    description: 'Welcome bonus',
+    points_change: pointsToAdd, // 0 if already had 50, otherwise the difference
+    points_balance_after: finalBalance, // Always 50
+    description: 'Welcome bonus: 50 Impact Points for joining Dopaya',
   });
+  
   if (txErr) {
-    // Non-critical: return success since points were applied
-    return res.status(200).json({ message: 'Welcome bonus applied, transaction not recorded', warning: txErr.message });
+    console.error('[welcome-bonus] Failed to create transaction:', txErr);
+    // Points were already updated, so return success but log warning
+    return res.status(200).json({ 
+      message: 'Welcome bonus applied, transaction not recorded', 
+      warning: txErr.message 
+    });
   }
 
   return res.status(200).json({ message: 'Welcome bonus applied' });
