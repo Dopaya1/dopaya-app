@@ -12,11 +12,38 @@ export default function AuthCallback() {
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('');
+  
+  // Log immediately when component renders (before useEffect)
+  console.log('[auth-callback] ========== COMPONENT RENDERED ==========');
+  console.log('[auth-callback] Current URL on render:', window.location.href);
+  console.log('[auth-callback] SessionStorage on render:', {
+    pendingSupportReturnUrl: sessionStorage.getItem('pendingSupportReturnUrl'),
+    isNewUser: sessionStorage.getItem('isNewUser'),
+    checkNewUser: sessionStorage.getItem('checkNewUser')
+  });
 
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        console.log('Processing auth callback...');
+        console.log('[auth-callback] ========== AUTH CALLBACK PAGE LOADED ==========');
+        console.log('[auth-callback] Current URL:', window.location.href);
+        console.log('[auth-callback] Hash:', window.location.hash);
+        console.log('[auth-callback] Search:', window.location.search);
+        console.log('[auth-callback] Referrer:', document.referrer);
+        
+        // Log ALL sessionStorage immediately
+        const allSessionStorageAtStart = {
+          pendingSupportReturnUrl: sessionStorage.getItem('pendingSupportReturnUrl'),
+          pendingSupportAmount: sessionStorage.getItem('pendingSupportAmount'),
+          isNewUser: sessionStorage.getItem('isNewUser'),
+          checkNewUser: sessionStorage.getItem('checkNewUser'),
+          authReturnUrl: sessionStorage.getItem('authReturnUrl'),
+          openPaymentDialog: sessionStorage.getItem('openPaymentDialog'),
+          welcomeModalShown: sessionStorage.getItem('welcomeModalShown')
+        };
+        console.log('[auth-callback] 📋 SessionStorage at START:', allSessionStorageAtStart);
+        
+        console.log('[auth-callback] Processing auth callback...');
         
         // Get the URL parameters (both hash and search params)
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
@@ -60,6 +87,10 @@ export default function AuthCallback() {
             // Invalidate queries to refresh navbar and dashboard
             await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
             await queryClient.invalidateQueries({ queryKey: ["/api/user/impact"] });
+            
+            // Force refresh auth state by triggering a small delay to allow Supabase listener to fire
+            // This ensures navbar gets updated user info
+            await new Promise(resolve => setTimeout(resolve, 100));
             
             // Apply welcome bonus transaction if user is new (non-blocking, with fallback)
             try {
@@ -130,9 +161,6 @@ export default function AuthCallback() {
               console.warn('[auth-callback] Failed to check/apply welcome bonus:', e);
             }
             
-            // Check if preview mode is enabled
-            const previewEnabled = isOnboardingPreviewEnabled();
-            
             // Set flags BEFORE redirect to ensure they're available when dashboard loads
             // Check if isNewUser flag was already set during signup (for email confirmation flow)
             const existingIsNewUser = sessionStorage.getItem('isNewUser') === 'true';
@@ -155,36 +183,123 @@ export default function AuthCallback() {
             setStatus('success');
             setMessage('Email verified successfully! Redirecting...');
             
+            // Check if preview mode is enabled (for preserving preview flag in URL)
+            const previewEnabled = isOnboardingPreviewEnabled();
+            
             // Check if we should return to support page (from support page auth modal)
-            const pendingSupportReturnUrl = sessionStorage.getItem('pendingSupportReturnUrl');
+            // This is the HIGHEST PRIORITY - if user was trying to donate, send them back to support page
+            let pendingSupportReturnUrl = sessionStorage.getItem('pendingSupportReturnUrl');
+            
+            // CRITICAL: Check URL parameter for returnTo (embedded in email confirmation link)
+            // This persists even if sessionStorage is cleared or Supabase redirects to a different URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const returnToParam = urlParams.get('returnTo');
+            if (returnToParam) {
+              const decodedReturnTo = decodeURIComponent(returnToParam);
+              console.log('[auth-callback] ✅✅✅ Found returnTo in URL parameter (from email link):', decodedReturnTo);
+              pendingSupportReturnUrl = decodedReturnTo;
+              // Also store it in sessionStorage for consistency
+              sessionStorage.setItem('pendingSupportReturnUrl', decodedReturnTo);
+            }
+            
+            // Log ALL sessionStorage items for debugging
+            const allSessionStorage = {
+              pendingSupportReturnUrl: sessionStorage.getItem('pendingSupportReturnUrl'),
+              pendingSupportAmount: sessionStorage.getItem('pendingSupportAmount'),
+              isNewUser: sessionStorage.getItem('isNewUser'),
+              checkNewUser: sessionStorage.getItem('checkNewUser'),
+              authReturnUrl: sessionStorage.getItem('authReturnUrl'),
+              openPaymentDialog: sessionStorage.getItem('openPaymentDialog'),
+              welcomeModalShown: sessionStorage.getItem('welcomeModalShown'),
+              returnToFromUrl: returnToParam
+            };
+            console.log('[auth-callback] 📋 ALL SessionStorage items:', allSessionStorage);
+            console.log('[auth-callback] 📋 Document referrer:', document.referrer);
+            console.log('[auth-callback] 📋 Current URL:', window.location.href);
+            console.log('[auth-callback] 📋 URL search params:', window.location.search);
+            
+            // FALLBACK: If no pendingSupportReturnUrl but referrer suggests support page, reconstruct it
+            if (!pendingSupportReturnUrl) {
+              const referrer = document.referrer;
+              const supportPageMatch = referrer.match(/\/support\/([^\/\?]+)/);
+              if (supportPageMatch) {
+                const projectSlug = supportPageMatch[1];
+                pendingSupportReturnUrl = `/support/${projectSlug}${previewEnabled ? '?previewOnboarding=1' : ''}`;
+                console.log('[auth-callback] ✅ Reconstructed support URL from referrer:', pendingSupportReturnUrl);
+                // Store it so it's available for the redirect
+                sessionStorage.setItem('pendingSupportReturnUrl', pendingSupportReturnUrl);
+              } else {
+                console.warn('[auth-callback] ⚠️ No pendingSupportReturnUrl and referrer does not match support page pattern');
+              }
+            } else {
+              console.log('[auth-callback] ✅ Found pendingSupportReturnUrl:', pendingSupportReturnUrl);
+            }
+            
             // Check if we should return to payment dialog
             const returnUrl = sessionStorage.getItem('authReturnUrl');
             const openPaymentDialog = sessionStorage.getItem('openPaymentDialog') === 'true';
             
+            // Debug logging
+            console.log('[auth-callback] 🔍 Redirect decision:', {
+              pendingSupportReturnUrl,
+              returnUrl,
+              openPaymentDialog,
+              referrer: document.referrer,
+              isNewUser: sessionStorage.getItem('isNewUser'),
+              checkNewUser: sessionStorage.getItem('checkNewUser'),
+              userEmail: data.user.email,
+              authMethod: 'email_confirmation'
+            });
+            
             setTimeout(() => {
-              if (pendingSupportReturnUrl) {
+              // Re-check sessionStorage right before redirect (in case it was cleared)
+              const finalPendingSupportUrl = sessionStorage.getItem('pendingSupportReturnUrl') || pendingSupportReturnUrl;
+              
+              console.log('[auth-callback] 🚀 FINAL REDIRECT DECISION (email confirmation):', {
+                hasPendingSupportUrl: !!finalPendingSupportUrl,
+                pendingSupportUrl: finalPendingSupportUrl,
+                originalPendingSupportUrl: pendingSupportReturnUrl,
+                hasReturnUrl: !!returnUrl,
+                returnUrl: returnUrl,
+                openPaymentDialog,
+                isNewUser: sessionStorage.getItem('isNewUser'),
+                checkNewUser: sessionStorage.getItem('checkNewUser'),
+                authMethod: 'email_confirmation',
+                allSessionStorage: {
+                  pendingSupportReturnUrl: sessionStorage.getItem('pendingSupportReturnUrl'),
+                  isNewUser: sessionStorage.getItem('isNewUser'),
+                  checkNewUser: sessionStorage.getItem('checkNewUser')
+                }
+              });
+              
+              if (finalPendingSupportUrl) {
                 // User was trying to support, redirect back to support page
+                // This takes priority over dashboard redirect for new users
+                console.log('[auth-callback] ✅✅✅ DECISION: Redirecting to support page:', finalPendingSupportUrl);
                 sessionStorage.removeItem('pendingSupportReturnUrl');
                 sessionStorage.removeItem('pendingSupportAmount');
                 // Construct full URL if it's a relative path
-                const fullUrl = pendingSupportReturnUrl.startsWith('http') 
-                  ? pendingSupportReturnUrl 
-                  : `${window.location.origin}${pendingSupportReturnUrl}`;
+                const fullUrl = finalPendingSupportUrl.startsWith('http') 
+                  ? finalPendingSupportUrl 
+                  : `${window.location.origin}${finalPendingSupportUrl}`;
+                console.log('[auth-callback] ✅✅✅ Redirecting to full URL:', fullUrl);
                 window.location.href = fullUrl;
               } else if (returnUrl && openPaymentDialog) {
                 // Return to original page where Support button was clicked
+                console.log('[auth-callback] ✅ DECISION: Redirecting to return URL:', returnUrl);
                 sessionStorage.removeItem('authReturnUrl');
                 window.location.href = returnUrl;
-              } else if (previewEnabled) {
-                // Log flags before redirect for debugging
-                console.log('[auth-callback] 🔍 Redirecting to dashboard with flags:', {
+              } else {
+                // Always redirect new users to previewOnboarding for full onboarding experience
+                const redirectUrl = '/dashboard?newUser=1&previewOnboarding=1';
+                console.log('[auth-callback] ⚠️ DECISION: No support return URL found, redirecting to dashboard:', {
                   isNewUser: sessionStorage.getItem('isNewUser'),
                   checkNewUser: sessionStorage.getItem('checkNewUser'),
-                  previewEnabled
+                  redirectUrl,
+                  reason: 'No pendingSupportReturnUrl or returnUrl found'
                 });
-                navigate('/dashboard?newUser=1&previewOnboarding=1');
-              } else {
-                navigate('/dashboard');
+                // Full reload to ensure session cookies are set and navbar picks up auth
+                window.location.href = redirectUrl;
               }
             }, 1500);
             return;
@@ -203,7 +318,12 @@ export default function AuthCallback() {
         }
         
         if (sessionData.session?.user) {
-          console.log('User already authenticated');
+          console.log('[auth-callback] User already authenticated (likely Google OAuth or existing session)');
+          console.log('[auth-callback] User info:', {
+            id: sessionData.session.user.id,
+            email: sessionData.session.user.email,
+            created_at: sessionData.session.user.created_at
+          });
           
           // User profile will be created by /api/user/impact if it doesn't exist (fallback)
           // Invalidate queries to refresh navbar and dashboard
@@ -230,6 +350,13 @@ export default function AuthCallback() {
                 const impact = await impactRes.json();
                 const impactPoints = impact.impactPoints ?? 0;
                 const projectsSupported = impact.projectsSupported ?? 0;
+                const welcomeShown = impact.welcome_shown === true;
+                
+                console.log('[auth-callback] Impact data fetched:', {
+                  impactPoints,
+                  projectsSupported,
+                  welcome_shown: welcomeShown
+                });
                 
                 // Check if user qualifies for welcome bonus:
                 // 1. Has exactly 50 points (from trigger or creation) - record transaction
@@ -237,7 +364,19 @@ export default function AuthCallback() {
                 const isNewUser = impactPoints === 0 && projectsSupported === 0;
                 const hasWelcomeBonus = impactPoints === 50;
                 
-                if (isNewUser || hasWelcomeBonus) {
+                // IMPORTANT: Set new user flags for Google OAuth flow (if user is new)
+                // This ensures welcome modal shows for Google signups too
+                if ((isNewUser || hasWelcomeBonus) && !welcomeShown) {
+                  // Check if flags are already set (might be set from donation button)
+                  const existingIsNewUser = sessionStorage.getItem('isNewUser') === 'true';
+                  if (!existingIsNewUser) {
+                    sessionStorage.setItem('isNewUser', 'true');
+                    sessionStorage.setItem('checkNewUser', 'true');
+                    console.log('[auth-callback] ✅ Set new user flags for Google OAuth flow');
+                  } else {
+                    console.log('[auth-callback] ✅ New user flags already set');
+                  }
+                  
                   // Call welcome bonus endpoint (idempotent - safe to call multiple times)
                   // This will create the user if they don't exist, then apply the bonus
                   fetch('/api/user/welcome-bonus', { 
@@ -250,6 +389,12 @@ export default function AuthCallback() {
                     // Non-critical - log but don't block user flow
                     console.warn('[auth-callback] Welcome bonus call failed:', err);
                   });
+                } else {
+                  console.log('[auth-callback] User is not new or welcome already shown:', {
+                    isNewUser,
+                    hasWelcomeBonus,
+                    welcomeShown
+                  });
                 }
               } else {
                 console.warn('[auth-callback] Failed to fetch impact data:', impactRes.status, impactRes.statusText);
@@ -260,40 +405,66 @@ export default function AuthCallback() {
             console.warn('[auth-callback] Failed to check/apply welcome bonus:', e);
           }
           
-          // Check if preview mode is enabled
-          const previewEnabled = isOnboardingPreviewEnabled();
-          
-          setStatus('success');
-          setMessage('You are already logged in. Redirecting...');
-          
-          // Check if we should return to support page (from support page auth modal)
-          const pendingSupportReturnUrl = sessionStorage.getItem('pendingSupportReturnUrl');
-          // Check if we should return to payment dialog
-          const returnUrl = sessionStorage.getItem('authReturnUrl');
-          const openPaymentDialog = sessionStorage.getItem('openPaymentDialog') === 'true';
-          
-          setTimeout(() => {
-            if (pendingSupportReturnUrl) {
-              // User was trying to support, redirect back to support page
-              sessionStorage.removeItem('pendingSupportReturnUrl');
-              sessionStorage.removeItem('pendingSupportAmount');
-              // Construct full URL if it's a relative path
-              const fullUrl = pendingSupportReturnUrl.startsWith('http') 
-                ? pendingSupportReturnUrl 
-                : `${window.location.origin}${pendingSupportReturnUrl}`;
-              window.location.href = fullUrl;
-            } else if (returnUrl && openPaymentDialog) {
-              // Return to original page where Support button was clicked
-              sessionStorage.removeItem('authReturnUrl');
-              window.location.href = returnUrl;
-            } else if (previewEnabled) {
-              // In preview mode, dashboard will check if new user based on impact data
-              sessionStorage.setItem('checkNewUser', 'true');
-              navigate('/dashboard?previewOnboarding=1');
-            } else {
-              navigate('/dashboard');
-            }
-          }, 1000);
+            // Check if preview mode is enabled (for preserving preview flag in URL)
+            const previewEnabled = isOnboardingPreviewEnabled();
+            
+            setStatus('success');
+            setMessage('You are already logged in. Redirecting...');
+            
+            // Check if we should return to support page (from support page auth modal)
+            const pendingSupportReturnUrl = sessionStorage.getItem('pendingSupportReturnUrl');
+            // Check if we should return to payment dialog
+            const returnUrl = sessionStorage.getItem('authReturnUrl');
+            const openPaymentDialog = sessionStorage.getItem('openPaymentDialog') === 'true';
+            
+            // Check if new user flags are set (from welcome bonus check above)
+            const hasNewUserFlags = sessionStorage.getItem('isNewUser') === 'true' || sessionStorage.getItem('checkNewUser') === 'true';
+            
+            setTimeout(() => {
+              console.log('[auth-callback] 🚀 FINAL REDIRECT DECISION (Google OAuth/Existing Session):', {
+                hasPendingSupportUrl: !!pendingSupportReturnUrl,
+                pendingSupportUrl: pendingSupportReturnUrl,
+                hasReturnUrl: !!returnUrl,
+                returnUrl: returnUrl,
+                openPaymentDialog,
+                hasNewUserFlags,
+                isNewUser: sessionStorage.getItem('isNewUser'),
+                checkNewUser: sessionStorage.getItem('checkNewUser'),
+                authMethod: 'google_oauth_or_existing_session'
+              });
+              
+              if (pendingSupportReturnUrl) {
+                // User was trying to support, redirect back to support page
+                console.log('[auth-callback] ✅ DECISION: Redirecting to support page:', pendingSupportReturnUrl);
+                sessionStorage.removeItem('pendingSupportReturnUrl');
+                sessionStorage.removeItem('pendingSupportAmount');
+                // Construct full URL if it's a relative path
+                const fullUrl = pendingSupportReturnUrl.startsWith('http') 
+                  ? pendingSupportReturnUrl 
+                  : `${window.location.origin}${pendingSupportReturnUrl}`;
+                window.location.href = fullUrl;
+              } else if (returnUrl && openPaymentDialog) {
+                // Return to original page where Support button was clicked
+                console.log('[auth-callback] ✅ DECISION: Redirecting to return URL:', returnUrl);
+                sessionStorage.removeItem('authReturnUrl');
+                window.location.href = returnUrl;
+              } else {
+                // If new user flags are set, redirect with newUser=1 and previewOnboarding=1
+                if (hasNewUserFlags) {
+                  // Always redirect new users to previewOnboarding for full onboarding experience
+                  const redirectUrl = '/dashboard?newUser=1&previewOnboarding=1';
+                  console.log('[auth-callback] ✅ DECISION: Redirecting new user to dashboard:', redirectUrl);
+                  navigate(redirectUrl);
+                } else {
+                  // Existing user - preserve preview flag if exists
+                  const redirectUrl = previewEnabled 
+                    ? '/dashboard?previewOnboarding=1'
+                    : '/dashboard';
+                  console.log('[auth-callback] ✅ DECISION: Redirecting existing user to dashboard:', redirectUrl);
+                  navigate(redirectUrl);
+                }
+              }
+            }, 1000);
         } else {
           // Check if user is authenticated via getUser as fallback
           const { data: userData, error: userError } = await supabase.auth.getUser();
@@ -379,7 +550,7 @@ export default function AuthCallback() {
               console.warn('[auth-callback] Failed to check/apply welcome bonus:', e);
             }
             
-            // Check if preview mode is enabled
+            // Check if preview mode is enabled (for preserving preview flag in URL)
             const previewEnabled = isOnboardingPreviewEnabled();
             
             setStatus('success');
@@ -390,6 +561,9 @@ export default function AuthCallback() {
             // Check if we should return to payment dialog
             const returnUrl = sessionStorage.getItem('authReturnUrl');
             const openPaymentDialog = sessionStorage.getItem('openPaymentDialog') === 'true';
+            
+            // Check if new user flags are set (from welcome bonus check above)
+            const hasNewUserFlags = sessionStorage.getItem('isNewUser') === 'true' || sessionStorage.getItem('checkNewUser') === 'true';
             
             setTimeout(() => {
               if (pendingSupportReturnUrl) {
@@ -405,12 +579,20 @@ export default function AuthCallback() {
                 // Return to original page where Support button was clicked
                 sessionStorage.removeItem('authReturnUrl');
                 window.location.href = returnUrl;
-              } else if (previewEnabled) {
-                // In preview mode, dashboard will check if new user based on impact data
-                sessionStorage.setItem('checkNewUser', 'true');
-                navigate('/dashboard?previewOnboarding=1');
               } else {
-                navigate('/dashboard');
+                // If new user flags are set, redirect with newUser=1 and previewOnboarding=1
+                if (hasNewUserFlags) {
+                  // Always redirect new users to previewOnboarding for full onboarding experience
+                  const redirectUrl = '/dashboard?newUser=1&previewOnboarding=1';
+                  console.log('[auth-callback] Redirecting new user to:', redirectUrl);
+                  window.location.href = redirectUrl;
+                } else {
+                  // Existing user - preserve preview flag if exists
+                  const redirectUrl = previewEnabled 
+                    ? '/dashboard?previewOnboarding=1'
+                    : '/dashboard';
+                  navigate(redirectUrl);
+                }
               }
             }, 1000);
           }

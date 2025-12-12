@@ -13,9 +13,13 @@ interface SupportedProjectsProps {
 }
 
 export function SupportedProjects({ supportCount = 0, showEmptyStateText = false, showTooltipOnFirst = false }: SupportedProjectsProps = {}) {
-  const { data: supportedProjects, isLoading: isLoadingSupported, error: supportedError } = useQuery<Project[]>({
-    queryKey: ["/api/user/supported-projects"],
+  // Use supported-projects-with-donations and extract just the projects
+  const { data: supportedProjectsWithDonations, isLoading: isLoadingSupported, error: supportedError } = useQuery<any[]>({
+    queryKey: ["/api/user/supported-projects-with-donations"],
   });
+  
+  // Extract just the projects from the response
+  const supportedProjects = supportedProjectsWithDonations?.map((item: any) => item.project) || [];
 
   // Fetch featured projects if user has no supported projects (for empty state)
   const { data: featuredProjects, isLoading: isLoadingFeatured } = useQuery<Project[]>({

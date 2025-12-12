@@ -13,6 +13,25 @@ import { createDatabaseSchema } from "./direct-schema-setup";
 import { setupStripeRoutes } from "./stripe-routes";
 import { subscribeNewsletter, getNewsletterStats } from "./newsletter";
 import { getSitemapXML } from "./sitemap-generator";
+import { generateImpactSnapshot, hasImpact } from "./impact-generator";
+
+// Normalize Supabase snake_case fields to camelCase for impact generator
+function mapProjectImpactFields(project: any) {
+  return {
+    ...project,
+    impactFactor: project.impactFactor ?? project.impact_factor,
+    impactUnitSingularEn: project.impactUnitSingularEn ?? project.impact_unit_singular_en,
+    impactUnitPluralEn: project.impactUnitPluralEn ?? project.impact_unit_plural_en,
+    impactUnitSingularDe: project.impactUnitSingularDe ?? project.impact_unit_singular_de,
+    impactUnitPluralDe: project.impactUnitPluralDe ?? project.impact_unit_plural_de,
+    ctaTemplateEn: project.ctaTemplateEn ?? project.cta_template_en,
+    ctaTemplateDe: project.ctaTemplateDe ?? project.cta_template_de,
+    pastTemplateEn: project.pastTemplateEn ?? project.past_template_en,
+    pastTemplateDe: project.pastTemplateDe ?? project.past_template_de,
+    impactTiers: project.impactTiers ?? project.impact_tiers,
+    impactPointsMultiplier: project.impactPointsMultiplier ?? project.impact_points_multiplier,
+  };
+}
 
 
 
@@ -798,6 +817,233 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Donations - Flat route (matches Vercel Function for local development)
+  // This route mirrors api/projects-donate.ts to ensure local and production work identically
+  app.post("/api/projects-donate", async (req, res) => {
+    try {
+      // CORS handling
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      
+      if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+      }
+
+      const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+      const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+
+      if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+        return res.status(500).json({ message: 'Supabase credentials not configured' });
+      }
+
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+      // Auth
+      const authHeader = req.headers.authorization;
+      if (!authHeader?.startsWith('Bearer ')) {
+        return res.status(401).json({ message: 'Missing bearer token' });
+      }
+      const token = authHeader.substring(7);
+      const { data: authData, error: authError } = await supabase.auth.getUser(token);
+      if (authError || !authData?.user) {
+        return res.status(401).json({ message: 'Invalid or missing user' });
+      }
+      const supaUser = authData.user;
+
+      // Resolve DB user (same logic as Vercel Function)
+      let dbUser;
+      const { data: byAuth } = await supabase.from('users').select('*').eq('auth_user_id', supaUser.id).maybeSingle();
+      dbUser = byAuth || null;
+      if (!dbUser && supaUser.email) {
+        const { data: byEmail } = await supabase.from('users').select('*').eq('email', supaUser.email).maybeSingle();
+        dbUser = byEmail || null;
+      }
+      if (!dbUser) {
+        // Create user on-the-fly (same as Vercel Function)
+        const username = (supaUser.email || `user_${Date.now()}`).split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+        const firstName = (supaUser.user_metadata?.full_name || '').split(' ')[0] || '';
+        const lastName = (supaUser.user_metadata?.full_name || '').split(' ').slice(1).join(' ') || '';
+        const { data: created, error: createErr } = await supabase
+          .from('users')
+          .insert({
+            username,
+            email: supaUser.email,
+            firstName,
+            lastName,
+            auth_user_id: supaUser.id,
+            impactPoints: 50, // Welcome Bonus - matches Vercel Function
+          })
+          .select()
+          .maybeSingle();
+        if (createErr || !created) {
+          return res.status(500).json({ message: 'Failed to resolve user' });
+        }
+        dbUser = created;
+      }
+      const userId = dbUser.id;
+
+      // Validate amount
+      const amount = typeof req.body?.amount === 'number' ? req.body.amount : Number(req.body?.amount);
+      if (!amount || isNaN(amount) || amount <= 0) {
+        return res.status(400).json({ message: 'Invalid donation amount' });
+      }
+
+      // Project lookup: projectId from body, fallback slug
+      const bodyProjectId = typeof req.body?.projectId === 'number' ? req.body.projectId : Number(req.body?.projectId);
+      let project = null;
+      if (!isNaN(bodyProjectId)) {
+        const { data: proj } = await supabase.from('projects').select('*').eq('id', bodyProjectId).maybeSingle();
+        project = proj || null;
+      }
+      if (!project && req.body?.slug) {
+        const { data: projBySlug } = await supabase.from('projects').select('*').eq('slug', req.body.slug).maybeSingle();
+        project = projBySlug || null;
+      }
+      if (!project) {
+        return res.status(404).json({ message: 'Project not found' });
+      }
+
+      const actualProjectId = project.id;
+      const mappedProject = mapProjectImpactFields(project);
+      const impactMultiplier = (mappedProject.impactPointsMultiplier ?? 10) || 10;
+      const impactPoints = Math.floor(amount * impactMultiplier);
+
+      // Impact snapshot generation (optional, safe fallback if data missing)
+      let calculatedImpact: number | undefined;
+      let impactSnapshot: any = null;
+      let generatedPastEn: string | undefined;
+      let generatedPastDe: string | undefined;
+      try {
+        if (hasImpact(mappedProject as any)) {
+          const snapshotEn = generateImpactSnapshot(mappedProject as any, amount, 'en');
+          const snapshotDe = generateImpactSnapshot(mappedProject as any, amount, 'de');
+
+          calculatedImpact = snapshotEn.calculated_impact;
+          generatedPastEn = snapshotEn.generated_text_past;
+          generatedPastDe = snapshotDe.generated_text_past;
+
+          impactSnapshot = {
+            en: snapshotEn,
+            de: snapshotDe,
+            amount,
+            projectId: actualProjectId,
+          };
+        }
+      } catch (impactError) {
+        console.warn('[POST /api/projects-donate] Impact snapshot generation skipped:', impactError);
+      }
+
+      // Update project stats (raised, donors)
+      try {
+        const { data: projectData } = await supabase
+          .from('projects')
+          .select('raised, donors')
+          .eq('id', actualProjectId)
+          .single();
+
+        if (projectData) {
+          await supabase
+            .from('projects')
+            .update({
+              raised: (projectData.raised || 0) + amount,
+              donors: (projectData.donors || 0) + 1
+            })
+            .eq('id', actualProjectId);
+        }
+      } catch (projectError) {
+        console.error('[POST /api/projects-donate] Error updating project stats:', projectError);
+      }
+
+      // Insert donation (include impact data if available)
+      const donationPayload: Record<string, any> = {
+        userId,
+        projectId: actualProjectId,
+        amount,
+        impactPoints,
+        status: 'pending',
+      };
+      if (calculatedImpact !== undefined) {
+        donationPayload.calculated_impact = calculatedImpact;
+      }
+      if (impactSnapshot) {
+        donationPayload.impact_snapshot = impactSnapshot;
+      }
+      if (generatedPastEn) {
+        donationPayload.generated_text_past_en = generatedPastEn;
+      }
+      if (generatedPastDe) {
+        donationPayload.generated_text_past_de = generatedPastDe;
+      }
+
+      const { data: donation, error: donationErr } = await supabase
+        .from('donations')
+        .insert(donationPayload)
+        .select()
+        .maybeSingle();
+
+      if (donationErr || !donation) {
+        return res.status(500).json({ message: 'Failed to create donation', error: donationErr?.message });
+      }
+
+      // Apply points change: update balance then create transaction
+      if (impactPoints > 0) {
+        try {
+          const { data: user, error: userError } = await supabase
+            .from('users')
+            .select('impactPoints')
+            .eq('id', userId)
+            .single();
+
+          if (userError || !user) {
+            throw new Error(`User ${userId} not found: ${userError?.message}`);
+          }
+
+          const currentBalance = (user as any).impactPoints ?? 0;
+          const newBalance = currentBalance + impactPoints;
+
+          const { error: updateError } = await supabase
+            .from('users')
+            .update({ impactPoints: newBalance })
+            .eq('id', userId);
+          if (updateError) {
+            throw new Error(`Failed to update balance: ${updateError.message}`);
+          }
+
+          const { error: transactionError } = await supabase
+            .from('user_transactions')
+            .insert([{
+              user_id: userId,
+              transaction_type: 'donation',
+              project_id: actualProjectId,
+              donation_id: donation.id,
+              support_amount: amount,
+              points_change: impactPoints,
+              points_balance_after: newBalance,
+              description: `Support: $${amount} for project ${actualProjectId}`,
+            }]);
+
+          if (transactionError) {
+            // rollback balance
+            await supabase.from('users').update({ impactPoints: currentBalance }).eq('id', userId);
+            throw new Error(`Failed to create transaction: ${transactionError.message}`);
+          }
+        } catch (pointsError) {
+          console.error('[POST /api/projects-donate] Failed to apply points change:', pointsError);
+        }
+      }
+
+      return res.status(201).json(donation);
+    } catch (error) {
+      console.error('[POST /api/projects-donate] Error:', error);
+      return res.status(500).json({
+        message: 'Failed to process donation',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   // Rewards
   app.get("/api/rewards", async (req, res) => {
     try {
@@ -1083,7 +1329,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             } else {
               console.log('[welcome-bonus] ❌ Step 3 FAILED: createUserMinimal not available, cannot create user');
               return res.status(404).json({ message: "User not found in database and cannot be created" });
-            }
+        }
           } catch (createError: any) {
             console.error('[welcome-bonus] ❌ Step 3 FAILED: Failed to create user:', createError);
             return res.status(500).json({ message: "Failed to create user", error: createError.message });
@@ -1138,6 +1384,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Check welcome_bonus_applied flag first (more reliable than transaction check)
+      const { data: userRecord, error: userError } = await supabase
+        .from('users')
+        .select('welcome_bonus_applied')
+        .eq('id', userId)
+        .single();
+      
+      if (!userError && userRecord && userRecord.welcome_bonus_applied === true) {
+        // Welcome bonus already applied, return success (idempotent)
+        console.log('[welcome-bonus] Welcome bonus already applied (welcome_bonus_applied flag is true)');
+        return res.status(200).json({ message: "Welcome bonus already applied" });
+      }
+      
+      // Fallback: Check transaction table (for backwards compatibility)
       const { data: existingTransaction, error: checkError } = await supabase
         .from('user_transactions')
         .select('id')
@@ -1254,6 +1514,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ message: "Transaction created but no data returned" });
       }
       
+      // Set welcome_bonus_applied flag to true
+      try {
+        const { error: flagError } = await supabase
+          .from('users')
+          .update({ welcome_bonus_applied: true })
+          .eq('id', userId);
+        
+        if (flagError) {
+          console.warn('[welcome-bonus] ⚠️ Could not set welcome_bonus_applied flag (column may not exist):', flagError);
+          // Don't fail - transaction was created successfully
+        } else {
+          console.log('[welcome-bonus] ✅ welcome_bonus_applied flag set to true');
+        }
+      } catch (flagErr) {
+        console.warn('[welcome-bonus] ⚠️ Error setting welcome_bonus_applied flag:', flagErr);
+        // Don't fail - transaction was created successfully
+      }
+      
       console.log('[welcome-bonus] ✅ Transaction created successfully:', {
         transactionId: insertedData[0]?.id,
         userId: userId,
@@ -1303,6 +1581,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: false, 
         message: 'Not authenticated',
         hasAuthHeader: !!req.headers.authorization
+      });
+    }
+  });
+
+  // Mark welcome modal as shown endpoint
+  app.post("/api/user/mark-welcome-shown", async (req, res) => {
+    console.log('[mark-welcome-shown] Endpoint called');
+    let userId: number | undefined;
+    try {
+      // Try Supabase auth first
+      const supabaseUser = await getSupabaseUser(req);
+      console.log('[mark-welcome-shown] Supabase user:', supabaseUser ? supabaseUser.email : 'none');
+      
+      if (supabaseUser) {
+        // User lookup flow (same as welcome-bonus)
+        let dbUser: User | undefined;
+        if (storage.getUserByAuthId && typeof storage.getUserByAuthId === 'function') {
+          dbUser = await storage.getUserByAuthId(supabaseUser.id);
+        }
+        if (!dbUser && supabaseUser.email) {
+          dbUser = await storage.getUserByEmail(supabaseUser.email);
+        }
+        if (!dbUser) {
+          return res.status(404).json({ message: "User not found in database" });
+        }
+        userId = dbUser.id;
+      } else {
+        // Fallback to Passport auth
+        if (!req.isAuthenticated()) {
+          return res.status(401).json({ message: "You must be logged in" });
+        }
+        userId = req.user!.id;
+      }
+      
+      // Get Supabase client
+      const supabaseStorageModule = await import('./supabase-storage-new');
+      const getSupabaseClient = (supabaseStorageModule as any).getSupabaseClient;
+      if (!getSupabaseClient || typeof getSupabaseClient !== 'function') {
+        return res.status(500).json({ message: "Server configuration error" });
+      }
+      const supabase = getSupabaseClient();
+      
+      // Update welcome_shown flag (idempotent - safe to call multiple times) for this user
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ welcome_shown: true })
+        .eq('id', userId);
+      
+      if (updateError) {
+        // Column might not exist yet - log warning but don't fail
+        console.warn('[mark-welcome-shown] ⚠️ Could not set welcome_shown flag (column may not exist):', updateError);
+      }
+      
+      // Also update all rows with the same email (handles multiple auth providers)
+      if (supabaseUser?.email) {
+        const emailLower = supabaseUser.email.toLowerCase();
+        const { error: emailUpdateError } = await supabase
+          .from('users')
+          .update({ welcome_shown: true })
+          .eq('email', emailLower);
+        if (emailUpdateError) {
+          console.warn('[mark-welcome-shown] ⚠️ Could not set welcome_shown for email rows:', emailUpdateError);
+        }
+      }
+      
+      console.log('[mark-welcome-shown] ✅ welcome_shown flag set to true for user (and email rows if any):', userId);
+      return res.status(200).json({ message: "Welcome modal marked as shown" });
+    } catch (error: any) {
+      console.error('[mark-welcome-shown] ❌ Error:', error);
+      return res.status(500).json({ 
+        message: "Failed to mark welcome modal as shown", 
+        error: error?.message || String(error)
       });
     }
   });
@@ -1377,16 +1727,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } else {
             // Fallback: Return default values
             console.log('[GET /api/user/impact] ⚠️ Step 3 FAILED: createUserMinimal not available, returning default values');
-            return res.json({
-              impactPoints: 50, // Default welcome bonus
-              impactPointsChange: 0,
-              amountDonated: 0,
-              amountDonatedChange: 0,
-              projectsSupported: 0,
-              projectsSupportedChange: 0,
-              userLevel: 'aspirer',
-              userStatus: 'aspirer', // 50 < 100, so aspirer
-            });
+        return res.json({
+          impactPoints: 50, // Default welcome bonus
+          impactPointsChange: 0,
+          amountDonated: 0,
+          amountDonatedChange: 0,
+          projectsSupported: 0,
+          projectsSupportedChange: 0,
+          userLevel: 'aspirer',
+          userStatus: 'aspirer', // 50 < 100, so aspirer
+        });
           }
         } catch (createError: any) {
           console.error('[GET /api/user/impact] ❌ Step 3 FAILED: Failed to create user:', createError);
@@ -1408,8 +1758,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       try {
         const userImpact = await storage.getUserImpact(dbUser.id);
-        console.log('[GET /api/user/impact] Returning impact:', userImpact);
-        return res.json(userImpact);
+        
+        // Get welcome flags from user record (handle missing columns gracefully)
+        // CRITICAL: Check by EMAIL FIRST to handle cases where Google login creates a new user record
+        let welcome_shown = false;
+        let welcome_bonus_applied = false;
+        try {
+          const supabaseStorageModule = await import('./supabase-storage-new');
+          const getSupabaseClient = (supabaseStorageModule as any).getSupabaseClient;
+          if (getSupabaseClient && typeof getSupabaseClient === 'function') {
+            const supabase = getSupabaseClient();
+            
+            // STEP 1: Check by EMAIL FIRST (most reliable - works across auth providers)
+            if (supabaseUser.email) {
+              const emailLower = supabaseUser.email.toLowerCase();
+              console.log('[GET /api/user/impact] 🔍 Checking welcome flags by email:', emailLower);
+              
+              // Get ALL users with this email and find one with welcome_shown=true
+              const { data: emailUsers, error: emailError } = await supabase
+                .from('users')
+                .select('id, welcome_shown, welcome_bonus_applied')
+                .eq('email', emailLower);
+              
+              if (!emailError && emailUsers && emailUsers.length > 0) {
+                // Check if ANY user with this email has welcome_shown=true
+                const userWithWelcomeShown = emailUsers.find(u => u.welcome_shown === true);
+                const userWithBonusApplied = emailUsers.find(u => u.welcome_bonus_applied === true);
+                
+                if (userWithWelcomeShown) {
+                  welcome_shown = true;
+                  console.log('[GET /api/user/impact] ✅ Found user with welcome_shown=true by email:', userWithWelcomeShown.id);
+                  
+                  // Sync ALL users with this email to have welcome_shown=true
+                  await supabase
+                    .from('users')
+                    .update({ welcome_shown: true })
+                    .eq('email', emailLower);
+                  console.log('[GET /api/user/impact] ✅ Synced all users with email to welcome_shown=true');
+                }
+                
+                if (userWithBonusApplied) {
+                  welcome_bonus_applied = true;
+                  console.log('[GET /api/user/impact] ✅ Found user with welcome_bonus_applied=true by email:', userWithBonusApplied.id);
+                  
+                  // Sync ALL users with this email to have welcome_bonus_applied=true
+                  await supabase
+                    .from('users')
+                    .update({ welcome_bonus_applied: true })
+                    .eq('email', emailLower);
+                  console.log('[GET /api/user/impact] ✅ Synced all users with email to welcome_bonus_applied=true');
+                }
+              }
+            }
+            
+            // STEP 2: Fallback - check current user's flag (in case email check didn't find anything)
+            if (!welcome_shown) {
+              const { data: userData } = await supabase
+                .from('users')
+                .select('welcome_shown, welcome_bonus_applied')
+                .eq('id', dbUser.id)
+                .single();
+              if (userData) {
+                welcome_shown = userData.welcome_shown === true;
+                welcome_bonus_applied = userData.welcome_bonus_applied === true;
+              }
+            }
+          }
+        } catch (flagError) {
+          // Columns might not exist yet - default to false
+          console.log('[GET /api/user/impact] Could not fetch welcome flags (columns may not exist):', flagError);
+        }
+        
+        console.log('[GET /api/user/impact] Returning impact:', { ...userImpact, welcome_shown, welcome_bonus_applied });
+        return res.json({ ...userImpact, welcome_shown, welcome_bonus_applied });
       } catch (error) {
         console.error('[GET /api/user/impact] Error:', error);
         return res.status(500).json({ message: "Failed to fetch impact data" });
@@ -1425,7 +1846,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     try {
       const userImpact = await storage.getUserImpact(req.user!.id);
-      res.json(userImpact);
+      
+      // Get welcome flags from user record (handle missing columns gracefully)
+      let welcome_shown = false;
+      let welcome_bonus_applied = false;
+      try {
+        const supabaseStorageModule = await import('./supabase-storage-new');
+        const getSupabaseClient = (supabaseStorageModule as any).getSupabaseClient;
+        if (getSupabaseClient && typeof getSupabaseClient === 'function') {
+          const supabase = getSupabaseClient();
+          const { data: userData } = await supabase
+            .from('users')
+            .select('welcome_shown, welcome_bonus_applied')
+            .eq('id', req.user!.id)
+            .single();
+          if (userData) {
+            welcome_shown = userData.welcome_shown === true;
+            welcome_bonus_applied = userData.welcome_bonus_applied === true;
+          }
+        }
+      } catch (flagError) {
+        // Columns might not exist yet - default to false
+        console.log('[GET /api/user/impact] Could not fetch welcome flags (columns may not exist):', flagError);
+      }
+      
+      res.json({ ...userImpact, welcome_shown, welcome_bonus_applied });
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch impact data" });
     }

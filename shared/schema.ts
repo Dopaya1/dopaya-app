@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, doublePrecision } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, doublePrecision, numeric, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -95,7 +95,7 @@ export const projects = pgTable("projects", {
   linkedinUrl: text("linkedin_url"),
   tiktokUrl: text("tiktok_url"),
   
-  // Impact tracking system
+  // Impact tracking system (Legacy - preserved for backward compatibility)
   impactUnit: text("impact_unit"),
   impact_noun: text("impact_noun"),
   impact_verb: text("impact_verb"),
@@ -113,6 +113,30 @@ export const projects = pgTable("projects", {
   impact5: doublePrecision("impact_5"),
   impact6: doublePrecision("impact_6"),
   impact7: doublePrecision("impact_7"),
+  
+  // New Impact Tracking System (Phase 1 Migration)
+  // Impact calculation
+  impactFactor: numeric("impact_factor"), // Linear impact factor (e.g., 0.1 = 1$ = 0.1 units)
+  
+  // Units (for {unit} placeholder - automatic Singular/Plural)
+  impactUnitSingularEn: text("impact_unit_singular_en"),
+  impactUnitPluralEn: text("impact_unit_plural_en"),
+  impactUnitSingularDe: text("impact_unit_singular_de"),
+  impactUnitPluralDe: text("impact_unit_plural_de"),
+  
+  // Templates (only free-text part - {impact} and {unit} are automatically inserted)
+  // Past: "{impact} {unit} {freitext_past}"
+  // CTA: "Support {project} with ${amount} and help {impact} {unit} {freitext_cta} — earn {points} Impact Points"
+  ctaTemplateEn: text("cta_template_en"),
+  ctaTemplateDe: text("cta_template_de"),
+  pastTemplateEn: text("past_template_en"),
+  pastTemplateDe: text("past_template_de"),
+  
+  // Impact-Tiers for non-linear projects (optional - for exceptions)
+  impactTiers: jsonb("impact_tiers"),
+  
+  // Optional: Backup of old presets
+  impactPresets: jsonb("impact_presets"),
   
   // Project status and metrics
   goal: integer("goal"),
@@ -144,7 +168,19 @@ export const donations = pgTable("donations", {
   impactPoints: integer("impactPoints").notNull(), // Actual DB column is "impactPoints" (camelCase)
   // stripeSessionId removed - column doesn't exist in database
   status: text("status").default("pending"),
-  createdAt: timestamp("createdAt").defaultNow() // Actual DB column is "createdAt" (camelCase)
+  createdAt: timestamp("createdAt").defaultNow(), // Actual DB column is "createdAt" (camelCase)
+  
+  // New Impact Tracking System (Phase 1 Migration)
+  // Calculated impact value (immutable snapshot at donation time)
+  calculatedImpact: numeric("calculated_impact"),
+  
+  // Full impact snapshot (JSONB with all data for debugging/audit)
+  impactSnapshot: jsonb("impact_snapshot"),
+  
+  // Generated texts (for quick access without template rendering)
+  // Note: Only Past texts are stored - CTA texts are only needed before donation (from project template)
+  generatedTextPastEn: text("generated_text_past_en"),
+  generatedTextPastDe: text("generated_text_past_de"),
 });
 
 export const insertDonationSchema = createInsertSchema(donations).omit({
@@ -161,6 +197,7 @@ export const rewards = pgTable("rewards", {
   title: text("title").notNull(),
   titleDe: text("title_de"), // German title
   description: text("description").notNull(),
+  descriptionDe: text("description_de"), // German description
   imageUrl: text("image_url").notNull(),
   category: text("category").notNull(),
   partnerLevel: text("partner_level").notNull(),
@@ -169,6 +206,8 @@ export const rewards = pgTable("rewards", {
   discount: text("discount"),
   discountName: text("discount_name"),
   companyName: text("company_name"),
+  redemptionInstructions: text("redemption_instructions"),
+  redemptionInstructionsDe: text("redemption_instructions_de"), // German redemption instructions
   createdAt: timestamp("created_at").defaultNow() // Added in Phase 1 migration
 });
 
@@ -188,6 +227,9 @@ export interface UserImpact {
   projectsSupported: number;
   projectsSupportedChange: number;
   userLevel: string;
+  // Optional flags for onboarding and bonus state
+  welcome_shown?: boolean;
+  welcome_bonus_applied?: boolean;
 }
 
 // Impact History schema (for chart)
@@ -199,11 +241,12 @@ export interface UserImpactHistory {
 // User Redemption schema
 export const redemptions = pgTable("redemptions", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
-  rewardId: integer("reward_id").notNull(),
-  pointsSpent: integer("points_spent").notNull(),
+  // userId is nullable to keep redemptions when a user is deleted (FK on delete set null)
+  userId: integer("userId").references(() => users.id, { onDelete: "set null" }),
+  rewardId: integer("rewardId").notNull(),
+  pointsSpent: integer("pointsSpent").notNull(),
   status: text("status").notNull().default("pending"), // pending, fulfilled, or cancelled
-  createdAt: timestamp("created_at").defaultNow()
+  createdAt: timestamp("createdAt").defaultNow()
 });
 
 export const insertRedemptionSchema = createInsertSchema(redemptions).omit({

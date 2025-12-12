@@ -36,3 +36,6 @@ WHERE tablename = 'redemptions';
 SELECT COUNT(*) as total_redemptions FROM redemptions;
 
 
+
+
+

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ShoppingBag, Leaf, Heart } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { ImpactShareCard } from "@/components/dashboard/impact-share-card";
 
@@ -217,7 +217,9 @@ export function SupportMiniJourney({
               className="w-full text-left p-4 rounded-xl border border-gray-200 bg-white hover:bg-orange-50 transition-colors active:scale-[0.99] flex items-start gap-3"
             >
               <div className="flex-shrink-0 mt-0.5">
-                <span className="text-2xl">🔸</span>
+                <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
+                  <ShoppingBag className="w-5 h-5 text-[#f2662d]" />
+                </div>
               </div>
               <div className="flex-1">
                 <p className="text-sm font-semibold text-gray-900">
@@ -236,7 +238,9 @@ export function SupportMiniJourney({
               className="w-full text-left p-4 rounded-xl border border-gray-200 bg-white hover:bg-blue-50 transition-colors active:scale-[0.99] flex items-start gap-3"
             >
               <div className="flex-shrink-0 mt-0.5">
-                <span className="text-2xl">🔹</span>
+                <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                  <Leaf className="w-5 h-5 text-green-600" />
+                </div>
               </div>
               <div className="flex-1">
                 <p className="text-sm font-semibold text-gray-900">
@@ -264,7 +268,9 @@ export function SupportMiniJourney({
                 ))}
               </span>
               <div className="flex-shrink-0 mt-0.5">
-                <span className="text-2xl">💛</span>
+                <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
+                  <Heart className="w-5 h-5 text-red-600" />
+                </div>
               </div>
               <div className="flex-1">
                 <p className="text-sm font-semibold text-gray-900">

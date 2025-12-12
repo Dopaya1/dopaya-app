@@ -73,16 +73,16 @@ export default function SupportPage() {
   const [supportAmount, setSupportAmount] = useState<number | null>(null);
   const [isCustomAmount, setIsCustomAmount] = useState<boolean>(false);
   const [customAmount, setCustomAmount] = useState<number>(0);
-  const [tipSliderValue, setTipSliderValue] = useState<number[]>([10]); // 10% default
+  const [tipSliderValue, setTipSliderValue] = useState<number[]>([0]); // Start at 0%
   const [isCustomTip, setIsCustomTip] = useState<boolean>(false);
   const [customTipValue, setCustomTipValue] = useState<number>(0);
-  const [hideNamePublicly, setHideNamePublicly] = useState<boolean>(false);
+  const [hasInteractedWithTip, setHasInteractedWithTip] = useState<boolean>(false);
   const [signUpForUpdates, setSignUpForUpdates] = useState<boolean>(false);
   const [showProcessingImpact, setShowProcessingImpact] = useState<boolean>(false);
   const [showMiniJourney, setShowMiniJourney] = useState<boolean>(false);
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
 
-  const predefinedAmounts = [50, 100, 200, 500, 1000];
+  const predefinedAmounts = [50, 100, 200, 300, 500, 1000];
 
   const currentSupportAmount = isCustomAmount ? customAmount : (supportAmount || 0);
   const hasSelectedAmount =
@@ -102,6 +102,12 @@ export default function SupportPage() {
     if (!isLoading && project && !user && previewEnabled) {
       // Store the current support page URL so auth-callback can redirect back here after OAuth
       const supportPageUrl = `/support/${slug}${previewEnabled ? '?previewOnboarding=1' : ''}`;
+      console.log('[Support Page] 🔍 Setting pendingSupportReturnUrl:', {
+        url: supportPageUrl,
+        slug,
+        previewEnabled,
+        currentUrl: window.location.href
+      });
       sessionStorage.setItem('pendingSupportReturnUrl', supportPageUrl);
       setShowAuthModal(true);
     }
@@ -332,21 +338,15 @@ export default function SupportPage() {
           </div>
         </header>
 
-        <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           {/* Payment card styled similar to GoFundMe layout (preview) */}
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 sm:p-8 space-y-6">
             {/* Header row: project name left, small image right */}
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-1 flex-1">
-                <p className="text-xs font-semibold tracking-wide text-[#f2662d] uppercase">
-                  {t("support.supportPreview")}
-                </p>
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
                   {project.title}
                 </h1>
-                <p className="text-sm text-gray-600">
-                  {t("support.previewDescription")}
-                </p>
               </div>
               {headerImageUrl && (
                 <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200 bg-gray-50">
@@ -362,15 +362,15 @@ export default function SupportPage() {
           {/* Amount selection */}
           <div className="space-y-6">
             {/* Amount pills */}
-            <div className="flex flex-wrap gap-3 justify-center">
+            <div className="w-full grid grid-cols-3 md:grid md:grid-cols-6 gap-2">
               {predefinedAmounts.map((amount) => {
                 const isSuggested = amount === 200;
                 const isActive = supportAmount === amount && !isCustomAmount;
                 return (
-                  <div key={amount} className="relative">
+                  <div key={amount} className="relative w-full">
                     <Button
                       variant="outline"
-                      className={`h-10 px-5 rounded-full text-sm font-medium border-2 transition-all ${
+                      className={`h-auto py-3 w-full rounded-lg text-sm font-medium border-2 transition-all ${
                         isActive
                           ? "bg-[#f2662d] text-white border-[#f2662d] hover:bg-[#d9551f]"
                           : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
@@ -389,7 +389,7 @@ export default function SupportPage() {
                       ${amount.toLocaleString()}
                     </Button>
                     {isSuggested && !isActive && (
-                      <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-green-100 text-green-700 text-[10px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap">
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 bg-green-100 text-green-700 text-[10px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap">
                         <Heart className="w-3 h-3" />
                         {t("support.suggested")}
                       </div>
@@ -401,7 +401,7 @@ export default function SupportPage() {
 
             {/* Custom amount input, styled like GoFundMe */}
             <div className="flex flex-col items-center space-y-2">
-              <div className="relative w-full max-w-md">
+              <div className="relative w-full">
                 {/* Left: currency */}
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 flex flex-col items-start">
                   <span className="text-2xl font-bold text-gray-700">$</span>
@@ -446,25 +446,18 @@ export default function SupportPage() {
 
           {/* Impact banner */}
           {hasSelectedAmount && currentSupportAmount > 0 && (
-            <div className="space-y-3 w-full max-w-md mx-auto">
+            <div className="space-y-3 w-full">
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-900">
-                      {t("support.congratulations")}{" "}
-                      <span className="font-bold">{impactPoints.toLocaleString()}</span>{" "}
-                      {t("support.impactPointsEarned")}
-                    </p>
-                  </div>
-                  <div className="ml-4 flex-shrink-0">
-                    <div className="w-10 h-10 bg-[#8B7355] rounded-full flex items-center justify-center">
-                      <Trophy className="w-5 h-5 text-white" />
-                    </div>
-                  </div>
+                <div className="text-center">
+                  <p className="text-base font-semibold text-gray-900">
+                    {t("support.congratulations")}{" "}
+                    <span className="font-bold">{impactPoints.toLocaleString()}</span>{" "}
+                    {t("support.impactPointsEarned")}
+                  </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-1 text-[11px] text-gray-600">
+              <div className="flex items-center gap-1 text-sm text-gray-600">
                 <span>
                   {t("support.goesToProject")}
                 </span>
@@ -489,10 +482,10 @@ export default function SupportPage() {
 
           {/* Tip section */}
           {hasSelectedAmount && currentSupportAmount > 0 && (
-            <div className="space-y-4">
+            <div className="space-y-4 pt-10">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-1">{t("support.tipDopaya")}</h3>
-                <p className="text-xs text-gray-500 mb-4">
+                <p className="text-sm text-gray-500 mb-4">
                   {t("support.tipDescription")}
                 </p>
 
@@ -507,19 +500,39 @@ export default function SupportPage() {
                           ${tipAmount.toFixed(2)}
                         </span>
                       </div>
-                      <Slider
-                        value={tipSliderValue}
-                        onValueChange={setTipSliderValue}
-                        min={0}
-                        max={20}
-                        step={0.5}
-                        className="w-full"
-                      />
+                      {/* Slider with 10% recommended marker */}
+                      <div className="relative w-full">
+                        <Slider
+                          value={tipSliderValue}
+                          onValueChange={(value) => {
+                            setTipSliderValue(value);
+                            setHasInteractedWithTip(true);
+                          }}
+                          min={0}
+                          max={30}
+                          step={1}
+                          className="w-full"
+                        />
+                        {/* Recommended marker at 10% */}
+                        <div
+                          className="absolute top-0 flex flex-col items-center"
+                          style={{ left: '33.33%', transform: 'translateX(-50%)' }}
+                        >
+                          {/* Vertical line marker */}
+                          <div className="w-0.5 h-6 bg-secondary mb-1" />
+                          {/* Recommended label - styled like suggested badge */}
+                          <div className="flex items-center gap-1 bg-green-100 text-green-700 text-[10px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap">
+                            <Heart className="w-3 h-3" />
+                            <span>10% {t("support.recommended")}</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                     <button
                       onClick={() => {
                         setIsCustomTip(true);
                         setCustomTipValue(tipSliderValue[0]);
+                        setHasInteractedWithTip(true);
                       }}
                       className="text-xs text-gray-600 hover:text-gray-900 underline mt-2"
                     >
@@ -532,12 +545,13 @@ export default function SupportPage() {
                       <Input
                         type="number"
                         min={0}
-                        max={20}
-                        step={0.5}
+                        max={30}
+                        step={1}
                         value={customTipValue}
                         onChange={(e) => {
                           const v = Number(e.target.value || 0);
-                          setCustomTipValue(Math.min(20, Math.max(0, isNaN(v) ? 0 : v)));
+                          setCustomTipValue(Math.min(30, Math.max(0, isNaN(v) ? 0 : v)));
+                          setHasInteractedWithTip(true);
                         }}
                         className="w-24"
                         placeholder="%"
@@ -558,13 +572,24 @@ export default function SupportPage() {
                     </button>
                   </div>
                 )}
+
+                {/* Thank you message when tip is selected - below slider/custom input */}
+                {hasInteractedWithTip && tipAmount > 0 && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 shadow-sm mt-4">
+                    <div className="text-center">
+                      <p className="text-base font-semibold text-gray-900">
+                        {t("support.thankYouGenerosity")}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
 
           {/* Payment method */}
           {hasSelectedAmount && currentSupportAmount > 0 && (
-            <div className="space-y-3">
+            <div className="space-y-3 pt-10">
               <h3 className="text-lg font-semibold text-gray-900">{t("support.paymentMethod")}</h3>
               <div className="flex items-center space-x-3 p-4 border-2 border-gray-300 rounded-lg bg-white">
                 <div className="h-4 w-4 rounded-full border-2 border-[#f2662d] bg-[#f2662d] flex items-center justify-center">
@@ -580,38 +605,6 @@ export default function SupportPage() {
           {/* Privacy & updates */}
           {hasSelectedAmount && currentSupportAmount > 0 && (
             <div className="space-y-4">
-              <div className="flex items-start space-x-3">
-                <Checkbox
-                  id="hideName"
-                  checked={hideNamePublicly}
-                  onCheckedChange={(checked) => setHideNamePublicly(checked === true)}
-                  className="mt-0.5"
-                />
-                <div className="flex-1 flex items-start gap-1">
-                  <label
-                    htmlFor="hideName"
-                    className="text-sm text-gray-700 cursor-pointer leading-relaxed"
-                  >
-                    {t("support.dontDisplayName")}
-                  </label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button
-                        type="button"
-                        className="mt-0.5 text-gray-400 hover:text-gray-600"
-                        aria-label="Why we show supporter names"
-                      >
-                        <Info className="h-3 w-3" />
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80 text-sm">
-                      <p>
-                        {t("support.whyShowNames")}
-                      </p>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              </div>
               <div className="flex items-start space-x-3">
                 <Checkbox
                   id="signUpUpdates"
@@ -656,45 +649,41 @@ export default function SupportPage() {
                   style={{ backgroundColor: "#FFC107", color: "#1a1a3a" }}
                   onClick={async () => {
                     if (!hasSelectedAmount || currentSupportAmount <= 0) return;
-                    
-                    // TEST MODE: Create donation via API
-                    // Set VITE_TEST_MODE=true in .env to enable test mode
-                    const TEST_MODE = import.meta.env.VITE_TEST_MODE === 'true';
-                    
-                    if (TEST_MODE && project?.id && user) {
-                      try {
-                        console.log('[TEST MODE] Creating donation via support page');
-                        
-                        // Use direct API endpoint (bypasses Stripe, creates donation + transaction automatically)
-                        // Include slug in request body for fallback lookup if project ID is wrong
-                        const response = await apiRequest("POST", `/api/projects/${project.id}/donate`, {
-                          amount: currentSupportAmount,
-                          slug: project.slug // Include slug for fallback lookup
-                        });
-                        
-                        if (!response.ok) {
-                          const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-                          throw new Error(errorData.message || `Server error: ${response.status}`);
-                        }
-                        
-                        const donation = await response.json();
-                        console.log('[TEST MODE] ✅ Donation created:', donation);
-                        
-                        // MICROSTEP 1.2: Invalidate impact query to update navbar immediately
-                        queryClient.invalidateQueries({ queryKey: ["/api/user/impact"] });
-                        console.log('[TEST MODE] ✅ Invalidated impact query - navbar will update');
-                        
-                        // Show processing animation after successful donation
-                        setShowProcessingImpact(true);
-                      } catch (error: any) {
-                        console.error('[TEST MODE] Donation failed:', error);
-                        alert(`Donation failed: ${error.message || 'Unknown error'}`);
-                        // Don't show animation on error
-                        return;
+                    if (!project?.id || !user) {
+                      alert("You must be logged in to donate.");
+                      return;
+                    }
+
+                    try {
+                      console.log('[TEST MODE] Creating donation via support page');
+
+                      // Use direct API endpoint (bypasses Stripe, creates donation + transaction automatically)
+                      // Include slug in request body for fallback lookup if project ID is wrong
+                      const response = await apiRequest("POST", `/api/projects-donate`, {
+                        projectId: project.id,
+                        amount: currentSupportAmount,
+                        slug: project.slug // Include slug for fallback lookup
+                      });
+
+                      if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+                        throw new Error(errorData.message || `Server error: ${response.status}`);
                       }
-                    } else {
-                      // Preview mode - just show animation (no real payment)
+
+                      const donation = await response.json();
+                      console.log('[TEST MODE] ✅ Donation created:', donation);
+
+                      // Invalidate impact query to update navbar immediately
+                      queryClient.invalidateQueries({ queryKey: ["/api/user/impact"] });
+                      console.log('[TEST MODE] ✅ Invalidated impact query - navbar will update');
+
+                      // Show processing animation after successful donation
                       setShowProcessingImpact(true);
+                    } catch (error: any) {
+                      console.error('[TEST MODE] Donation failed:', error);
+                      alert(`Donation failed: ${error.message || 'Unknown error'}`);
+                      // Don't show animation on error
+                      return;
                     }
                   }}
                 >

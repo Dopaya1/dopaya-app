@@ -86,3 +86,4 @@ temp/
 
 # User data
 newsletter-subscribers.json
+.env*.local

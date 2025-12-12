@@ -7,6 +7,7 @@ import { BRAND_COLORS } from "@/constants/colors";
 import ExpandableGallery from "@/components/ui/gallery-animation";
 import { LanguageLink } from "@/components/ui/language-link";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ChevronDown, Target, GraduationCap, Droplets, Leaf, Wind, Heart, Users } from "lucide-react";
 import sdgWheelImg from "@assets/sdg wheel.png";
 import { SDGNotificationBell } from "@/components/ui/sdg-notification-bell";
@@ -14,14 +15,20 @@ import { getProjectImageUrl } from "@/lib/image-utils";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { useI18n } from "@/lib/i18n/i18n-context";
 import { getProjectImpactUnit, getProjectImpactNoun, getProjectImpactVerb, getProjectMissionStatement, getProjectDescription } from "@/lib/i18n/project-content";
+import { isOnboardingPreviewEnabled } from "@/lib/feature-flags";
+import { useLocation } from "wouter";
+import { calculateImpactUnified, generateCtaText } from "@/lib/impact-calculator";
 
 export function CaseStudyModernSectionV3() {
   const { t } = useTranslation();
   const { language } = useI18n();
+  const [, navigate] = useLocation();
+  const previewEnabled = isOnboardingPreviewEnabled();
   const [selectedProject, setSelectedProject] = React.useState<Project | null>(null);
   const [donationAmount, setDonationAmount] = React.useState(0);
   const [showDonationDropdown, setShowDonationDropdown] = React.useState(false);
-  const initializedRef = React.useRef<string | null>(null);
+  const [showWaitlistDialog, setShowWaitlistDialog] = React.useState(false);
+  const initializedRef = React.useRef<string | number | null>(null);
 
   // Featured projects for case study section (up to 3, plus "All Projects" box)
   // Fetch latest featured projects ordered by creation date
@@ -109,29 +116,88 @@ export function CaseStudyModernSectionV3() {
 
   // Donation tiers util (same as V2)
   const getAvailableTiers = (project: Project | null) => {
-    if (!project) return [] as { donation: number; impact: string; unit: string; points: number }[];
-    const tiers: { donation: number; impact: string; unit: string; points: number }[] = [];
+    if (!project) return [] as { donation: number; unit: string; points: number }[];
+    const tiers: { donation: number; unit: string; points: number }[] = [];
     for (let i = 1; i <= 7; i++) {
       const donation = project[`donation_${i}` as keyof Project] as unknown as number;
-      const impact = project[`impact_${i}` as keyof Project] as unknown as string;
       const impactUnit = getProjectImpactUnit(project, language) || 'impact created';
-      if (donation && impact) {
-        tiers.push({ donation, impact, unit: impactUnit || 'impact created', points: donation * 10 });
+      if (donation) {
+        tiers.push({ donation, unit: impactUnit || 'impact created', points: donation * 10 });
       }
     }
     return tiers.sort((a, b) => a.donation - b.donation);
   };
   const availableTiers = getAvailableTiers(selectedProject);
+  const fallbackDonations = [10, 25, 50, 100];
+  const donationOptions = availableTiers.length > 0 ? availableTiers.map(t => t.donation) : fallbackDonations;
   React.useEffect(() => {
-    if (selectedProject && availableTiers.length > 0 && initializedRef.current !== selectedProject.id) {
-      setDonationAmount(availableTiers[0].donation);
-      initializedRef.current = selectedProject.id;
+    const projectKey = selectedProject ? (selectedProject.id ?? selectedProject.slug ?? null) : null;
+    if (selectedProject && initializedRef.current !== projectKey) {
+      if (availableTiers.length > 0) {
+        setDonationAmount(availableTiers[0].donation);
+      } else {
+        setDonationAmount(fallbackDonations[2]); // default to 50 if no tiers
+      }
+      initializedRef.current = projectKey;
     }
   }, [selectedProject, availableTiers]);
   const currentTier = availableTiers.find(t => t.donation === donationAmount) || availableTiers[0];
-  const impactAmount = currentTier?.impact || '0';
-  const impactUnit = currentTier?.unit || 'impact created';
-  const impactPoints = currentTier?.points || 0;
+  // Impact calculation (new unified logic with fallback)
+  const impactResult = selectedProject
+    ? calculateImpactUnified(selectedProject, donationAmount || 0, language === 'de' ? 'de' : 'en')
+    : null;
+  
+  // Try to generate CTA text from templates (new system)
+  const generatedCtaText = selectedProject && impactResult
+    ? generateCtaText(selectedProject, donationAmount || 0, impactResult, language === 'de' ? 'de' : 'en')
+    : null;
+  
+  // Parse generated text to extract impact+unit and freitext separately
+  const parseCtaText = (text: string, lang: 'en' | 'de') => {
+    if (lang === 'de') {
+      // Format: "Unterstütze {project} mit ${amount} und hilf {impact} {unit} {freitext} — verdiene {points} Impact Points"
+      const match = text.match(/und hilf (.+?) — verdiene/);
+      if (match) {
+        const impactAndFreitext = match[1];
+        // Split by impact amount (number) to separate impact+unit from freitext
+        const impactMatch = impactAndFreitext.match(/^(\d+(?:\.\d+)?)\s+([^\s]+)\s+(.+)$/);
+        if (impactMatch) {
+          return {
+            impact: impactMatch[1],
+            unit: impactMatch[2],
+            freitext: impactMatch[3]
+          };
+        }
+      }
+    } else {
+      // Format: "Support {project} with ${amount} and help {impact} {unit} {freitext} — earn {points} Impact Points"
+      const match = text.match(/and help (.+?) — earn/);
+      if (match) {
+        const impactAndFreitext = match[1];
+        // Split by impact amount (number) to separate impact+unit from freitext
+        const impactMatch = impactAndFreitext.match(/^(\d+(?:\.\d+)?)\s+([^\s]+)\s+(.+)$/);
+        if (impactMatch) {
+          return {
+            impact: impactMatch[1],
+            unit: impactMatch[2],
+            freitext: impactMatch[3]
+          };
+        }
+      }
+    }
+    return null;
+  };
+  
+  const parsedCta = generatedCtaText ? parseCtaText(generatedCtaText, language === 'de' ? 'de' : 'en') : null;
+  
+  // Fallback values for old system
+  const impactAmount = impactResult
+    ? (impactResult.impact % 1 === 0 ? impactResult.impact.toString() : impactResult.impact.toFixed(2))
+    : (currentTier?.impact || '0');
+  const impactUnit = impactResult?.unit || currentTier?.unit || 'impact created';
+  const impactPoints = selectedProject
+    ? Math.floor((selectedProject.impactPointsMultiplier ?? (selectedProject as any)?.impact_points_multiplier ?? 10) * (donationAmount || 0))
+    : (currentTier?.points || 0);
   const impactVerb = selectedProject ? getProjectImpactVerb(selectedProject, language) || 'help' : 'help';
   const impactNoun = selectedProject ? getProjectImpactNoun(selectedProject, language) || 'people' : 'people';
 
@@ -193,55 +259,185 @@ export function CaseStudyModernSectionV3() {
                 <div className="space-y-8 order-2 lg:order-1">
                   <div>
                     <div className="text-center lg:text-left">
-                      <p className="text-2xl lg:text-4xl font-semibold leading-[1.4]" style={{ color: BRAND_COLORS.textPrimary }}>
-                        {t("homeSections.caseStudy.support")} <span className="font-bold" style={{ color: BRAND_COLORS.textPrimary }}>{selectedProject.title}</span> {t("homeSections.caseStudy.withProject")}{' '}
-                        <span className="relative inline-block">
-                          <button
-                            onClick={() => setShowDonationDropdown(!showDonationDropdown)}
-                            className="inline-flex items-center gap-1 border-b-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors min-h-[48px] px-2 font-bold"
-                            style={{ color: BRAND_COLORS.primaryOrange }}
-                          >
-                            ${donationAmount}
-                            <ChevronDown className="h-5 w-5" />
-                          </button>
-                          {showDonationDropdown && (
-                            <div className="absolute top-full left-0 mt-2 bg-white border rounded-lg shadow-lg z-10 min-w-[140px]" style={{ borderColor: BRAND_COLORS.borderSubtle }}>
-                              {availableTiers.map((tier) => (
-                                <button key={tier.donation} onClick={() => { setDonationAmount(tier.donation); setShowDonationDropdown(false); }} className="w-full p-2 text-left hover:bg-gray-50 transition-colors min-h-[36px]">
-                                  <span className="text-lg font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>
-                                    ${tier.donation}
-                                  </span>
+                      {generatedCtaText ? (
+                        // New system: Use generated CTA text from templates
+                        <p className="text-2xl lg:text-4xl font-semibold leading-[1.4]" style={{ color: BRAND_COLORS.textPrimary }}>
+                          {language === 'de' ? (
+                            <>
+                              Unterstütze <span className="font-bold" style={{ color: BRAND_COLORS.textPrimary }}>{selectedProject.title}</span> mit{' '}
+                              <span className="relative inline-block">
+                                <button
+                                  onClick={() => setShowDonationDropdown(!showDonationDropdown)}
+                                  className="inline-flex items-center gap-1 border-b-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors min-h-[48px] px-2 font-bold"
+                                  style={{ color: BRAND_COLORS.primaryOrange }}
+                                >
+                                  ${donationAmount}
+                                  <ChevronDown className="h-5 w-5" />
                                 </button>
-                              ))}
-                            </div>
+                                {showDonationDropdown && (
+                                  <div className="absolute top-full left-0 mt-2 bg-white border rounded-lg shadow-lg z-10 min-w-[140px]" style={{ borderColor: BRAND_COLORS.borderSubtle }}>
+                                    {donationOptions.map((amount) => (
+                                      <button key={amount} onClick={() => { setDonationAmount(amount); setShowDonationDropdown(false); }} className="w-full p-2 text-left hover:bg-gray-50 transition-colors min-h-[36px]">
+                                        <span className="text-lg font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>
+                                          ${amount}
+                                        </span>
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </span>
+                              {' '}und hilf{' '}
+                              {parsedCta ? (
+                                <>
+                                  <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>
+                                    {parsedCta.impact} {parsedCta.unit}
+                                  </span>
+                                  {' '}
+                                  <span style={{ color: BRAND_COLORS.textPrimary }}>
+                                    {parsedCta.freitext}
+                                  </span>
+                                </>
+                              ) : (
+                                <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>
+                                  {impactAmount} {impactUnit}
+                                </span>
+                              )}
+                              {' '}
+                              <span style={{ color: BRAND_COLORS.textSecondary }}>
+                                <span style={{ fontSize: '0.7em', verticalAlign: 'baseline' }}>—</span> {t("homeSections.caseStudy.earn").replace('— ', '')}
+                              </span>
+                              {' '}
+                              <span className="font-bold" style={{ color: BRAND_COLORS.textSecondary }}>
+                                {generatedCtaText.split('verdiene ')[1]?.split(' Impact Points')[0] || impactPoints}
+                              </span>
+                              {' '}
+                              <span style={{ color: BRAND_COLORS.textSecondary }}>{t("homeSections.caseStudy.impactPoints")}</span><span style={{ color: BRAND_COLORS.textSecondary }}>.</span>
+                            </>
+                          ) : (
+                            <>
+                              Support <span className="font-bold" style={{ color: BRAND_COLORS.textPrimary }}>{selectedProject.title}</span> with{' '}
+                              <span className="relative inline-block">
+                                <button
+                                  onClick={() => setShowDonationDropdown(!showDonationDropdown)}
+                                  className="inline-flex items-center gap-1 border-b-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors min-h-[48px] px-2 font-bold"
+                                  style={{ color: BRAND_COLORS.primaryOrange }}
+                                >
+                                  ${donationAmount}
+                                  <ChevronDown className="h-5 w-5" />
+                                </button>
+                                {showDonationDropdown && (
+                                  <div className="absolute top-full left-0 mt-2 bg-white border rounded-lg shadow-lg z-10 min-w-[140px]" style={{ borderColor: BRAND_COLORS.borderSubtle }}>
+                                    {donationOptions.map((amount) => (
+                                      <button key={amount} onClick={() => { setDonationAmount(amount); setShowDonationDropdown(false); }} className="w-full p-2 text-left hover:bg-gray-50 transition-colors min-h-[36px]">
+                                        <span className="text-lg font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>
+                                          ${amount}
+                                        </span>
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </span>
+                              {' '}and help{' '}
+                              {parsedCta ? (
+                                <>
+                                  <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>
+                                    {parsedCta.impact} {parsedCta.unit}
+                                  </span>
+                                  {' '}
+                                  <span style={{ color: BRAND_COLORS.textPrimary }}>
+                                    {parsedCta.freitext}
+                                  </span>
+                                </>
+                              ) : (
+                                <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>
+                                  {impactAmount} {impactUnit}
+                                </span>
+                              )}
+                              {' '}
+                              <span style={{ color: BRAND_COLORS.textSecondary }}>
+                                <span style={{ fontSize: '0.7em', verticalAlign: 'baseline' }}>—</span> {t("homeSections.caseStudy.earn").replace('— ', '')}
+                              </span>
+                              {' '}
+                              <span className="font-bold" style={{ color: BRAND_COLORS.textSecondary }}>
+                                {generatedCtaText.split('earn ')[1]?.split(' Impact Points')[0] || impactPoints}
+                              </span>
+                              {' '}
+                              <span style={{ color: BRAND_COLORS.textSecondary }}>{t("homeSections.caseStudy.impactPoints")}</span><span style={{ color: BRAND_COLORS.textSecondary }}>.</span>
+                            </>
                           )}
-                        </span> {t("homeSections.caseStudy.andHelp")}{' '}
-                        {language === 'de' ? (
-                          <>
-                            <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>{impactAmount}</span>{' '}
-                            <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>{impactNoun}</span>{' '}
-                            <span className="font-bold" style={{ color: BRAND_COLORS.textPrimary }}>{impactVerb}</span>{' '}
-                          </>
-                        ) : (
-                          <>
-                            <span className="font-bold" style={{ color: BRAND_COLORS.textPrimary }}>{impactVerb}</span>{' '}
-                            <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>{impactAmount}</span>{' '}
-                            <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>{impactNoun}</span>{' '}
-                          </>
-                        )}
-                        <span style={{ color: BRAND_COLORS.textSecondary }}>
-                          <span style={{ fontSize: '0.7em', verticalAlign: 'baseline' }}>—</span> {t("homeSections.caseStudy.earn").replace('— ', '')}
-                        </span>{' '}
-                        <span className="font-bold" style={{ color: BRAND_COLORS.textSecondary }}>{impactPoints}</span>{' '}
-                        <span style={{ color: BRAND_COLORS.textSecondary }}>{t("homeSections.caseStudy.impactPoints")}</span><span style={{ color: BRAND_COLORS.textSecondary }}>.</span>
-                      </p>
+                        </p>
+                      ) : (
+                        // Fallback: Old system with verb/noun
+                        <p className="text-2xl lg:text-4xl font-semibold leading-[1.4]" style={{ color: BRAND_COLORS.textPrimary }}>
+                          {t("homeSections.caseStudy.support")} <span className="font-bold" style={{ color: BRAND_COLORS.textPrimary }}>{selectedProject.title}</span> {t("homeSections.caseStudy.withProject")}{' '}
+                          <span className="relative inline-block">
+                            <button
+                              onClick={() => setShowDonationDropdown(!showDonationDropdown)}
+                              className="inline-flex items-center gap-1 border-b-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors min-h-[48px] px-2 font-bold"
+                              style={{ color: BRAND_COLORS.primaryOrange }}
+                            >
+                              ${donationAmount}
+                              <ChevronDown className="h-5 w-5" />
+                            </button>
+                            {showDonationDropdown && (
+                              <div className="absolute top-full left-0 mt-2 bg-white border rounded-lg shadow-lg z-10 min-w-[140px]" style={{ borderColor: BRAND_COLORS.borderSubtle }}>
+                                {donationOptions.map((amount) => (
+                                  <button key={amount} onClick={() => { setDonationAmount(amount); setShowDonationDropdown(false); }} className="w-full p-2 text-left hover:bg-gray-50 transition-colors min-h-[36px]">
+                                    <span className="text-lg font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>
+                                      ${amount}
+                                    </span>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </span> {t("homeSections.caseStudy.andHelp")}{' '}
+                          {language === 'de' ? (
+                            <>
+                              <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>{impactAmount}</span>{' '}
+                              <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>{impactNoun}</span>{' '}
+                              <span className="font-bold" style={{ color: BRAND_COLORS.textPrimary }}>{impactVerb}</span>{' '}
+                            </>
+                          ) : (
+                            <>
+                              <span className="font-bold" style={{ color: BRAND_COLORS.textPrimary }}>{impactVerb}</span>{' '}
+                              <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>{impactAmount}</span>{' '}
+                              <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>{impactNoun}</span>{' '}
+                            </>
+                          )}
+                          <span style={{ color: BRAND_COLORS.textSecondary }}>
+                            <span style={{ fontSize: '0.7em', verticalAlign: 'baseline' }}>—</span> {t("homeSections.caseStudy.earn").replace('— ', '')}
+                          </span>{' '}
+                          <span className="font-bold" style={{ color: BRAND_COLORS.textSecondary }}>{impactPoints}</span>{' '}
+                          <span style={{ color: BRAND_COLORS.textSecondary }}>{t("homeSections.caseStudy.impactPoints")}</span><span style={{ color: BRAND_COLORS.textSecondary }}>.</span>
+                        </p>
+                      )}
                     </div>
 
-                    <div className="mt-8 lg:mt-10 text-center lg:text-left">
-                      <Button size="lg" className="text-white font-semibold px-6 lg:px-8 py-3 lg:py-4 text-base lg:text-lg min-h-[44px] lg:min-h-[48px] w-full sm:w-auto" style={{ backgroundColor: BRAND_COLORS.primaryOrange }} asChild>
+                    <div className="mt-8 lg:mt-10 text-center lg:text-left flex flex-col sm:flex-row gap-4">
+                      <Button 
+                        size="lg" 
+                        variant="outline"
+                        className="px-6 lg:px-8 py-3 lg:py-4 text-base lg:text-lg font-medium w-full sm:w-auto bg-white hover:bg-gray-50 border-gray-300"
+                        style={{ color: BRAND_COLORS.textPrimary }}
+                        asChild
+                      >
                         <LanguageLink href={`/project/${selectedProject.slug || selectedProject.id}`}>
-                          {t("homeSections.caseStudy.supportThisProject")}
+                          {t("homeSections.caseStudy.readMore")}
                         </LanguageLink>
+                      </Button>
+                      <Button 
+                        size="lg" 
+                        className="text-white px-6 lg:px-8 py-3 lg:py-4 text-base lg:text-lg font-medium w-full sm:w-auto" 
+                        style={{ backgroundColor: BRAND_COLORS.primaryOrange }}
+                        onClick={() => {
+                          if (previewEnabled && selectedProject?.slug) {
+                            navigate(`/support/${selectedProject.slug}?previewOnboarding=1`);
+                          } else {
+                            setShowWaitlistDialog(true);
+                          }
+                        }}
+                      >
+                        {t("homeSections.caseStudy.supportThisProject")}
                       </Button>
                     </div>
                   </div>
@@ -269,6 +465,36 @@ export function CaseStudyModernSectionV3() {
             </div>
           </div>
         )}
+
+        {/* Waiting List Dialog */}
+        <Dialog open={showWaitlistDialog} onOpenChange={setShowWaitlistDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold text-center">{t("projectDetail.waitlistTitle")}</DialogTitle>
+              <DialogDescription className="text-center pt-4">
+                {t("projectDetail.waitlistDescription")}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex flex-col sm:flex-col gap-3 pt-4">
+              <Button 
+                onClick={() => {
+                  window.open("https://tally.so/r/m6MqAe", "_blank");
+                }}
+                className="w-full"
+                style={{ backgroundColor: BRAND_COLORS.primaryOrange }}
+              >
+                {t("projectDetail.joinWaitlist")}
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowWaitlistDialog(false)}
+                className="w-full"
+              >
+                {t("projectDetail.close")}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </section>
   );

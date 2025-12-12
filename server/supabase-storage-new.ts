@@ -1400,6 +1400,8 @@ export class SupabaseStorage implements IStorage {
       // Use camelCase columns (snake_case columns removed)
       const impactPoints = (user as any).impactPoints ?? 0;
       const totalDonations = (user as any).totalDonations ?? 0;
+      const welcome_shown = (user as any).welcome_shown === true;
+      const welcome_bonus_applied = (user as any).welcome_bonus_applied === true;
       
       console.log(`[getUserImpact] User ${userId}: impactPoints=${impactPoints}, totalDonations=${totalDonations}`);
       
@@ -1425,6 +1427,8 @@ export class SupabaseStorage implements IStorage {
           projectsSupported: 0,
           projectsSupportedChange: 0,
           userStatus,
+          welcome_shown,
+          welcome_bonus_applied,
         };
       }
       
@@ -1447,6 +1451,8 @@ export class SupabaseStorage implements IStorage {
         projectsSupported,
         projectsSupportedChange: 0, // TODO: Calculate change if needed
         userStatus,
+        welcome_shown,
+        welcome_bonus_applied,
       };
     } catch (error) {
       console.error(`Error calculating user impact for user ${userId}:`, error);
@@ -1458,6 +1464,8 @@ export class SupabaseStorage implements IStorage {
         projectsSupported: 0,
         projectsSupportedChange: 0,
         userStatus: "aspirer",
+        welcome_shown: false,
+        welcome_bonus_applied: false,
       };
     }
   }

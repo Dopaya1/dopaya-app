@@ -44,7 +44,11 @@ export function RewardCard({ reward, onRedeem }: RewardCardProps) {
         {reward.companyName && (
           <p className="text-sm text-gray-600 font-medium mb-3">{reward.companyName}</p>
         )}
-        <p className="text-sm text-neutral mb-5 flex-grow">{reward.description}</p>
+        <p className="text-sm text-neutral mb-5 flex-grow">
+          {(language === 'de' && (reward as any).descriptionDe) 
+            ? (reward as any).descriptionDe 
+            : reward.description}
+        </p>
       </CardContent>
     </Card>
   );

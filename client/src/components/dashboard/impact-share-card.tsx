@@ -4,8 +4,9 @@ import { useTranslation } from "@/lib/i18n/use-translation";
 import { useI18n } from "@/lib/i18n/i18n-context";
 import { trackEvent } from "@/lib/simple-analytics";
 import { toast } from "@/hooks/use-toast";
-import { MessageCircle, Link2, Instagram, X } from "lucide-react";
+import { MessageCircle, Link2, Facebook, Mail } from "lucide-react";
 import { useState, useEffect } from "react";
+import { formatNumber } from "@/lib/i18n/formatters";
 
 interface ImpactStat {
   id: string;
@@ -37,9 +38,22 @@ export function ImpactShareCard({ isOpen, onClose, stat }: ImpactShareCardProps)
       setShareUrl(shareUrl);
 
       // Create share message with dynamic impact
-      const shareMessage = language === 'de'
-        ? `Ich habe gerade ein tolles Social Enterprise mit echtem Impact unterstützt. Auf der ersten Plattform, die Social Enterprises unterstützt und gleichzeitig Zugang zu nachhaltigen Marken bietet. Mach mit auf ${shareUrl}`
-        : `I just supported an amazing social enterprise with real impact. On the first platform that supports social enterprises while providing access to sustainable brands. Join me on ${shareUrl}`;
+      // Priority: Use stat.label if available (contains generated text from snapshot)
+      let shareMessage = '';
+      if (stat.label) {
+        // Use the impact label from snapshot, add the number (ohne Unit-Duplikat)
+        // Remove "impact" from label if present (clean up the text)
+        const cleanLabel = stat.label.replace(/\bimpact\s+/gi, '').trim();
+        const shareValue = formatNumber(stat.value);
+        shareMessage = language === 'de'
+          ? `Ich habe gerade echten Impact geschaffen:\n\n${shareValue} ${cleanLabel}\n\nAuf der ersten Plattform, die inspirierende Social Enterprises unterstützt und gleichzeitig Zugang zu nachhaltigen Marken bietet. Mach mit auf ${shareUrl}`
+          : `I have just created real impact:\n\n${shareValue} ${cleanLabel}\n\nOn the first platform that supports inspiring social enterprises while providing access to sustainable brands. Join me on ${shareUrl}`;
+      } else {
+        // Fallback: Generic message
+        shareMessage = language === 'de'
+          ? `Ich habe gerade ein tolles Social Enterprise mit echtem Impact unterstützt. Auf der ersten Plattform, die Social Enterprises unterstützt und gleichzeitig Zugang zu nachhaltigen Marken bietet. Mach mit auf ${shareUrl}`
+          : `I just supported an amazing social enterprise with real impact. On the first platform that supports social enterprises while providing access to sustainable brands. Join me on ${shareUrl}`;
+      }
       
       setShareText(shareMessage);
       setShowShareOptions(true); // Show options immediately
@@ -71,11 +85,11 @@ export function ImpactShareCard({ isOpen, onClose, stat }: ImpactShareCardProps)
     }
   };
 
-  const handleSocialShare = (platform: 'twitter' | 'facebook' | 'whatsapp' | 'instagram') => {
+  const handleSocialShare = (platform: 'twitter' | 'facebook' | 'whatsapp' | 'email') => {
     if (!stat) return;
 
     const encodedText = encodeURIComponent(shareText);
-    const encodedUrl = encodeURIComponent(shareUrl);
+    const encodedUrl = encodeURIComponent(`https://${shareUrl}`);
     
     let shareLink = '';
     
@@ -86,8 +100,9 @@ export function ImpactShareCard({ isOpen, onClose, stat }: ImpactShareCardProps)
         trackEvent('click_share', 'engagement', 'twitter');
         break;
       case 'facebook':
-        // Facebook: share URL with text
-        shareLink = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedText}`;
+        // Facebook: Use proper share dialog with URL
+        // Note: Facebook's share dialog works best with just the URL
+        shareLink = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
         trackEvent('click_share', 'engagement', 'facebook');
         break;
       case 'whatsapp':
@@ -95,64 +110,30 @@ export function ImpactShareCard({ isOpen, onClose, stat }: ImpactShareCardProps)
         shareLink = `https://wa.me/?text=${encodedText}`;
         trackEvent('click_share', 'engagement', 'whatsapp');
         break;
-      case 'instagram':
-        // Instagram: Try to open Instagram app (mobile) or website (desktop)
-        // On mobile: Try instagram:// URL scheme, fallback to instagram.com
-        // On desktop: Open instagram.com
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        const textToShare = shareText || (language === 'de'
-          ? `Ich habe gerade ein tolles Social Enterprise mit echtem Impact unterstützt. Auf der ersten Plattform, die Social Enterprises unterstützt und gleichzeitig Zugang zu nachhaltigen Marken bietet. Mach mit auf ${shareUrl}`
-          : `I just supported an amazing social enterprise with real impact. On the first platform that supports social enterprises while providing access to sustainable brands. Join me on ${shareUrl}`);
+      case 'email':
+        // Email: Use mailto: with subject and body
+        const emailSubject = t("impactShare.emailSubject");
+        // Priority: Use stat.label if available (contains generated text from snapshot)
+        // Remove "impact" from label if present (clean up the text)
+        const emailCleanLabel = stat?.label ? stat.label.replace(/\bimpact\s+/gi, '').trim() : '';
+        const emailShareValue = formatNumber(stat.value);
+        const emailBody = shareText || (stat?.label
+          ? (language === 'de'
+              ? `Ich habe gerade echten Impact geschaffen:\n\n${emailShareValue} ${emailCleanLabel}\n\nAuf der ersten Plattform, die inspirierende Social Enterprises unterstützt und gleichzeitig Zugang zu nachhaltigen Marken bietet. Mach mit auf ${shareUrl}`
+              : `I have just created real impact:\n\n${emailShareValue} ${emailCleanLabel}\n\nOn the first platform that supports inspiring social enterprises while providing access to sustainable brands. Join me on ${shareUrl}`)
+          : (language === 'de'
+              ? `Ich habe gerade ein tolles Social Enterprise mit echtem Impact unterstützt. Auf der ersten Plattform, die Social Enterprises unterstützt und gleichzeitig Zugang zu nachhaltigen Marken bietet. Mach mit auf ${shareUrl}`
+              : `I just supported an amazing social enterprise with real impact. On the first platform that supports social enterprises while providing access to sustainable brands. Join me on ${shareUrl}`));
         
-        if (isMobile) {
-          // Try to open Instagram app first, fallback to website
-          const instagramAppUrl = 'instagram://';
-          const instagramWebUrl = 'https://www.instagram.com/';
-          
-          // Try to open app, if it fails (after timeout), open website
-          const startTime = Date.now();
-          window.location.href = instagramAppUrl;
-          
-          setTimeout(() => {
-            // If we're still here after 500ms, app didn't open, go to website
-            if (Date.now() - startTime < 1000) {
-              window.open(instagramWebUrl, '_blank');
-            }
-          }, 500);
-          
-          // Also copy text to clipboard for easy pasting
-          if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(textToShare).catch(() => {
-              // Silent fail for clipboard
-            });
-          }
-          
-          toast({
-            title: language === 'de' ? 'Instagram wird geöffnet' : 'Opening Instagram',
-            description: language === 'de' 
-              ? 'Füge den kopierten Text in deine Story ein'
-              : 'Paste the copied text in your Story',
-          });
-        } else {
-          // Desktop: Open Instagram website
-          window.open('https://www.instagram.com/', '_blank');
-          
-          // Copy text to clipboard
-          if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(textToShare).then(() => {
-              toast({
-                title: language === 'de' ? 'Text kopiert!' : 'Text copied!',
-                description: language === 'de' 
-                  ? 'Füge den Text in deinen Instagram Post ein'
-                  : 'Paste the text in your Instagram post',
-              });
-            }).catch(() => {
-              // Silent fail
-            });
-          }
-        }
+        shareLink = `mailto:?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+        trackEvent('click_share', 'engagement', 'email');
         
-        trackEvent('click_share', 'engagement', 'instagram');
+        // Open email client
+        window.location.href = shareLink;
+        toast({
+          title: t("impactShare.emailOpeningTitle"),
+          description: t("impactShare.emailOpeningDescription"),
+        });
         return;
     }
 
@@ -177,9 +158,18 @@ export function ImpactShareCard({ isOpen, onClose, stat }: ImpactShareCardProps)
 
     // Always generate the text fresh to ensure it's up to date
     const shareUrl = language === 'de' ? 'dopaya.com' : 'www.dopaya.com';
-    const textToCopy = language === 'de'
-      ? `Ich habe gerade ein tolles Social Enterprise mit echtem Impact unterstützt. Auf der ersten Plattform, die Social Enterprises unterstützt und gleichzeitig Zugang zu nachhaltigen Marken bietet. Mach mit auf ${shareUrl}`
-      : `I just supported an amazing social enterprise with real impact. On the first platform that supports social enterprises while providing access to sustainable brands. Join me on ${shareUrl}`;
+    // Priority: Use stat.label if available (contains generated text from snapshot)
+    // When stat.label exists, use formatNumber directly (not stat.format which adds noun)
+    // Remove "impact" from label if present (clean up the text)
+    const cleanLabel = stat.label ? stat.label.replace(/\bimpact\s+/gi, '').trim() : '';
+    const shareValue = stat.label ? formatNumber(stat.value) : (stat.format ? stat.format(stat.value) : formatNumber(stat.value));
+    const textToCopy = stat.label
+      ? (language === 'de'
+          ? `Ich habe gerade echten Impact geschaffen:\n\n${shareValue} ${cleanLabel}\n\nAuf der ersten Plattform, die inspirierende Social Enterprises unterstützt und gleichzeitig Zugang zu nachhaltigen Marken bietet. Mach mit auf ${shareUrl}`
+          : `I have just created real impact:\n\n${shareValue} ${cleanLabel}\n\nOn the first platform that supports inspiring social enterprises while providing access to sustainable brands. Join me on ${shareUrl}`)
+      : (language === 'de'
+          ? `Ich habe gerade ein tolles Social Enterprise mit echtem Impact unterstützt. Auf der ersten Plattform, die Social Enterprises unterstützt und gleichzeitig Zugang zu nachhaltigen Marken bietet. Mach mit auf ${shareUrl}`
+          : `I just supported an amazing social enterprise with real impact. On the first platform that supports social enterprises while providing access to sustainable brands. Join me on ${shareUrl}`);
     
     console.log('Copying text:', textToCopy);
     
@@ -264,23 +254,33 @@ export function ImpactShareCard({ isOpen, onClose, stat }: ImpactShareCardProps)
 
         {/* Share Options - Show immediately */}
         <div className="mt-4 space-y-3">
-          {/* Social Share Buttons - WhatsApp and Instagram side by side */}
+          {/* WhatsApp Button - Full width, placed first */}
+          <Button
+            onClick={() => handleSocialShare('whatsapp')}
+            className="w-full flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20BA5A] text-white"
+            aria-label={t("impactShare.shareOnWhatsApp")}
+          >
+            <MessageCircle className="w-5 h-5" />
+            <span>WhatsApp</span>
+          </Button>
+
+          {/* Social Share Buttons - Facebook and Email side by side */}
           <div className="flex gap-2">
             <Button
-              onClick={() => handleSocialShare('whatsapp')}
-              className="flex-1 flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20BA5A] text-white"
-              aria-label={t("impactShare.shareOnWhatsApp")}
+              onClick={() => handleSocialShare('facebook')}
+              className="flex-1 flex items-center justify-center gap-2 bg-[#1877F2] hover:bg-[#166FE5] text-white"
+              aria-label={t("impactShare.shareOnFacebook")}
             >
-              <MessageCircle className="w-5 h-5" />
-              <span>WhatsApp</span>
+              <Facebook className="w-5 h-5" />
+              <span>Facebook</span>
             </Button>
             <Button
-              onClick={() => handleSocialShare('instagram')}
+              onClick={() => handleSocialShare('email')}
               className="flex-1 flex items-center justify-center gap-2 bg-[#f2662d] hover:bg-[#d9551f] text-white"
-              aria-label="Auf Instagram teilen"
+              aria-label={t("impactShare.shareOnEmail")}
             >
-              <Instagram className="w-5 h-5" />
-              <span>Instagram</span>
+              <Mail className="w-5 h-5" />
+              <span>{t("impactShare.shareOnEmail")}</span>
             </Button>
           </div>
 

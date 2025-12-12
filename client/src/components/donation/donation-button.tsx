@@ -106,9 +106,10 @@ export function DonationButton({
   const [supportAmount, setSupportAmount] = useState<number | null>(null); // Start with null (no amount selected)
   const [isCustomAmount, setIsCustomAmount] = useState<boolean>(false);
   const [customAmount, setCustomAmount] = useState<number>(0); // Start with 0
-  const [tipSliderValue, setTipSliderValue] = useState<number[]>([10]); // Default 10%
+  const [tipSliderValue, setTipSliderValue] = useState<number[]>([0]); // Start at 0%
   const [isCustomTip, setIsCustomTip] = useState<boolean>(false);
   const [customTipValue, setCustomTipValue] = useState<number>(0);
+  const [hasInteractedWithTip, setHasInteractedWithTip] = useState<boolean>(false);
   const [hideNamePublicly, setHideNamePublicly] = useState<boolean>(false);
   const [signUpForUpdates, setSignUpForUpdates] = useState<boolean>(false);
   const [authEmail, setAuthEmail] = useState<string>("");
@@ -611,22 +612,15 @@ export function DonationButton({
                     <div className="space-y-3 w-full max-w-md mx-auto">
                       {/* Congratulatory Banner - Like image reference, same width as input box */}
                       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 shadow-sm relative">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <p className="text-sm text-gray-900">
-                              Congratulations! You will get <span className="font-bold">{impactPoints.toLocaleString()}</span> Impact Points and create real impact!
-                            </p>
-                          </div>
-                          <div className="ml-4 flex-shrink-0">
-                            <div className="w-12 h-12 bg-[#8B7355] rounded-full flex items-center justify-center">
-                              <Trophy className="w-6 h-6 text-white" />
-                            </div>
-                          </div>
+                        <div className="text-center">
+                          <p className="text-base font-semibold text-gray-900">
+                            Congratulations! You will get <span className="font-bold">{impactPoints.toLocaleString()}</span> Impact Points and create real impact!
+                          </p>
                         </div>
                       </div>
                       
                       {/* Small text below box - Consistently shown */}
-                      <div className="flex items-center gap-1 text-xs text-gray-600">
+                      <div className="flex items-center gap-1 text-sm text-gray-600">
                         <span>100% goes to the project, minus unavoidable payment fees. Supported by our nonprofit partner Impaktera.</span>
                         <Popover>
                           <PopoverTrigger asChild>
@@ -649,11 +643,11 @@ export function DonationButton({
 
                   {/* Tip Section - GoFundMe Style Slider */}
                   {hasSelectedAmount && currentSupportAmount > 0 && (
-                    <div className="space-y-4">
+                    <div className="space-y-4 mt-12">
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-1">Tip Dopaya</h3>
-                        <p className="text-xs text-gray-500 mb-4">
-                          We have 0% platform fee for Social Enterprises, because we believe in <span className="font-semibold text-[#f2662d]">Impact First</span>. Dopaya can keep the platform independent and ad-free thanks to people who leave an optional amount here:
+                        <h3 className="text-lg font-semibold text-gray-900 mb-1">{t("support.tipDopaya")}</h3>
+                        <p className="text-sm text-gray-500 mb-4">
+                          {t("support.tipDescription")}
                         </p>
                         
                         {!isCustomTip ? (
@@ -667,28 +661,41 @@ export function DonationButton({
                                   ${tipAmount.toFixed(2)}
                                 </span>
                               </div>
-                              <Slider
-                                value={tipSliderValue}
-                                onValueChange={setTipSliderValue}
-                                min={0}
-                                max={20}
-                                step={0.5}
-                                className="w-full"
-                              />
-                              {tipSliderValue[0] < 10 && (
-                                <p className="text-xs text-gray-500 text-center">
-                                  Most people choose around 10%.
-                                </p>
-                              )}
+                              {/* Slider with 10% recommended marker */}
+                              <div className="relative w-full">
+                                {/* Recommended marker at 10% (above slider, non-overlapping) */}
+                                <div
+                                  className="absolute -top-6 flex flex-col items-center"
+                                  style={{ left: '33.33%', transform: 'translateX(-50%)' }}
+                                >
+                                  <div className="flex items-center gap-1 bg-green-100 text-green-700 text-[10px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap">
+                                    <Heart className="w-3 h-3" />
+                                    <span>10% {t("support.recommended")}</span>
+                                  </div>
+                                </div>
+
+                                <Slider
+                                  value={tipSliderValue}
+                                  onValueChange={(value) => {
+                                    setTipSliderValue(value);
+                                    setHasInteractedWithTip(true);
+                                  }}
+                                  min={0}
+                                  max={30}
+                                  step={1}
+                                  className="w-full"
+                                />
+                              </div>
                             </div>
                             <button
                               onClick={() => {
                                 setIsCustomTip(true);
                                 setCustomTipValue(tipSliderValue[0]);
+                                setHasInteractedWithTip(true);
                               }}
                               className="text-xs text-gray-600 hover:text-gray-900 underline mt-2"
                             >
-                              Enter custom tip
+                              {t("support.enterCustomTip")}
                             </button>
                           </>
                         ) : (
@@ -697,12 +704,13 @@ export function DonationButton({
                               <Input
                                 type="number"
                                 min={0}
-                                max={20}
-                                step={0.5}
+                                max={30}
+                                step={1}
                                 value={customTipValue}
                                 onChange={(e) => {
                                   const v = Number(e.target.value || 0);
-                                  setCustomTipValue(Math.min(20, Math.max(0, isNaN(v) ? 0 : v)));
+                                  setCustomTipValue(Math.min(30, Math.max(0, isNaN(v) ? 0 : v)));
+                                  setHasInteractedWithTip(true);
                                 }}
                                 className="w-24"
                                 placeholder="%"
@@ -719,8 +727,19 @@ export function DonationButton({
                               }}
                               className="text-xs text-gray-600 hover:text-gray-900 underline"
                             >
-                              Use slider instead
+                              {t("support.useSliderInstead")}
                             </button>
+                          </div>
+                        )}
+                        
+                        {/* Thank you message when tip is selected - below slider/custom input */}
+                        {hasInteractedWithTip && tipAmount > 0 && (
+                          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 shadow-sm mt-4">
+                            <div className="text-center">
+                              <p className="text-base font-semibold text-gray-900">
+                                {t("support.thankYouGenerosity")}
+                              </p>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -729,7 +748,7 @@ export function DonationButton({
 
                   {/* Payment Method Section */}
                   {hasSelectedAmount && currentSupportAmount > 0 && (
-                    <div className="space-y-3">
+                    <div className="space-y-3 mt-12">
                       <h3 className="text-lg font-semibold text-gray-900">Payment method</h3>
                       <div className="flex items-center space-x-3 p-4 border-2 border-gray-300 rounded-lg bg-white">
                         <div className="h-4 w-4 rounded-full border-2 border-[#f2662d] bg-[#f2662d] flex items-center justify-center">

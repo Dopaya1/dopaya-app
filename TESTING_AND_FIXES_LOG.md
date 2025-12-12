@@ -193,6 +193,168 @@ GROUP BY u.id, u."impactPoints";
 
 ---
 
+### Dashboard V2: Infinite Loop Fix - safeImpact Memoization
+
+**Datum:** 2025-01-27
+**Status:** ✅ FIXED
+**Problem:** 
+- Dashboard V2 page was stuck in an infinite loading loop
+- Root cause: `safeImpact` was being recomputed on every render, creating new object references
+- When used in `useEffect` dependencies, this caused infinite re-renders
+- The 404 fallback logic creates a new object literal each render, which breaks React's dependency comparison
+
+**Root Cause Analysis:**
+1. `safeImpact` has important fallback logic for 404 errors (returns default object with `impactPoints: 50`)
+2. Without memoization, the fallback object creates a new reference on every render
+3. `useEffect` hooks depend on `safeImpact`, so they re-run infinitely
+4. Attempting to use `impact` instead breaks the 404 fallback logic
+
+**Solution:**
+1. Wrap `safeImpact` in `useMemo` to memoize based on `impact` and `impactError`
+2. This preserves the 404 fallback logic while preventing infinite loops
+3. Update all `useEffect` dependencies to use the memoized `safeImpact`
+
+**Changes Made:**
+- `Tech/client/src/pages/dashboard-v2.tsx`:
+  - Line 181-185: Wrapped `safeImpact` in `useMemo(() => {...}, [impact, impactError])`
+  - Line 246: Changed dependency from `[user?.id, impact]` to `[user?.id, safeImpact]`
+  - Line 513: Changed dependency from `[user?.id, impact]` to `[user?.id, safeImpact]`
+  - Line 516-533: Updated analytics tracking to use `safeImpact` instead of `impact`
+
+**Key Insight:**
+- The 404 fallback logic is critical for handling new users who don't exist in the database yet
+- `safeImpact` must be memoized to prevent infinite loops while preserving this fallback behavior
+- Using `impact` directly in dependencies breaks the fallback because `impact` is `undefined` on 404, but `safeImpact` provides the fallback object
+
+**Testing:**
+- ✅ Page loads without infinite loops
+- ✅ 404 fallback logic still works correctly
+- ✅ Welcome modal logic works with memoized `safeImpact`
+- ✅ Analytics tracking uses correct impact data
+
+**Result:** ✅ FIXED
+
+---
+
+### Project Detail Page: ReferenceError Fix
+
+**Datum:** 2025-01-27
+**Status:** ✅ FIXED
+**Problem:** 
+- `Uncaught ReferenceError: project is not defined` at `project-detail-new-v3.tsx:43:51`
+- Helper functions were being called at the top level before imports and before `project` prop was available
+
+**Root Cause:**
+- Helper functions (`normalizeProjectLocal`, `hasImpactDataLocal`) were defined at the top of the file
+- They were being called with `project` before the component was defined
+- `project` is only available as a prop inside the component
+
+**Solution:**
+- Moved all imports to the top
+- Moved helper functions after imports but before component
+- Removed top-level calls to helper functions (they're not needed there)
+
+**Files Changed:**
+- `Tech/client/src/components/projects/project-detail-new-v3.tsx`
+  - Moved imports to top (lines 1-47)
+  - Moved helper functions after imports (lines 49-89)
+  - Component starts at line 95
+
+**Testing:** ✅ Verified - Page loads without errors
+
+---
+
+### Dashboard V2: Impact Calculation Migration
+
+**Datum:** 2025-01-27
+**Status:** ✅ FIXED
+**Problem:** 
+- Dashboard was using deprecated `calculateImpact()` instead of snapshot-first pattern
+- Bypassed new impact calculation system and snapshot logic
+
+**Solution:**
+- Replaced `calculateImpact()` with snapshot-first pattern using `calculateImpactUnified()`
+- Priority 1: Use `donation.calculated_impact` from snapshot (new donations)
+- Priority 2: Fallback to `calculateImpactUnified()` (old donations or new without snapshot)
+
+**Files Changed:**
+- `Tech/client/src/pages/dashboard-v2.tsx` (lines 1361-1385)
+  - Updated impact calculation to use snapshot-first pattern
+  - Handles both donations array and fallback to totalAmount
+
+**Testing:** ✅ Verified - Impact calculations work correctly with new system
+
+---
+
+### Impact Summary Modal: Group by Project Instead of Unit
+
+**Datum:** 2025-01-27
+**Status:** ✅ FIXED
+**Problem:** 
+- Impact Summary Modal was grouping impact by unit across all projects
+- Projects with same unit were merged together
+- Last project's generated text was overwriting others
+
+**Solution:**
+- Changed from `impactByUnit: Record<string, {...}>` to `impactByProject: Array<{...}>`
+- Each project now gets its own separate entry
+- Impact is summed per project (not across all projects)
+- Each project keeps its own generated text
+
+**Files Changed:**
+- `Tech/client/src/components/dashboard/impact-summary-modal.tsx`
+  - Changed grouping logic to create separate entry per project
+  - Updated ID generation to use `projectId`
+
+**Testing:** ✅ Verified - Projects now show separately with correct impact sums and text
+
+---
+
+### Impact Summary Modal: Improved Emoji Detection
+
+**Datum:** 2025-01-27
+**Status:** ✅ FIXED
+**Problem:** 
+- All projects were showing the same default emoji (🌱)
+- Emoji detection was too basic
+
+**Solution:**
+- Enhanced emoji detection to check:
+  1. Generated text from snapshot (most context)
+  2. Unit/noun strings
+  3. Project category
+- Added comprehensive detection patterns for: vision (👁), children (👶), water (💧), trees (🌳), meals (🍽️), tea/agriculture (🌿), education (📚), plastic (♻️), health (🏥), women (👩), energy (⚡), finance (💰), housing (🏠), sanitation (🚿), technology (💻), conservation (🌍), environment (🌱), people (👥)
+
+**Files Changed:**
+- `Tech/client/src/components/dashboard/impact-summary-modal.tsx`
+  - Enhanced emoji detection logic (lines 148-195)
+
+**Testing:** ✅ Verified - Each project shows appropriate emoji based on impact type
+
+---
+
+### Impact Share Card: Remove "impact" Word from Share Text
+
+**Datum:** 2025-01-27
+**Status:** ✅ FIXED
+**Problem:** 
+- Share text was showing "1 impact person with safe drinking water access"
+- Should be "1 person with safe drinking water access"
+
+**Solution:**
+- Added `.replace(/\bimpact\s+/gi, '')` to remove "impact" word from labels
+- Fixed value formatting to use `formatNumber(stat.value)` directly when label exists
+- Applied to all share methods (WhatsApp, Facebook, Email, Copy)
+
+**Files Changed:**
+- `Tech/client/src/components/dashboard/impact-share-card.tsx`
+  - Added cleanup to remove "impact" word from labels (lines 46, 159, 116)
+  - Fixed share value formatting
+
+**Testing:** ✅ Verified - Share text shows correctly without "impact" word
+
+---
+
 ## Notizen
 
 [Platz für allgemeine Notizen, Erkenntnisse, etc.]

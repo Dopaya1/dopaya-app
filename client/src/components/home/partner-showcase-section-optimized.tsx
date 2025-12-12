@@ -571,21 +571,21 @@ export function PartnerShowcaseSection() {
                     <p className="text-base leading-relaxed" style={{ color: BRAND_COLORS.textSecondary }}>
                       {brand.hoverDescription}
                     </p>
-                  </div>
-                  
+            </div>
+            
                   {/* Mobile Navigation - Directly under each card */}
-                  {brands.length > 1 && (
-                    <div className="flex justify-center items-center gap-1 mt-4">
-                      <button
-                        onClick={() => {
-                          setPage((p) => (p - 1 + brands.length) % brands.length);
-                          setIsPaused(true);
-                        }}
-                        className="p-1.5 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
-                        aria-label="Previous brand"
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </button>
+            {brands.length > 1 && (
+              <div className="flex justify-center items-center gap-1 mt-4">
+                <button
+                  onClick={() => {
+                    setPage((p) => (p - 1 + brands.length) % brands.length);
+                    setIsPaused(true);
+                  }}
+                  className="p-1.5 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
+                  aria-label="Previous brand"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
                       <div className="flex gap-1 mx-2">
                         {brands.map((_, index) => (
                           <button
@@ -600,18 +600,18 @@ export function PartnerShowcaseSection() {
                           />
                         ))}
                       </div>
-                      <button
-                        onClick={() => {
-                          setPage((p) => (p + 1) % brands.length);
-                          setIsPaused(true);
-                        }}
-                        className="p-1.5 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
-                        aria-label="Next brand"
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </button>
-                    </div>
-                  )}
+                <button
+                  onClick={() => {
+                    setPage((p) => (p + 1) % brands.length);
+                    setIsPaused(true);
+                  }}
+                  className="p-1.5 rounded-md hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
+                  aria-label="Next brand"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            )}
                 </div>
               ))}
             </div>
@@ -698,9 +698,23 @@ export function PartnerShowcaseSection() {
                         )}
                       </div>
                       
-                        <h4 className="font-semibold line-clamp-3 mb-5" style={{ color: BRAND_COLORS.textPrimary }}>
+                        <h4 className="font-semibold line-clamp-3 mb-2" style={{ color: BRAND_COLORS.textPrimary }}>
                         {getRewardTitle(reward, language)}
                       </h4>
+                      
+                      {/* Description - Only shown if available, use German if available and language is German */}
+                      {(() => {
+                        const description = (language === 'de' && (reward as any).description_de) 
+                          ? (reward as any).description_de 
+                          : (reward as any).description;
+                        return description && description.trim() ? (
+                          <p className="text-sm text-gray-600 line-clamp-3 mb-5">
+                            {description}
+                          </p>
+                        ) : (
+                          <div className="mb-5"></div>
+                        );
+                      })()}
                     </div>
                   </div>
                   );
@@ -722,49 +736,63 @@ export function PartnerShowcaseSection() {
                     
                     return (
                       <div key={`${reward.id}-mobile-${idx}`} className="w-full flex-shrink-0 px-3">
-                        <div
-                          className="rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group cursor-pointer"
-                          style={{ backgroundColor: BRAND_COLORS.bgWhite, border: `1px solid ${BRAND_COLORS.borderSubtle}` }}
-                        >
-                          {/* Reward Image - Smaller Height */}
-                          <div className="aspect-[16/9] bg-gray-100 overflow-hidden relative">
-                            <img
-                              src={reward.imageUrl}
-                              alt={getRewardTitle(reward, language)}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                            />
-                            {/* Brand Logo - Small badge in top-right corner */}
-                            {brandInfo?.logoUrl && (
-                              <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-md p-1.5 shadow-sm">
-                                <img
-                                  src={brandInfo.logoUrl}
-                                  alt={brandInfo.name}
-                                  className="h-6 w-auto object-contain"
-                                />
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Reward Info */}
-                          <div className="p-4">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-xs font-medium px-2 py-1 rounded" 
-                                    style={{ backgroundColor: BRAND_COLORS.bgCool, color: BRAND_COLORS.textMuted }}>
-                                {reward.category}
-                              </span>
-                              {reward.discount && (
-                                <span className="text-xs font-medium" style={{ color: BRAND_COLORS.primaryOrange }}>
-                                  {reward.discount}
-                                </span>
-                              )}
+                    <div
+                      className="rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group cursor-pointer"
+                      style={{ backgroundColor: BRAND_COLORS.bgWhite, border: `1px solid ${BRAND_COLORS.borderSubtle}` }}
+                    >
+                      {/* Reward Image - Smaller Height */}
+                        <div className="aspect-[16/9] bg-gray-100 overflow-hidden relative">
+                        <img
+                          src={reward.imageUrl}
+                          alt={getRewardTitle(reward, language)}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                          {/* Brand Logo - Small badge in top-right corner */}
+                          {brandInfo?.logoUrl && (
+                            <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-md p-1.5 shadow-sm">
+                              <img
+                                src={brandInfo.logoUrl}
+                                alt={brandInfo.name}
+                                className="h-6 w-auto object-contain"
+                              />
                             </div>
-                            
-                            <h4 className="font-semibold line-clamp-2 mb-5" style={{ color: BRAND_COLORS.textPrimary }}>
-                              {getRewardTitle(reward, language)}
-                            </h4>
-                          </div>
-                        </div>
+                          )}
                       </div>
+
+                      {/* Reward Info */}
+                      <div className="p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-medium px-2 py-1 rounded" 
+                                style={{ backgroundColor: BRAND_COLORS.bgCool, color: BRAND_COLORS.textMuted }}>
+                            {reward.category}
+                          </span>
+                          {reward.discount && (
+                            <span className="text-xs font-medium" style={{ color: BRAND_COLORS.primaryOrange }}>
+                              {reward.discount}
+                            </span>
+                          )}
+                        </div>
+                        
+                          <h4 className="font-semibold line-clamp-2 mb-2" style={{ color: BRAND_COLORS.textPrimary }}>
+                          {getRewardTitle(reward, language)}
+                        </h4>
+                        
+                        {/* Description - Only shown if available, use German if available and language is German */}
+                        {(() => {
+                          const description = (language === 'de' && (reward as any).description_de) 
+                            ? (reward as any).description_de 
+                            : (reward as any).description;
+                          return description && description.trim() ? (
+                            <p className="text-sm text-gray-600 line-clamp-3 mb-5">
+                              {description}
+                            </p>
+                          ) : (
+                            <div className="mb-5"></div>
+                          );
+                        })()}
+                          </div>
+                      </div>
+                    </div>
                     );
                   })}
                 </div>

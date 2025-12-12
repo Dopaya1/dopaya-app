@@ -66,12 +66,14 @@ interface Reward {
   brandId: number | null;
   title: string;
   description: string;
+  descriptionDe?: string | null;
   imageUrl: string;
   pointsCost: number;
   category: string | null;
   retailValue: string | null;
   promoCode: string | null;
   redemptionInstructions: string | null;
+  redemptionInstructionsDe?: string | null;
   rewardLink: string | null;
   status: string;
   featured: boolean;
@@ -87,6 +89,7 @@ export default function RewardsPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [brandFilter, setBrandFilter] = useState<string>("all");
   const [pointsFilter, setPointsFilter] = useState<string>("all");
+  const [redemptionInstructionsModal, setRedemptionInstructionsModal] = useState<Reward | null>(null);
   const [highlightedFilter, setHighlightedFilter] = useState<boolean>(false);
   const [sortBy, setSortBy] = useState<string>("newest");
   const [selectedBrandId, setSelectedBrandId] = useState<number | null>(null);
@@ -242,9 +245,11 @@ export default function RewardsPage() {
           title: reward.title || reward.name || 'Untitled Reward', // Ensure title is always present (will be translated later)
           category: reward.category || null,
           description: reward.description || null, // Ensure description is included
+          descriptionDe: reward.descriptionDe || reward.description_de || null,
           retailValue: reward.retailValue || reward.retail_value,
           promoCode: reward.promoCode || reward.promo_code,
           redemptionInstructions: reward.redemptionInstructions || reward.redemption_instructions,
+          redemptionInstructionsDe: reward.redemptionInstructionsDe || reward.redemption_instructions_de || null,
           rewardLink: reward.rewardLink || reward.reward_link || null,
           featured: reward.featured !== undefined ? Boolean(reward.featured) : false, // Ensure boolean
         };
@@ -523,8 +528,10 @@ export default function RewardsPage() {
 
     try {
       // Call API to redeem reward
-      console.log(`[handleConfirmUnlock] Calling API: POST /api/rewards/${rewardToUnlock.id}/redeem`);
-      const response = await apiRequest("POST", `/api/rewards/${rewardToUnlock.id}/redeem`);
+      console.log(`[handleConfirmUnlock] Calling API: POST /api/rewards-redeem`);
+      const response = await apiRequest("POST", `/api/rewards-redeem`, {
+        rewardId: rewardToUnlock.id
+      });
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
@@ -897,10 +904,10 @@ export default function RewardsPage() {
                   {/* Search & Filters Row */}
                   <section>
                     <div className="mb-12 max-w-7xl mx-auto">
-                      {/* Filters Row - All in one row on desktop */}
+                      {/* Filters Row - All in one row on desktop, 2 columns for selectors on mobile */}
                       <div className="bg-white border-2 border-gray-200 rounded-xl p-4 md:p-6">
                         <div className="flex flex-col md:flex-row gap-4 items-center justify-center">
-                          {/* Search Bar */}
+                          {/* Search Bar - Full width on mobile */}
                           <div className="relative flex-1 max-w-md w-full">
                             <Input
                               placeholder={t("rewardsPage.searchPlaceholder")}
@@ -921,9 +928,11 @@ export default function RewardsPage() {
                             )}
                           </div>
 
+                          {/* Selectors Grid - 2 columns on mobile, row on desktop */}
+                          <div className="grid grid-cols-2 md:flex gap-4 w-full md:w-auto">
                         {/* Brand Filter */}
                         <Select value={brandFilter} onValueChange={setBrandFilter}>
-                          <SelectTrigger className="w-[180px]">
+                              <SelectTrigger className="w-full md:w-[180px]">
                             <SelectValue placeholder={t("rewardsPage.brand")} />
                           </SelectTrigger>
                           <SelectContent>
@@ -938,7 +947,7 @@ export default function RewardsPage() {
 
                         {/* Category Filter */}
                         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                          <SelectTrigger className="w-[180px]">
+                              <SelectTrigger className="w-full md:w-[180px]">
                             <SelectValue placeholder={t("rewardsPage.category")} />
                           </SelectTrigger>
                           <SelectContent>
@@ -953,7 +962,7 @@ export default function RewardsPage() {
 
                         {/* Impact Points Filter */}
                         <Select value={pointsFilter} onValueChange={setPointsFilter}>
-                          <SelectTrigger className="w-[180px]">
+                              <SelectTrigger className="w-full md:w-[180px]">
                             <SelectValue placeholder={t("rewardsPage.impactPoints")} />
                           </SelectTrigger>
                           <SelectContent>
@@ -969,11 +978,12 @@ export default function RewardsPage() {
                         <Button
                           variant={highlightedFilter ? "default" : "outline"}
                           onClick={() => setHighlightedFilter(!highlightedFilter)}
-                          className={`w-[180px] ${highlightedFilter ? 'bg-orange-600 hover:bg-orange-700 text-white' : ''}`}
+                              className={`w-full md:w-[180px] ${highlightedFilter ? 'bg-orange-600 hover:bg-orange-700 text-white' : ''}`}
                           aria-label="Filter Dopaya's Pick rewards only"
                         >
                           {highlightedFilter ? t("rewardsPage.dopayasPickActive") : t("rewardsPage.dopayasPick")}
                         </Button>
+                          </div>
                         </div>
 
                         {/* Active Filters Display - Show below filters when any filter is active */}
@@ -1170,21 +1180,17 @@ export default function RewardsPage() {
                                     alt={`Product for ${getRewardTitle(reward, language) || 'Reward'}`}
                                     className="w-full h-full object-cover object-center"
                                   />
-                                  {/* Dopaya's Pick Badge - Top Right - Show if featured */}
-                                  {(reward.featured === true || reward.featured === 'true' || (reward as any).featured === 1) && (
-                                    <div className="absolute top-3 right-3 bg-orange-600 text-white rounded-full px-3 py-1 text-xs font-medium shadow-lg">
-                                      {t("rewardsPage.dopayasPick")}
-                                    </div>
-                                  )}
+                                  {/* Impact Points Badge - Top Right */}
+                                  <div className="absolute top-3 right-3 bg-amber-50 text-black rounded-full px-3 py-1 text-xs font-medium border border-amber-200 shadow-lg">
+                                    {reward.pointsCost} {t("rewardsPage.impactPoints")}
+                                  </div>
                                 </div>
                               ) : (
                                 <div className="relative aspect-[3/2] bg-gray-100">
-                                  {/* Dopaya's Pick Badge - Top Right - Show if featured */}
-                                  {(reward.featured === true || reward.featured === 'true' || (reward as any).featured === 1) && (
-                                    <div className="absolute top-3 right-3 bg-orange-600 text-white rounded-full px-3 py-1 text-xs font-medium shadow-lg">
-                                      {t("rewardsPage.dopayasPick")}
-                                    </div>
-                                  )}
+                                  {/* Impact Points Badge - Top Right */}
+                                  <div className="absolute top-3 right-3 bg-amber-50 text-black rounded-full px-3 py-1 text-xs font-medium border border-amber-200 shadow-lg">
+                                    {reward.pointsCost} {t("rewardsPage.impactPoints")}
+                                  </div>
                                 </div>
                               )}
 
@@ -1225,29 +1231,60 @@ export default function RewardsPage() {
                                   {getRewardTitle(reward, language) || 'Reward'}
                                 </h3>
 
-                                {/* Description - Only shown if available */}
-                                {reward.description && reward.description.trim() && (
-                                  <p className="text-sm text-gray-600 mb-3 text-center">
-                                    {reward.description}
-                                  </p>
-                                )}
+                                {/* Description - Only shown if available, use German if available and language is German */}
+                                {(() => {
+                                  const displayDescription = (language === 'de' && reward.descriptionDe) 
+                                    ? reward.descriptionDe 
+                                    : reward.description;
+                                  return displayDescription && displayDescription.trim() ? (
+                                    <p className="text-sm text-gray-600 mb-3 text-center">
+                                      {displayDescription}
+                                    </p>
+                                  ) : null;
+                                })()}
 
                                 {/* CTA Button */}
                                 <div className="mt-auto space-y-2">
-                                  {/* Impact Points Badge - directly above button */}
-                                  <div className="flex justify-center">
-                                    <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-amber-50 text-black border border-amber-200">
-                                      {reward.pointsCost} {t("rewardsPage.impactPoints")}
-                                    </span>
-                                  </div>
-                                  <Button
-                                    variant="outline"
-                                    className="w-full bg-gray-100 hover:bg-orange-600 hover:text-white hover:border-orange-600 transition-colors"
-                                    onClick={() => handleRedeemReward(reward)}
-                                    aria-label={`Unlock reward: ${getRewardTitle(reward, language)}`}
-                                  >
-                                    {t("rewardsPage.unlockRewardButton")}
-                                  </Button>
+                                <Button
+                                  variant="outline"
+                                    className="w-full transition-colors"
+                                    style={{ 
+                                      backgroundColor: '#f8f6f1',
+                                      borderColor: '#e5e7eb',
+                                      color: '#1a1a3a'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.backgroundColor = '#f2662d';
+                                      e.currentTarget.style.color = 'white';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.backgroundColor = '#f8f6f1';
+                                      e.currentTarget.style.color = '#1a1a3a';
+                                    }}
+                                  onClick={() => handleRedeemReward(reward)}
+                                  aria-label={`Unlock reward: ${getRewardTitle(reward, language)}`}
+                                >
+                                  {t("rewardsPage.unlockRewardButton")}
+                                </Button>
+                                
+                                {/* Redemption Instructions Link - Only show if instructions exist */}
+                                {(() => {
+                                  const hasInstructions = (language === 'de' && reward.redemptionInstructionsDe) 
+                                    ? reward.redemptionInstructionsDe.trim() 
+                                    : reward.redemptionInstructions?.trim();
+                                  
+                                  return hasInstructions ? (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setRedemptionInstructionsModal(reward);
+                                      }}
+                                      className="text-xs text-gray-500 hover:text-gray-700 underline mt-1 w-full text-center"
+                                    >
+                                      {language === 'de' ? 'Hinweise zur Einlösung' : 'Redemption information'}
+                                    </button>
+                                  ) : null;
+                                })()}
                                 </div>
                               </div>
                             </div>
@@ -1641,6 +1678,44 @@ export default function RewardsPage() {
           })() : (
             <div className="space-y-4">
               <p className="text-sm text-gray-600">{t("rewardsPage.loadingRewardDetails")}</p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Redemption Instructions Modal */}
+      <Dialog 
+        open={redemptionInstructionsModal !== null} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setRedemptionInstructionsModal(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-md bg-white">
+          <DialogHeader>
+            <DialogTitle className="text-center">
+              {language === 'de' ? 'Hinweise zur Einlösung' : 'Redemption Information'}
+            </DialogTitle>
+          </DialogHeader>
+          {redemptionInstructionsModal && (
+            <div className="space-y-4 py-4">
+              <div className="prose prose-sm max-w-none">
+                <p className="text-sm text-gray-700 whitespace-pre-line">
+                  {(language === 'de' && redemptionInstructionsModal.redemptionInstructionsDe) 
+                    ? redemptionInstructionsModal.redemptionInstructionsDe 
+                    : redemptionInstructionsModal.redemptionInstructions}
+                </p>
+              </div>
+              <div className="flex justify-center">
+                <Button
+                  variant="outline"
+                  onClick={() => setRedemptionInstructionsModal(null)}
+                  className="w-full"
+                >
+                  {t("rewardsPage.close")}
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>

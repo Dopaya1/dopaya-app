@@ -11,7 +11,9 @@
     "check": "tsc",
     "db:push": "drizzle-kit push",
     "test:serverless": "tsx scripts/test-serverless-local.ts",
-    "test:local": "tsx scripts/test-local-auth.ts"
+    "test:local": "tsx scripts/test-local-auth.ts",
+    "test:impact-generator": "TMPDIR=/tmp tsx scripts/test-impact-generator.ts",
+    "analyze:impact-presets": "tsx scripts/analyze-impact-presets.ts"
   },
   "dependencies": {
     "@base-ui-components/react": "^1.0.0-beta.4",
@@ -92,6 +94,7 @@
     "zod-validation-error": "^3.4.0"
   },
   "devDependencies": {
+    "@vercel/node": "^3.0.33",
     "@replit/vite-plugin-cartographer": "^0.2.8",
     "@replit/vite-plugin-runtime-error-modal": "^0.0.3",
     "@tailwindcss/typography": "^0.5.15",

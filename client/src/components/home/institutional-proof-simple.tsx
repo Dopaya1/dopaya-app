@@ -322,7 +322,7 @@ export function InstitutionalProofSimple() {
                       {supportedProjects.map((project) => {
                         const projectImage = getProjectImageUrl(project) || '/api/placeholder/100/100';
                         return (
-                          <LanguageLink key={project.id} href={`/project/${project.slug}`}>
+                          <Link key={project.id} href={`/project/${project.slug}`}>
                             <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
                               <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
                                 <img 
@@ -355,7 +355,7 @@ export function InstitutionalProofSimple() {
                                 </div>
                               </div>
                             </div>
-                          </LanguageLink>
+                          </Link>
                         );
                       })}
                     </div>

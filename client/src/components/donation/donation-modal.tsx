@@ -99,9 +99,10 @@ export function DonationModal({ isOpen, onClose, project, generalDonation = fals
         
         try {
           // Use direct API endpoint (bypasses Stripe, creates donation + transaction automatically)
-          const response = await apiRequest("POST", `/api/projects/${project.id}/donate`, {
-            amount: currentAmount
-          });
+      const response = await apiRequest("POST", `/api/projects-donate`, {
+        projectId: project.id,
+        amount: currentAmount
+      });
           
           if (!response.ok) {
             const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));

@@ -48,11 +48,13 @@ interface Reward {
   brandId: number | null;
   title: string;
   description: string;
+  descriptionDe?: string | null;
   imageUrl: string;
   pointsCost: number;
   retailValue: string | null;
   promoCode: string | null;
   redemptionInstructions: string | null;
+  redemptionInstructionsDe?: string | null;
   status: string;
   featured: boolean;
 }
@@ -371,7 +373,9 @@ export default function RewardsPageV2() {
                             </span>
                           </div>
                           <p className="text-sm text-gray-600 line-clamp-2">
-                            {reward.description}
+                            {(language === 'de' && reward.descriptionDe) 
+                              ? reward.descriptionDe 
+                              : reward.description}
                           </p>
                           <div className="pt-2">
                             {reward.available ? (
@@ -603,7 +607,9 @@ export default function RewardsPageV2() {
                                 <div>
                                   <h3 className="font-bold text-lg mb-2">{reward.title}</h3>
                                   <p className="text-sm text-gray-600 line-clamp-2">
-                                    {reward.description}
+                                    {(language === 'de' && reward.descriptionDe) 
+                                      ? reward.descriptionDe 
+                                      : reward.description}
                                   </p>
                                 </div>
 

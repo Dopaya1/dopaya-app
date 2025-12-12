@@ -201,6 +201,21 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
       
       const username = authEmail.trim().split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
       
+      // IMPORTANT: Include pendingSupportReturnUrl in the email confirmation redirect URL
+      // This ensures it persists even if sessionStorage is cleared during redirect
+      const pendingSupportReturnUrl = sessionStorage.getItem('pendingSupportReturnUrl');
+      let emailRedirectUrl = `${window.location.origin}/auth/callback`;
+      if (pendingSupportReturnUrl) {
+        // Encode the support URL as a query parameter so it persists
+        const encodedSupportUrl = encodeURIComponent(pendingSupportReturnUrl);
+        emailRedirectUrl = `${window.location.origin}/auth/callback?returnTo=${encodedSupportUrl}`;
+        console.log('[Auth Modal] ✅ Including pendingSupportReturnUrl in email redirect:', {
+          original: pendingSupportReturnUrl,
+          encoded: encodedSupportUrl,
+          finalRedirectUrl: emailRedirectUrl
+        });
+      }
+      
       const { data, error } = await supabase.auth.signUp({
         email: authEmail.trim(),
         password: authPassword,
@@ -208,7 +223,7 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
           data: {
             username: username,
           },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: emailRedirectUrl,
         },
       });
       
@@ -234,13 +249,31 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
         
         if (!data.user.email_confirmed_at && !session) {
           // Email confirmation required
-          console.warn('Email confirmation required. Check Supabase dashboard for email logs.');
+          console.warn('[Auth Modal] Email confirmation required. Check Supabase dashboard for email logs.');
           setAuthError(t("auth.errors.checkEmailToConfirm"));
           setIsSignUp(false);
           setShowResendEmail(true);
           
-          if (previewEnabled) {
-            sessionStorage.setItem('isNewUser', 'true');
+          // Always set new user flag (for email confirmation flow)
+          sessionStorage.setItem('isNewUser', 'true');
+          console.log('[Auth Modal] ✅ Set isNewUser flag for email confirmation flow');
+          
+          // IMPORTANT: Preserve pendingSupportReturnUrl if it exists (user was trying to donate)
+          // This ensures they get redirected back to support page after email confirmation
+          const existingPendingSupportUrl = sessionStorage.getItem('pendingSupportReturnUrl');
+          const allSessionStorage = {
+            pendingSupportReturnUrl: existingPendingSupportUrl,
+            isNewUser: sessionStorage.getItem('isNewUser'),
+            checkNewUser: sessionStorage.getItem('checkNewUser'),
+            authReturnUrl: sessionStorage.getItem('authReturnUrl'),
+            openPaymentDialog: sessionStorage.getItem('openPaymentDialog')
+          };
+          console.log('[Auth Modal] 📋 SessionStorage state after email signup:', allSessionStorage);
+          if (existingPendingSupportUrl) {
+            console.log('[Auth Modal] ✅ Preserving pendingSupportReturnUrl for email confirmation:', existingPendingSupportUrl);
+            // Flag is already set, just log it - don't overwrite it
+          } else {
+            console.warn('[Auth Modal] ⚠️ No pendingSupportReturnUrl found - user might be redirected to dashboard instead of support page!');
           }
         } else {
           // Email confirmed - user is immediately logged in
@@ -248,13 +281,11 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
           setAuthEmail("");
           setAuthPassword("");
           
-          // Set new user flag for welcome modal
-          if (previewEnabled) {
-            sessionStorage.setItem('isNewUser', 'true');
-            window.location.href = '/dashboard?newUser=1&previewOnboarding=1';
-          } else {
-            window.location.href = '/dashboard';
-          }
+          // Always set new user flag and redirect with newUser=1 and previewOnboarding=1
+          // This ensures welcome modals show and user gets full onboarding experience
+          sessionStorage.setItem('isNewUser', 'true');
+          const redirectUrl = '/dashboard?newUser=1&previewOnboarding=1';
+          window.location.href = redirectUrl;
         }
       }
     } catch (e: any) {

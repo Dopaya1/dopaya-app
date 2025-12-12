@@ -100,10 +100,10 @@ async function getUserImpact(userId: number) {
   }
   
   try {
-    // Get user from users table
+    // Get user from users table (including welcome flags)
     const { data: user, error: userError } = await supabase
       .from('users')
-      .select('id, "impactPoints", "totalDonations"')
+      .select('id, "impactPoints", "totalDonations", "welcome_shown", "welcome_bonus_applied"')
       .eq('id', userId)
       .single();
     
@@ -117,6 +117,8 @@ async function getUserImpact(userId: number) {
         projectsSupported: 0,
         projectsSupportedChange: 0,
         userLevel: 'aspirer',
+        welcome_shown: false,
+        welcome_bonus_applied: false,
       };
     }
     
@@ -132,6 +134,8 @@ async function getUserImpact(userId: number) {
     if (donationsError) {
       console.error('[getUserImpact] Error fetching donations:', donationsError);
       // Return user's Impact Points even if donations fail
+      const welcome_shown = (user as any).welcome_shown === true;
+      const welcome_bonus_applied = (user as any).welcome_bonus_applied === true;
       return {
         impactPoints,
         impactPointsChange: 0,
@@ -140,6 +144,8 @@ async function getUserImpact(userId: number) {
         projectsSupported: 0,
         projectsSupportedChange: 0,
         userLevel: totalDonations > 0 ? 'changemaker' : 'aspirer',
+        welcome_shown,
+        welcome_bonus_applied,
       };
     }
     
@@ -157,6 +163,10 @@ async function getUserImpact(userId: number) {
     const userLevel: string = impactPoints >= 100 ? 'changemaker' : 'aspirer';
     const userStatus: string = impactPoints >= 100 ? 'changemaker' : 'aspirer';
     
+    // Get welcome flags (handle missing columns gracefully)
+    const welcome_shown = (user as any).welcome_shown === true;
+    const welcome_bonus_applied = (user as any).welcome_bonus_applied === true;
+    
     return {
       impactPoints,
       impactPointsChange: 0,
@@ -166,6 +176,8 @@ async function getUserImpact(userId: number) {
       projectsSupportedChange: 0,
       userLevel,
       userStatus,
+      welcome_shown,
+      welcome_bonus_applied,
     };
   } catch (error) {
     console.error('[getUserImpact] Error:', error);
@@ -210,6 +222,8 @@ export default async function handler(req: any, res: any) {
         projectsSupportedChange: 0,
         userLevel: 'aspirer',
         userStatus: 'aspirer', // 50 < 100, so aspirer
+        welcome_shown: false,
+        welcome_bonus_applied: false,
       });
     }
     
@@ -218,8 +232,55 @@ export default async function handler(req: any, res: any) {
     // Get impact data
     const userImpact = await getUserImpact(dbUser.id);
     
-    console.log('[GET /api/user/impact] Returning impact data');
-    return res.json(userImpact);
+    // CRITICAL: Check welcome flags by EMAIL FIRST (works across auth providers)
+    let welcome_shown = (userImpact as any).welcome_shown || false;
+    let welcome_bonus_applied = (userImpact as any).welcome_bonus_applied || false;
+    
+    try {
+      const emailLower = supabaseUser.email.toLowerCase();
+      console.log('[GET /api/user/impact] 🔍 Checking welcome flags by email:', emailLower);
+      
+      // Get ALL users with this email and find one with welcome_shown=true
+      const { data: emailUsers, error: emailError } = await supabase
+        .from('users')
+        .select('id, welcome_shown, welcome_bonus_applied')
+        .eq('email', emailLower);
+      
+      if (!emailError && emailUsers && emailUsers.length > 0) {
+        // Check if ANY user with this email has welcome_shown=true
+        const userWithWelcomeShown = emailUsers.find(u => u.welcome_shown === true);
+        const userWithBonusApplied = emailUsers.find(u => u.welcome_bonus_applied === true);
+        
+        if (userWithWelcomeShown) {
+          welcome_shown = true;
+          console.log('[GET /api/user/impact] ✅ Found user with welcome_shown=true by email:', userWithWelcomeShown.id);
+          
+          // Sync ALL users with this email to have welcome_shown=true
+          await supabase
+            .from('users')
+            .update({ welcome_shown: true })
+            .eq('email', emailLower);
+          console.log('[GET /api/user/impact] ✅ Synced all users with email to welcome_shown=true');
+        }
+        
+        if (userWithBonusApplied) {
+          welcome_bonus_applied = true;
+          console.log('[GET /api/user/impact] ✅ Found user with welcome_bonus_applied=true by email:', userWithBonusApplied.id);
+          
+          // Sync ALL users with this email to have welcome_bonus_applied=true
+          await supabase
+            .from('users')
+            .update({ welcome_bonus_applied: true })
+            .eq('email', emailLower);
+          console.log('[GET /api/user/impact] ✅ Synced all users with email to welcome_bonus_applied=true');
+        }
+      }
+    } catch (flagError) {
+      console.log('[GET /api/user/impact] Could not check welcome flags by email:', flagError);
+    }
+    
+    console.log('[GET /api/user/impact] Returning impact data with flags:', { welcome_shown, welcome_bonus_applied });
+    return res.json({ ...userImpact, welcome_shown, welcome_bonus_applied });
     
   } catch (error) {
     console.error('[GET /api/user/impact] Error:', error);

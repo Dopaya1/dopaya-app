@@ -7,7 +7,7 @@ import { formatNumber, formatCurrency } from "@/lib/i18n/formatters";
 import { Share2, Info } from "lucide-react";
 import { trackEvent } from "@/lib/simple-analytics";
 import { useQuery } from "@tanstack/react-query";
-import { calculateImpact } from "@/lib/impact-calculator";
+import { calculateImpactUnified } from "@/lib/impact-calculator";
 import { getProjectImpactUnit, getProjectImpactNoun, getProjectImpactVerb } from "@/lib/i18n/project-content";
 import { useState, useEffect } from "react";
 
@@ -59,20 +59,24 @@ export function ImpactSummaryModal({ isOpen, onClose, impact, onShareStat }: Imp
 
   if (!impact) return null;
 
-  // Calculate real impact from donations - grouped by unit with project context
+  // Calculate real impact from donations - grouped by PROJECT (each project gets separate entry)
   const calculateRealImpact = () => {
     if (!supportedProjectsWithDonations || supportedProjectsWithDonations.length === 0) {
       return [];
     }
 
-    // Group impact by unit and collect project info for description
-    const impactByUnit: Record<string, { 
+    // Group impact by PROJECT (not by unit) - each project gets its own entry
+    // NEW: Use snapshots from donations, fallback to calculation
+    const impactByProject: Array<{ 
+      projectId: number;
+      projectTitle: string;
       value: number; 
       unit: string;
       noun: string;
       verb: string;
       emoji: string;
-    }> = {};
+      generatedText?: string; // Store generated text from snapshot for sharing
+    }> = [];
 
     supportedProjectsWithDonations.forEach((item) => {
       const { project, donations } = item;
@@ -89,27 +93,9 @@ export function ImpactSummaryModal({ isOpen, onClose, impact, onShareStat }: Imp
         const noun = getProjectImpactNoun(project, language) || unit;
         const verb = getProjectImpactVerb(project, language) || 'enabled';
         
-        // Get emoji based on impact type (you can customize this)
-        let emoji = '🌱'; // default
-        const unitLower = unit.toLowerCase();
-        const nounLower = noun.toLowerCase();
-        if (unitLower.includes('wasser') || unitLower.includes('water') || unitLower.includes('liter')) {
-          emoji = '💧';
-        } else if (unitLower.includes('baum') || unitLower.includes('tree')) {
-          emoji = '🌳';
-        } else if (unitLower.includes('mahlzeit') || unitLower.includes('meal')) {
-          emoji = '🍽️';
-        } else if (nounLower.includes('sehkraft') || nounLower.includes('vision') || nounLower.includes('sight')) {
-          emoji = '👁';
-        } else if (unitLower.includes('mensch') || unitLower.includes('person') || unitLower.includes('people')) {
-          emoji = '👥';
-        } else if (unitLower.includes('kind') || unitLower.includes('child')) {
-          emoji = '👶';
-        } else if (unitLower.includes('bildung') || unitLower.includes('education') || unitLower.includes('schul')) {
-          emoji = '📚';
-        } else if (unitLower.includes('plastik') || unitLower.includes('plastic')) {
-          emoji = '🌱';
-        }
+        // Sum impact for this project and collect generated text
+        let projectTotalImpact = 0;
+        let projectGeneratedText: string | undefined;
         
         donations.forEach((donation: any) => {
           // Only process real donations from database with valid amounts
@@ -119,86 +105,184 @@ export function ImpactSummaryModal({ isOpen, onClose, impact, onShareStat }: Imp
             donationAmount: donationAmount,
             hasId: !!donation.id,
             isValid: donationAmount > 0 && donation.id,
+            hasCalculatedImpact: donation.calculated_impact != null,
+            hasGeneratedText: !!(donation.generated_text_past_en || donation.generated_text_past_de),
           });
           
           // Ensure we only count actual donations (amount > 0 and from database)
           if (donationAmount > 0 && donation.id) {
-            const impactResult = calculateImpact(project, donationAmount);
+            let calculatedImpact: number;
+            let generatedText: string | undefined;
+            
+            // Priority 1: Use calculated_impact from snapshot (new donations)
+            if (donation.calculated_impact != null) {
+              calculatedImpact = Number(donation.calculated_impact);
+              // Also try to get generated text from snapshot
+              generatedText = language === 'de' 
+                ? (donation.generated_text_past_de || donation.generated_text_past_en)
+                : (donation.generated_text_past_en || donation.generated_text_past_de);
+            } 
+            // Priority 2: Fallback to calculateImpactUnified (old donations or new without snapshot)
+            else {
+              const impactResult = calculateImpactUnified(project, donationAmount, language === 'de' ? 'de' : 'en');
+              calculatedImpact = impactResult.impact;
+            }
+            
             console.log('[ImpactSummaryModal] Impact result:', {
-              impact: impactResult?.impact,
-              unit: impactResult?.unit,
-              isValid: impactResult && impactResult.impact > 0,
+              calculatedImpact,
+              unit,
+              generatedText: generatedText?.substring(0, 50),
             });
             
             // Only add if impact calculation returned valid result
-            if (impactResult && impactResult.impact > 0) {
-              if (!impactByUnit[unit]) {
-                impactByUnit[unit] = { 
-                  value: 0, 
-                  unit,
-                  noun,
-                  verb,
-                  emoji
-                };
+            if (calculatedImpact > 0) {
+              projectTotalImpact += calculatedImpact;
+              // Store generated text if available (use the first one found)
+              if (generatedText && !projectGeneratedText) {
+                projectGeneratedText = generatedText;
               }
-              impactByUnit[unit].value += impactResult.impact;
             }
           }
         });
+        
+        // Get emoji based on impact type - improved detection
+        // Check generated text first (has most context), then unit/noun, then category
+        let emoji = '🌱'; // default
+        const unitLower = unit.toLowerCase();
+        const nounLower = noun.toLowerCase();
+        const categoryLower = (project.category || '').toLowerCase();
+        const generatedTextLower = (projectGeneratedText || '').toLowerCase();
+        
+        const allText = `${generatedTextLower} ${unitLower} ${nounLower} ${categoryLower}`;
+        
+        // Priority detection based on impact type (most specific first)
+        if (allText.includes('vision') || allText.includes('sight') || allText.includes('sehkraft') || nounLower.includes('vision') || nounLower.includes('sight')) {
+          emoji = '👁';
+        } else if (allText.includes('child') || allText.includes('kind') || unitLower.includes('child') || nounLower.includes('child') || allText.includes('educat')) {
+          emoji = '👶';
+        } else if (allText.includes('wasser') || allText.includes('water') || allText.includes('drinking') || unitLower.includes('water') || unitLower.includes('liter')) {
+          emoji = '💧';
+        } else if (allText.includes('tree') || allText.includes('baum') || unitLower.includes('tree')) {
+          emoji = '🌳';
+        } else if (allText.includes('meal') || allText.includes('mahlzeit') || allText.includes('food')) {
+          emoji = '🍽️';
+        } else if (allText.includes('tea') || allText.includes('farmer') || allText.includes('agriculture')) {
+          emoji = '🌿';
+        } else if (allText.includes('education') || allText.includes('bildung') || allText.includes('schul') || categoryLower === 'education') {
+          emoji = '📚';
+        } else if (allText.includes('plastic') || allText.includes('plastik') || allText.includes('recycl')) {
+          emoji = '♻️';
+        } else if (allText.includes('health') || categoryLower === 'health') {
+          emoji = '🏥';
+        } else if (allText.includes('women') || allText.includes('empowerment') || categoryLower.includes('women')) {
+          emoji = '👩';
+        } else if (allText.includes('energy') || categoryLower === 'energy') {
+          emoji = '⚡';
+        } else if (allText.includes('finance') || categoryLower === 'finance') {
+          emoji = '💰';
+        } else if (allText.includes('housing') || categoryLower === 'housing') {
+          emoji = '🏠';
+        } else if (allText.includes('sanitation') || categoryLower === 'sanitation') {
+          emoji = '🚿';
+        } else if (allText.includes('technology') || categoryLower === 'technology') {
+          emoji = '💻';
+        } else if (allText.includes('conservation') || categoryLower === 'conservation') {
+          emoji = '🌍';
+        } else if (allText.includes('environment') || categoryLower === 'environment') {
+          emoji = '🌱';
+        } else if (unitLower.includes('mensch') || unitLower.includes('person') || unitLower.includes('people')) {
+          emoji = '👥';
+        }
+        
+        // Add this project's impact as a separate entry
+        if (projectTotalImpact > 0) {
+          impactByProject.push({
+            projectId: project.id,
+            projectTitle: project.title,
+            value: projectTotalImpact,
+            unit,
+            noun,
+            verb,
+            emoji,
+            generatedText: projectGeneratedText
+          });
+        }
       }
     });
 
-    // Convert to array and format with descriptive text
-    return Object.values(impactByUnit).map((item, index) => {
+    // Convert to array and format with descriptive text (label ohne doppelte Zahl)
+    return impactByProject.map((item, index) => {
       const roundedValue = Math.round(item.value);
       const formattedValue = formatNumber(roundedValue);
       
-      // Create compact label phrase based on impact type
-      // Examples: "900 Menschen mit wiederhergestellter Sehkraft", "300 Monatszugänge zu sauberem Trinkwasser"
+      // Priority 1: Use generated text from snapshot if available (ohne Zahl, Zahl steht links)
       let label = '';
-      const unitLower = item.unit.toLowerCase();
-      const nounLower = item.noun.toLowerCase();
-      
-      if (language === 'de') {
-        // German formatting
-        if (unitLower.includes('wasser') || unitLower.includes('water') || unitLower.includes('liter')) {
-          label = `${formattedValue} Monatszugänge zu sauberem Trinkwasser`;
-        } else if (unitLower.includes('mensch') || unitLower.includes('person') || unitLower.includes('people')) {
-          if (nounLower.includes('sehkraft') || nounLower.includes('vision') || nounLower.includes('sight')) {
-            label = `${formattedValue} Menschen mit wiederhergestellter Sehkraft`;
+      if (item.generatedText) {
+        // Extract impact value from generated text and replace with aggregated value
+        // Format: "{impact} {unit} {freitext}" -> "{unit} {freitext}" (ohne Zahl)
+        const textMatch = item.generatedText.match(/^(\d+(?:\.\d+)?)\s+([^\s]+)\s+(.+)$/);
+        if (textMatch) {
+          const unitWord = textMatch[2];
+          const freitext = textMatch[3];
+          const freitextLower = freitext.toLowerCase();
+          // Wenn Freitext schon mit Unit/people startet, keine Unit doppeln
+          if (freitextLower.startsWith(unitWord.toLowerCase()) || freitextLower.startsWith('people')) {
+            label = freitext;
           } else {
-            label = `${formattedValue} ${item.noun} unterstützt`;
+            label = `${unitWord} ${freitext}`;
           }
-        } else if (unitLower.includes('bildung') || unitLower.includes('education') || unitLower.includes('schul')) {
-          label = `${formattedValue} Schulwochen finanziert`;
-        } else if (unitLower.includes('plastik') || unitLower.includes('plastic')) {
-          label = `${formattedValue} kg Plastik recycelt`;
         } else {
-          // Fallback: use verb
-          label = `${formattedValue} ${item.noun} ${item.verb}`;
+          // Fallback: Zahl entfernen falls führend
+          const withoutNumber = item.generatedText.replace(/^\d+(?:\.\d+)?\s+/, '');
+          label = withoutNumber;
         }
-      } else {
-        // English formatting
-        if (unitLower.includes('wasser') || unitLower.includes('water') || unitLower.includes('liter')) {
-          label = `${formattedValue} monthly access to clean drinking water`;
-        } else if (unitLower.includes('mensch') || unitLower.includes('person') || unitLower.includes('people')) {
-          if (nounLower.includes('sehkraft') || nounLower.includes('vision') || nounLower.includes('sight')) {
-            label = `${formattedValue} people with restored vision`;
+      } 
+      // Priority 2: Fallback to manual label generation (old system)
+      else {
+        const unitLower = item.unit.toLowerCase();
+        const nounLower = item.noun.toLowerCase();
+        
+        if (language === 'de') {
+          // German formatting (ohne Zahl)
+          if (unitLower.includes('wasser') || unitLower.includes('water') || unitLower.includes('liter')) {
+            label = `Monatszugänge zu sauberem Trinkwasser`;
+          } else if (unitLower.includes('mensch') || unitLower.includes('person') || unitLower.includes('people')) {
+            if (nounLower.includes('sehkraft') || nounLower.includes('vision') || nounLower.includes('sight')) {
+              label = `Menschen mit wiederhergestellter Sehkraft`;
+            } else {
+              label = `${item.noun} unterstützt`;
+            }
+          } else if (unitLower.includes('bildung') || unitLower.includes('education') || unitLower.includes('schul')) {
+            label = `Schulwochen finanziert`;
+          } else if (unitLower.includes('plastik') || unitLower.includes('plastic')) {
+            label = `kg Plastik recycelt`;
           } else {
-            label = `${formattedValue} ${item.noun} supported`;
+            // Fallback: use verb
+            label = `${item.noun} ${item.verb}`;
           }
-        } else if (unitLower.includes('bildung') || unitLower.includes('education') || unitLower.includes('schul')) {
-          label = `${formattedValue} school weeks funded`;
-        } else if (unitLower.includes('plastik') || unitLower.includes('plastic')) {
-          label = `${formattedValue} kg plastic recycled`;
         } else {
-          // Fallback: use verb
-          label = `${formattedValue} ${item.noun} ${item.verb}`;
+          // English formatting (ohne Zahl)
+          if (unitLower.includes('wasser') || unitLower.includes('water') || unitLower.includes('liter')) {
+            label = `monthly access to clean drinking water`;
+          } else if (unitLower.includes('mensch') || unitLower.includes('person') || unitLower.includes('people')) {
+            if (nounLower.includes('sehkraft') || nounLower.includes('vision') || nounLower.includes('sight')) {
+              label = `people with restored vision`;
+            } else {
+              label = `${item.noun} supported`;
+            }
+          } else if (unitLower.includes('bildung') || unitLower.includes('education') || unitLower.includes('schul')) {
+            label = `school weeks funded`;
+          } else if (unitLower.includes('plastik') || unitLower.includes('plastic')) {
+            label = `kg plastic recycled`;
+          } else {
+            // Fallback: use verb
+            label = `${item.noun} ${item.verb}`;
+          }
         }
       }
       
       return {
-        id: `impact-${item.unit}-${index}`,
+        id: `impact-project-${item.projectId}-${index}`,
         emoji: item.emoji,
         value: roundedValue,
         label: label,

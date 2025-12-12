@@ -7,6 +7,7 @@ import { LanguageLink } from "@/components/ui/language-link";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { useI18n } from "@/lib/i18n/i18n-context";
 import { getProjectTitle, getProjectDescription, getProjectSummary, getProjectMissionStatement, getProjectKeyImpact, getProjectAboutUs, getProjectImpactAchievements, getProjectFundUsage, getProjectSelectionReasoning, getProjectCountry, getProjectImpactUnit, getProjectImpactNoun, getProjectImpactVerb, hasGermanContent, getBackerShortDescription, getProjectFounderBio } from "@/lib/i18n/project-content";
+import { calculateImpactUnified, generateCtaText } from "@/lib/impact-calculator";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -44,6 +45,48 @@ import { PressMentionCard } from "@/components/projects/press-mention-card";
 import verifiedIcon from "@assets/SE-Page_Icons/Dopaya icon - verified Social enterprises.png";
 import percentageIcon from "@assets/SE-Page_Icons/Dopaya icon - 100percentage.png";
 import rewardsIcon from "@assets/SE-Page_Icons/Dopaya icon - Rewards.png";
+
+// Normalize project (snake_case -> camelCase) for impact data
+const normalizeProjectLocal = (proj: Project) => ({
+  ...proj,
+  impactFactor: (proj as any).impact_factor ?? proj.impactFactor,
+  impactUnitSingularEn: (proj as any).impact_unit_singular_en ?? proj.impactUnitSingularEn,
+  impactUnitPluralEn: (proj as any).impact_unit_plural_en ?? proj.impactUnitPluralEn,
+  impactUnitSingularDe: (proj as any).impact_unit_singular_de ?? proj.impactUnitSingularDe,
+  impactUnitPluralDe: (proj as any).impact_unit_plural_de ?? proj.impactUnitPluralDe,
+  ctaTemplateEn: (proj as any).cta_template_en ?? proj.ctaTemplateEn,
+  ctaTemplateDe: (proj as any).cta_template_de ?? proj.ctaTemplateDe,
+  pastTemplateEn: (proj as any).past_template_en ?? proj.pastTemplateEn,
+  pastTemplateDe: (proj as any).past_template_de ?? proj.pastTemplateDe,
+  impactTiers: (proj as any).impact_tiers ?? proj.impactTiers,
+  impactPointsMultiplier: (proj as any).impact_points_multiplier ?? proj.impactPointsMultiplier,
+});
+
+const hasImpactDataLocal = (proj: Project | null) => {
+  if (!proj) return false;
+  const tiers = (proj.impactTiers as any[]) || [];
+  const hasTiers = Array.isArray(tiers) && tiers.length > 0;
+  if (hasTiers) {
+    return !!(
+      proj.impactUnitSingularEn &&
+      proj.impactUnitPluralEn &&
+      proj.impactUnitSingularDe &&
+      proj.impactUnitPluralDe &&
+      tiers.some((t: any) => t && t.impact_factor != null && t.cta_template_en && t.cta_template_de && t.past_template_en && t.past_template_de)
+    );
+  }
+  return !!(
+    proj.impactFactor != null &&
+    proj.impactUnitSingularEn &&
+    proj.impactUnitPluralEn &&
+    proj.impactUnitSingularDe &&
+    proj.impactUnitPluralDe &&
+    proj.ctaTemplateEn &&
+    proj.ctaTemplateDe &&
+    proj.pastTemplateEn &&
+    proj.pastTemplateDe
+  );
+};
 
 interface ProjectDetailProps {
   project: Project;
@@ -313,16 +356,14 @@ export function ProjectDetailNewV3({ project }: ProjectDetailProps) {
   
   // Get available donation tiers from project
   const getAvailableTiers = (project: Project | null) => {
-    if (!project) return [] as { donation: number; impact: string; unit: string; points: number }[];
-    const tiers: { donation: number; impact: string; unit: string; points: number }[] = [];
+    if (!project) return [] as { donation: number; unit: string; points: number }[];
+    const tiers: { donation: number; unit: string; points: number }[] = [];
     for (let i = 1; i <= 7; i++) {
       const donation = project[`donation_${i}` as keyof Project] as unknown as number;
-      const impact = project[`impact_${i}` as keyof Project] as unknown as string;
       const impactUnit = getProjectImpactUnit(project, language) || 'impact created';
-      if (donation && impact) {
+      if (donation) {
         tiers.push({
           donation,
-          impact,
           unit: impactUnit || 'impact created',
           points: donation * (project.impactPointsMultiplier || 10)
         });
@@ -332,11 +373,17 @@ export function ProjectDetailNewV3({ project }: ProjectDetailProps) {
   };
 
   const availableTiers = getAvailableTiers(project);
+  const fallbackDonations = [10, 25, 50, 100];
+  const donationOptions = availableTiers.length > 0 ? availableTiers.map(t => t.donation) : fallbackDonations;
   
   // Initialize donation amount when project loads
   useEffect(() => {
-    if (project && availableTiers.length > 0 && donationAmountInteractive === 0) {
-      setDonationAmountInteractive(availableTiers[0].donation);
+    if (project && donationAmountInteractive === 0) {
+      if (availableTiers.length > 0) {
+        setDonationAmountInteractive(availableTiers[0].donation);
+      } else {
+        setDonationAmountInteractive(fallbackDonations[2]); // default to 50 if no tiers
+      }
     }
   }, [project, availableTiers, donationAmountInteractive]);
 
@@ -462,11 +509,57 @@ export function ProjectDetailNewV3({ project }: ProjectDetailProps) {
   }, []);
 
   const currentTier = availableTiers.find(t => t.donation === donationAmountInteractive) || availableTiers[0];
-  const impactAmount = currentTier?.impact || '0';
-  const impactUnit = currentTier?.unit || 'impact created';
-  const impactPoints = currentTier?.points || 0;
-  const impactVerb = projectImpactVerb || 'help';
-  const impactNoun = projectImpactNoun || 'people';
+  
+  // Impact calculation (new unified logic with fallback)
+  const impactResult = project
+    ? calculateImpactUnified(project, donationAmountInteractive || 0, language === 'de' ? 'de' : 'en')
+    : null;
+  
+  // Try to generate CTA text from templates (new system)
+  const generatedCtaText = project && impactResult
+    ? generateCtaText(project, donationAmountInteractive || 0, impactResult, language === 'de' ? 'de' : 'en')
+    : null;
+  
+  // Parse generated text to extract impact+unit and freitext separately
+  const parseCtaText = (text: string, lang: 'en' | 'de') => {
+    if (lang === 'de') {
+      const match = text.match(/und hilf (.+?) — verdiene/);
+      if (match) {
+        const impactAndFreitext = match[1];
+        const impactMatch = impactAndFreitext.match(/^(\d+(?:\.\d+)?)\s+([^\s]+)\s+(.+)$/);
+        if (impactMatch) {
+          return {
+            impact: impactMatch[1],
+            unit: impactMatch[2],
+            freitext: impactMatch[3]
+          };
+        }
+      }
+    } else {
+      const match = text.match(/and help (.+?) — earn/);
+      if (match) {
+        const impactAndFreitext = match[1];
+        const impactMatch = impactAndFreitext.match(/^(\d+(?:\.\d+)?)\s+([^\s]+)\s+(.+)$/);
+        if (impactMatch) {
+          return {
+            impact: impactMatch[1],
+            unit: impactMatch[2],
+            freitext: impactMatch[3]
+          };
+        }
+      }
+    }
+    return null;
+  };
+  
+  const parsedCta = generatedCtaText ? parseCtaText(generatedCtaText, language === 'de' ? 'de' : 'en') : null;
+  
+  // Display values (only if impact data available)
+  const impactAmount = impactResult
+    ? (impactResult.impact % 1 === 0 ? impactResult.impact.toString() : impactResult.impact.toFixed(2))
+    : '0';
+  const impactUnit = parsedCta?.unit || impactResult?.unit || 'impact units';
+  const impactPoints = Math.floor((project.impactPointsMultiplier ?? (project as any)?.impact_points_multiplier ?? 10) * (donationAmountInteractive || 0));
   
   // Fallback function for copying to clipboard on older browsers
   const copyToClipboardFallback = (text: string) => {
@@ -1690,7 +1783,7 @@ ${url}
             </div>
 
             {/* Interactive Impact Calculator Box - Bottom of left side */}
-            {availableTiers.length > 0 && (
+            {(availableTiers.length > 0 || donationOptions.length > 0) && (
               <div id="impactbox" ref={impactBoxRef} className="mt-12">
                 <div className="rounded-lg p-4 lg:p-6" style={{ backgroundColor: BRAND_COLORS.bgBeige }}>
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
@@ -1713,18 +1806,18 @@ ${url}
                           </button>
                           {showDonationDropdown && (
                             <div className="absolute top-full left-0 mt-2 bg-white border rounded-lg shadow-lg z-10 min-w-[140px]" style={{ borderColor: BRAND_COLORS.borderSubtle }}>
-                              {availableTiers.map((tier) => (
+                              {donationOptions.map((amount) => (
                                 <button 
-                                  key={tier.donation} 
+                                  key={amount} 
                                   onClick={(e) => { 
                                     e.stopPropagation();
-                                    setDonationAmountInteractive(tier.donation); 
+                                    setDonationAmountInteractive(amount); 
                                     setShowDonationDropdown(false); 
                                   }} 
                                   className="w-full p-2 text-left hover:bg-gray-50 transition-colors min-h-[36px]"
                                 >
                                   <span className="text-lg font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>
-                                    ${tier.donation}
+                                    ${amount}
                                   </span>
                                 </button>
                               ))}
@@ -1732,7 +1825,19 @@ ${url}
                           )}
                         </span>
                         {' '}{language === 'de' ? 'und hilf' : 'and help'}{' '}
-                        {language === 'de' ? (
+                        {generatedCtaText && parsedCta ? (
+                          // New system: Use parsed template text
+                          <>
+                            <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>
+                              {parsedCta.impact} {parsedCta.unit}
+                            </span>
+                            {' '}
+                            <span style={{ color: BRAND_COLORS.textPrimary }}>
+                              {parsedCta.freitext}
+                            </span>
+                          </>
+                        ) : language === 'de' ? (
+                          // Fallback: Old system with verb/noun
                           <>
                             <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>{impactAmount}</span>{' '}
                             <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>{impactNoun}</span>{' '}

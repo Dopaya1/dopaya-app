@@ -281,6 +281,8 @@ export class MemStorage implements IStorage {
     const impactPointsEarned = userDonations.reduce((sum, donation) => sum + donation.impactPoints, 0);
     const impactPointsSpent = userRedemptions.reduce((sum, redemption) => sum + redemption.pointsSpent, 0);
     const impactPoints = impactPointsEarned - impactPointsSpent;
+    const welcome_shown = (this.users.get(userId) as any)?.welcome_shown === true;
+    const welcome_bonus_applied = (this.users.get(userId) as any)?.welcome_bonus_applied === true;
     
     // Calculate total amount donated
     const amountDonated = userDonations.reduce((sum, donation) => sum + donation.amount, 0);
@@ -304,7 +306,9 @@ export class MemStorage implements IStorage {
       amountDonatedChange: 47,
       projectsSupported,
       projectsSupportedChange: -12,
-      userStatus
+      userStatus,
+      welcome_shown,
+      welcome_bonus_applied
     };
   }
 
