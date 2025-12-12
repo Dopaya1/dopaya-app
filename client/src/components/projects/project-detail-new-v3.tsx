@@ -116,6 +116,10 @@ export function ProjectDetailNewV3({ project }: ProjectDetailProps) {
   const projectFounderBio = getProjectFounderBio(project, language);
   const hasGerman = hasGermanContent(project);
   
+  // Check if project has impact data (new system) - used to conditionally show impact box
+  const normalizedProjectForImpact = normalizeProjectLocal(project);
+  const hasImpactForDisplay = hasImpactDataLocal(normalizedProjectForImpact);
+  
   // Debug: Log language and project data
   useEffect(() => {
     console.log('[ProjectDetailV3] Language:', language);
@@ -318,8 +322,11 @@ export function ProjectDetailNewV3({ project }: ProjectDetailProps) {
         { id: 'impact', ref: impactRef },
         { id: 'changemakers', ref: changemakersRef },
         { id: 'ourview', ref: ourviewRef },
-        { id: 'impactbox', ref: impactBoxRef },
       ];
+      // Only include impactbox if project has impact data
+      if (hasImpactForDisplay) {
+        sections.push({ id: 'impactbox' as TabId, ref: impactBoxRef });
+      }
       
       // Find the section that is currently closest to the top of the viewport
       let activeSection: TabId = 'story';
@@ -352,7 +359,7 @@ export function ProjectDetailNewV3({ project }: ProjectDetailProps) {
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
-  }, []);
+  }, [hasImpactForDisplay]);
   
   // Get available donation tiers from project
   const getAvailableTiers = (project: Project | null) => {
@@ -511,12 +518,12 @@ export function ProjectDetailNewV3({ project }: ProjectDetailProps) {
   const currentTier = availableTiers.find(t => t.donation === donationAmountInteractive) || availableTiers[0];
   
   // Impact calculation (new unified logic with fallback)
-  const impactResult = project
+  const impactResult = project && hasImpactForDisplay
     ? calculateImpactUnified(project, donationAmountInteractive || 0, language === 'de' ? 'de' : 'en')
     : null;
   
   // Try to generate CTA text from templates (new system)
-  const generatedCtaText = project && impactResult
+  const generatedCtaText = project && impactResult && hasImpactForDisplay
     ? generateCtaText(project, donationAmountInteractive || 0, impactResult, language === 'de' ? 'de' : 'en')
     : null;
   
@@ -1199,13 +1206,19 @@ ${url}
       <div className="sticky top-0 z-[60] bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex gap-6 overflow-x-auto">
-            {[
-              { id: 'story', label: t("projectDetail.story") },
-              { id: 'changemakers', label: t("projectDetail.theChangemaker") },
-              { id: 'impact', label: t("projectDetail.impact") },
-              { id: 'ourview', label: t("projectDetail.whyWeBackThem") },
-              { id: 'impactbox', label: t("projectDetail.makeAnImpact") }
-            ].map((tab) => (
+            {(() => {
+              const tabs: Array<{ id: TabId; label: string }> = [
+                { id: 'story', label: t("projectDetail.story") },
+                { id: 'changemakers', label: t("projectDetail.theChangemaker") },
+                { id: 'impact', label: t("projectDetail.impact") },
+                { id: 'ourview', label: t("projectDetail.whyWeBackThem") },
+              ];
+              // Only show impactbox tab if project has impact data
+              if (hasImpactForDisplay) {
+                tabs.push({ id: 'impactbox', label: t("projectDetail.makeAnImpact") });
+              }
+              return tabs;
+            })().map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => scrollToSection(tab.id as TabId)}
@@ -1783,7 +1796,8 @@ ${url}
             </div>
 
             {/* Interactive Impact Calculator Box - Bottom of left side */}
-            {(availableTiers.length > 0 || donationOptions.length > 0) && (
+            {/* Only show if project has impact data (new system) */}
+            {hasImpactForDisplay && (availableTiers.length > 0 || donationOptions.length > 0) && (
               <div id="impactbox" ref={impactBoxRef} className="mt-12">
                 <div className="rounded-lg p-4 lg:p-6" style={{ backgroundColor: BRAND_COLORS.bgBeige }}>
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
@@ -1836,19 +1850,18 @@ ${url}
                               {parsedCta.freitext}
                             </span>
                           </>
-                        ) : language === 'de' ? (
-                          // Fallback: Old system with verb/noun
+                        ) : impactResult ? (
+                          // Fallback: Show impact amount and unit if available (from new system)
                           <>
-                            <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>{impactAmount}</span>{' '}
-                            <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>{impactNoun}</span>{' '}
-                            <span className="font-bold" style={{ color: BRAND_COLORS.textPrimary }}>{impactVerb}</span>
+                            <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>
+                              {impactAmount} {impactUnit}
+                            </span>
                           </>
                         ) : (
-                          <>
-                            <span className="font-bold" style={{ color: BRAND_COLORS.textPrimary }}>{impactVerb}</span>{' '}
-                            <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>{impactAmount}</span>{' '}
-                            <span className="font-bold" style={{ color: BRAND_COLORS.primaryOrange }}>{impactNoun}</span>
-                          </>
+                          // No impact data: Show simple message (should not happen if hasImpactForDisplay is true)
+                          <span style={{ color: BRAND_COLORS.textPrimary }}>
+                            {language === 'de' ? 'Gemeinschaften unterstützen' : 'support communities'}
+                          </span>
                         )}
                         {' '}<span style={{ color: BRAND_COLORS.textSecondary }}>—</span> <span style={{ color: BRAND_COLORS.textSecondary }}>{language === 'de' ? 'verdiene' : 'earn'}</span>{' '}
                         <span className="font-bold" style={{ color: BRAND_COLORS.textSecondary }}>{impactPoints}</span>{' '}
