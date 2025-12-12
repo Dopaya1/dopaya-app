@@ -17,6 +17,7 @@ import milletarianLogo from '@assets/Brand_backers/milletarian sustainable brand
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { useI18n } from "@/lib/i18n/i18n-context";
 import { getBrandDescription, getRewardTitle } from "@/lib/i18n/project-content";
+import { LanguageLink } from "@/components/ui/language-link";
 
 // Fallback brand data (used if no brands in database)
 const fallbackBrands = [
@@ -851,6 +852,119 @@ export function PartnerShowcaseSection() {
           </div> */}
         </div>
       </div>
+
+      {/* Brand Details Modal/Popup */}
+      {selectedBrand !== null && (() => {
+        const selectedBrandData = brands.find(b => b.id === selectedBrand);
+        if (!selectedBrandData) return null;
+        
+        // Get rewards for this brand
+        const brandRewards = rewards.filter((reward) => {
+          const rewardBrandId = (reward as any).brandId || (reward as any).brand_id;
+          return rewardBrandId === selectedBrand;
+        });
+
+        return (
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={() => setSelectedBrand(null)}
+          >
+            <div 
+              className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setSelectedBrand(null)}
+                className="absolute top-6 right-6 z-10 p-2 rounded-full bg-white/90 hover:bg-white shadow-sm transition-colors"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5 text-gray-700" />
+              </button>
+
+              {/* Modal Content */}
+              <div className="p-6 lg:p-8">
+                {/* Brand Header */}
+                <div className="flex items-start gap-4 mb-6">
+                  <img 
+                    src={selectedBrandData.logo} 
+                    alt={selectedBrandData.name} 
+                    className="w-16 h-16 object-contain flex-shrink-0"
+                  />
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-bold mb-2" style={{ color: BRAND_COLORS.textPrimary }}>
+                      {renderBrandName(selectedBrandData)}
+                    </h3>
+                    <p className="text-sm mb-4" style={{ color: BRAND_COLORS.textMuted }}>
+                      {selectedBrandData.category}
+                    </p>
+                    {selectedBrandData.website && selectedBrandData.website !== '#' && (
+                      <LanguageLink 
+                        href={selectedBrandData.website}
+                        className="inline-flex items-center gap-2 text-sm font-medium hover:underline"
+                        style={{ color: BRAND_COLORS.primaryOrange }}
+                      >
+                        <span>{language === 'de' ? 'Zur Website' : 'Visit Website'}</span>
+                        <ExternalLink className="h-4 w-4" />
+                      </LanguageLink>
+                    )}
+                  </div>
+                </div>
+
+                {/* Brand Description */}
+                {selectedBrandData.hoverDescription && (
+                  <div className="mb-6">
+                    <p className="text-base leading-relaxed" style={{ color: BRAND_COLORS.textSecondary }}>
+                      {selectedBrandData.hoverDescription}
+                    </p>
+                  </div>
+                )}
+
+                {/* Brand Rewards */}
+                {brandRewards.length > 0 && (
+                  <div className="mt-8">
+                    <h4 className="text-lg font-semibold mb-4" style={{ color: BRAND_COLORS.textPrimary }}>
+                      {language === 'de' ? 'Verfügbare Rewards' : 'Available Rewards'}
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {brandRewards.map((reward) => {
+                        const brandId = (reward as any).brandId || (reward as any).brand_id;
+                        const brandInfo = brandId ? brandMap.get(Number(brandId)) : null;
+                        
+                        return (
+                          <div
+                            key={reward.id}
+                            className="rounded-lg overflow-hidden shadow-sm border"
+                            style={{ borderColor: BRAND_COLORS.borderSubtle }}
+                          >
+                            {reward.imageUrl && (
+                              <div className="aspect-[16/9] bg-gray-100 overflow-hidden">
+                                <img
+                                  src={reward.imageUrl}
+                                  alt={getRewardTitle(reward, language)}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            )}
+                            <div className="p-4">
+                              <h5 className="font-semibold text-sm mb-1" style={{ color: BRAND_COLORS.textPrimary }}>
+                                {getRewardTitle(reward, language)}
+                              </h5>
+                              <p className="text-xs" style={{ color: BRAND_COLORS.textMuted }}>
+                                {reward.pointsCost || (reward as any).points_cost} {language === 'de' ? 'Impact Points' : 'Impact Points'}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </section>
   );
 }

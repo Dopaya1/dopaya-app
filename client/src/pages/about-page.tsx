@@ -206,20 +206,7 @@ export default function AboutPageV2() {
           </div>
         </section>
 
-        {/* SECTION 6 - Final CTA Block */}
-        <section className="py-12 md:py-16">
-          <div className="container mx-auto px-4">
-            <div className="text-center bg-[#f2662d] py-12 px-6 rounded-lg text-white">
-              <h2 className="text-2xl md:text-3xl font-bold mb-6">{t("about.ctaTitle")}</h2>
-              <p className="text-lg mb-6 text-orange-100">{t("about.ctaSubtitle")}</p>
-              <a href="https://tally.so/r/m6MqAe" target="_blank" rel="noopener noreferrer">
-                <Button size="lg" className="bg-white text-[#f2662d] hover:bg-gray-50">
-                  {t("about.ctaButton")}
-                </Button>
-              </a>
-            </div>
-          </div>
-        </section>
+        {/* SECTION 6 - Final CTA Block - REMOVED */}
       </div>
       </div>
     </>

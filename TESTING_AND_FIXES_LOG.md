@@ -230,6 +230,35 @@ GROUP BY u.id, u."impactPoints";
 - ✅ Page loads without infinite loops
 - ✅ 404 fallback logic still works correctly
 - ✅ Welcome modal logic works with memoized `safeImpact`
+
+## 2025-01-XX - Partner Showcase Modal Fix & Link Import Fix
+
+### Issues Fixed:
+1. **Partner Showcase Modal Missing**: When clicking on a partner card, a modal/popup should appear with brand information, description, and link to website. The modal was missing entirely.
+2. **Link Import Error**: `ReferenceError: Link is not defined` in `institutional-proof-simple.tsx` at line 325.
+
+### Changes Made:
+1. **partner-showcase-section-optimized.tsx**:
+   - Added `LanguageLink` import from `@/components/ui/language-link`
+   - Created brand details modal/popup that appears when `selectedBrand` is set
+   - Modal displays:
+     - Brand logo and name
+     - Category
+     - Website link (using `LanguageLink`)
+     - Description
+     - Available rewards for the selected brand
+   - Modal can be closed by clicking outside or the X button
+
+2. **institutional-proof-simple.tsx**:
+   - Fixed `Link` usage at line 325 - replaced with `LanguageLink` (which was already imported)
+   - This was causing `ReferenceError: Link is not defined` when the institutional proof section rendered
+
+### Testing:
+- ✅ Partner cards now show modal when clicked
+- ✅ Modal displays all brand information correctly
+- ✅ Website links work properly
+- ✅ No more `Link is not defined` errors
+- ✅ Site loads without errors
 - ✅ Analytics tracking uses correct impact data
 
 **Result:** ✅ FIXED

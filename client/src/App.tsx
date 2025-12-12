@@ -170,7 +170,7 @@ function App() {
                 <div className="sticky top-0 z-[60] bg-[#F8F6EF] border-b border-gray-200 py-2.5 px-4">
                   <div className="max-w-7xl mx-auto">
                     <p className="text-sm text-black text-center">
-                      Latest brand partners: <span className="font-semibold">NIKIN</span> 🇨🇭 - <span className="font-semibold">RRREVOLVE</span> 🇨🇭
+                      Latest brand partners: <span className="font-semibold">NIKIN</span> 🇨🇭 - <span className="font-semibold">RRREVOLVE</span> 🇨🇭 - <span className="font-semibold">RESLIDES</span> 🇨🇭
                     </p>
                   </div>
                 </div>

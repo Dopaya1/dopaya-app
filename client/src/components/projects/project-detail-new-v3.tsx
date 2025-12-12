@@ -1367,7 +1367,7 @@ ${url}
               
               {/* Why We Selected Content - First part of merged section */}
               <div className={`${BRAND_COLORS.bgBeige} rounded-lg pb-6 px-0 pt-0 w-full`}>
-                <h2 className="text-xl font-bold text-dark font-heading mb-4 w-full">{t("projectDetail.whyWeSelected")} {projectTitle} {language === 'de' ? 'ausgewählt haben' : 'Selected'}</h2>
+                <h2 className="text-xl font-bold text-dark font-heading mb-4 w-full">{t("projectDetail.whyWeSelected")} {projectTitle}{language === 'de' ? ' ausgewählt haben' : ''}</h2>
                 <div className="space-y-4 text-neutral leading-relaxed w-full">
                     {(() => {
                       // Check all possible field name variations (Supabase may return different casing)
