@@ -884,24 +884,60 @@ ${url}
                       const isVimeo = currentMedia.url.includes('vimeo.com');
                       
                       if (isYouTube) {
-                        // Extract YouTube video ID
+                        // Extract YouTube video ID (including Shorts)
                         let videoId = '';
-                        const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
-                        const match = currentMedia.url.match(youtubeRegex);
-                        if (match && match[1]) {
-                          videoId = match[1];
+                        const isShorts = currentMedia.url.toLowerCase().includes('/shorts/');
+                        
+                        // Try Shorts URL first: youtube.com/shorts/VIDEO_ID
+                        if (isShorts) {
+                          const shortsMatch = currentMedia.url.match(/\/shorts\/([^"&?\/\s]{11})/);
+                          if (shortsMatch && shortsMatch[1]) {
+                            videoId = shortsMatch[1];
+                          }
                         }
                         
-                        return videoId ? (
-                          <iframe
-                            src={`https://www.youtube.com/embed/${videoId}`}
-                            className="w-full h-full min-h-[500px] max-h-[600px] rounded-lg"
-                            frameBorder="0"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                            title={`${projectTitle} - Video`}
-                          />
-                        ) : (
+                        // Fallback: Standard YouTube URL patterns
+                        if (!videoId) {
+                          const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+                          const match = currentMedia.url.match(youtubeRegex);
+                          if (match && match[1]) {
+                            videoId = match[1];
+                          }
+                        }
+                        
+                        // Render iframe with appropriate styling
+                        if (videoId) {
+                          // Shorts: vertical format, centered and narrower
+                          if (isShorts) {
+                            return (
+                              <div className="w-full flex items-center justify-center">
+                                <iframe
+                                  src={`https://www.youtube.com/embed/${videoId}`}
+                                  className="w-full max-w-[315px] aspect-[9/16] min-h-[560px] max-h-[560px] rounded-lg"
+                                  frameBorder="0"
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                  allowFullScreen
+                                  title={`${projectTitle} - Shorts Video`}
+                                />
+                              </div>
+                            );
+                          }
+                          
+                          // Regular YouTube video: horizontal format
+                          return (
+                            <iframe
+                              src={`https://www.youtube.com/embed/${videoId}`}
+                              className="w-full h-full min-h-[500px] max-h-[600px] rounded-lg"
+                              frameBorder="0"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                              title={`${projectTitle} - Video`}
+                            />
+                          );
+                        }
+                        
+                        // Fallback: Direct video file if ID extraction fails
+                        return (
                           <video
                             src={currentMedia.url}
                             controls
