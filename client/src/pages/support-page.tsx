@@ -87,6 +87,8 @@ export default function SupportPage() {
   const currentSupportAmount = isCustomAmount ? customAmount : (supportAmount || 0);
   const hasSelectedAmount =
     supportAmount !== null || (isCustomAmount && customAmount > 0);
+  // Check if amount meets minimum requirement of $10
+  const meetsMinimumAmount = currentSupportAmount >= 10;
   const impactPoints = Math.max(0, Math.floor(currentSupportAmount * 10)); // 10 IP per $1
 
   const tipPercent = isCustomTip ? customTipValue : tipSliderValue[0];
@@ -445,7 +447,7 @@ export default function SupportPage() {
           </div>
 
           {/* Impact banner */}
-          {hasSelectedAmount && currentSupportAmount > 0 && (
+          {hasSelectedAmount && currentSupportAmount > 0 && meetsMinimumAmount && (
             <div className="space-y-3 w-full">
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 shadow-sm">
                 <div className="text-center">
@@ -481,7 +483,7 @@ export default function SupportPage() {
           )}
 
           {/* Tip section */}
-          {hasSelectedAmount && currentSupportAmount > 0 && (
+          {hasSelectedAmount && currentSupportAmount > 0 && meetsMinimumAmount && (
             <div className="space-y-4 pt-10">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-1">{t("support.tipDopaya")}</h3>
@@ -588,7 +590,7 @@ export default function SupportPage() {
           )}
 
           {/* Payment method */}
-          {hasSelectedAmount && currentSupportAmount > 0 && (
+          {hasSelectedAmount && currentSupportAmount > 0 && meetsMinimumAmount && (
             <div className="space-y-3 pt-10">
               <h3 className="text-lg font-semibold text-gray-900">{t("support.paymentMethod")}</h3>
               <div className="flex items-center space-x-3 p-4 border-2 border-gray-300 rounded-lg bg-white">
@@ -603,7 +605,7 @@ export default function SupportPage() {
           )}
 
           {/* Privacy & updates */}
-          {hasSelectedAmount && currentSupportAmount > 0 && (
+          {hasSelectedAmount && currentSupportAmount > 0 && meetsMinimumAmount && (
             <div className="space-y-4">
               <div className="flex items-start space-x-3">
                 <Checkbox
@@ -623,7 +625,7 @@ export default function SupportPage() {
           )}
 
           {/* Summary + CTA - preview only (with processing animation on click) */}
-          {hasSelectedAmount && currentSupportAmount > 0 && (
+          {hasSelectedAmount && currentSupportAmount > 0 && meetsMinimumAmount && (
             <div className="space-y-4 pt-4 border-t border-gray-200">
               <div className="space-y-3">
                 <div className="flex items-center justify-between text-sm">
@@ -644,11 +646,11 @@ export default function SupportPage() {
 
               <div className="space-y-2">
                 <Button
-                  disabled={!hasSelectedAmount || currentSupportAmount <= 0}
+                  disabled={!hasSelectedAmount || currentSupportAmount <= 0 || !meetsMinimumAmount}
                   className="w-full h-14 text-base font-semibold bg-yellow-400 hover:bg-yellow-500 text-gray-900 disabled:opacity-60"
                   style={{ backgroundColor: "#FFC107", color: "#1a1a3a" }}
                   onClick={async () => {
-                    if (!hasSelectedAmount || currentSupportAmount <= 0) return;
+                    if (!hasSelectedAmount || currentSupportAmount <= 0 || !meetsMinimumAmount) return;
                     if (!project?.id || !user) {
                       alert("You must be logged in to donate.");
                       return;
