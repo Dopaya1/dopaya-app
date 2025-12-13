@@ -1,8 +1,53 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
-import { generateImpactSnapshot, hasImpact } from '../server/impact-generator';
 
-// Normalize Supabase snake_case fields to the camelCase shape expected by impact-generator
+/**
+ * ============================================================================
+ * IMPACT SNAPSHOT GENERATION - INLINED FUNCTIONS
+ * ============================================================================
+ * 
+ * These functions were inlined from server/impact-generator.ts to avoid
+ * module resolution issues in Vercel serverless functions.
+ * 
+ * IMPORTANT: This file does NOT import from ../server/ or @shared/ to ensure
+ * compatibility with Vercel's build system. All dependencies are self-contained.
+ * 
+ * FALLBACK GUARANTEE: Impact snapshot generation is wrapped in try-catch.
+ * If generation fails, donations still proceed without impact data.
+ * 
+ * ============================================================================
+ */
+
+/**
+ * Impact Tier structure (for non-linear projects)
+ */
+interface ImpactTier {
+  min_amount: number;
+  max_amount: number;
+  impact_factor: number;
+  cta_template_en: string;
+  cta_template_de: string;
+  past_template_en: string;
+  past_template_de: string;
+}
+
+/**
+ * Impact Snapshot structure
+ */
+interface ImpactSnapshot {
+  calculated_impact: number;
+  impact_factor: number;
+  impact_unit_singular: string;
+  impact_unit_plural: string;
+  unit: string; // Singular or Plural based on calculated_impact
+  generated_text_cta: string;
+  generated_text_past: string;
+  timestamp: string;
+}
+
+/**
+ * Normalize Supabase snake_case fields to camelCase for impact functions
+ */
 function mapProjectImpactFields(project: any) {
   return {
     ...project,
@@ -17,6 +62,228 @@ function mapProjectImpactFields(project: any) {
     pastTemplateDe: project.pastTemplateDe ?? project.past_template_de,
     impactTiers: project.impactTiers ?? project.impact_tiers,
     impactPointsMultiplier: project.impactPointsMultiplier ?? project.impact_points_multiplier,
+  };
+}
+
+/**
+ * Checks if project has new impact tracking data
+ * Supports both linear (impact_factor) and non-linear (impact_tiers) projects
+ * 
+ * FALLBACK: Returns false if data is missing (donation proceeds without impact snapshot)
+ */
+function hasImpact(project: any): boolean {
+  // Check if project has impact_tiers (non-linear)
+  if (project.impactTiers && Array.isArray(project.impactTiers) && project.impactTiers.length > 0) {
+    // For impact_tiers, we need units and templates from project
+    return !!(
+      project.impactUnitSingularEn &&
+      project.impactUnitPluralEn &&
+      project.pastTemplateEn &&
+      project.ctaTemplateEn
+    );
+  }
+  
+  // Check if project has impact_factor (linear)
+  return !!(
+    project.impactFactor != null &&
+    project.impactUnitSingularEn &&
+    project.impactUnitPluralEn &&
+    project.pastTemplateEn &&
+    project.ctaTemplateEn
+  );
+}
+
+/**
+ * Formats impact value according to rules:
+ * - People: Whole number if ≥1, else decimal with tooltip
+ * - kg/Liter: 1 decimal place
+ * - <1 Person: Show decimal value in tooltip
+ */
+function formatImpact(calculatedImpact: number, unitType: string): string {
+  // Check if unit is person/people type
+  const isPersonType = unitType.toLowerCase().includes('person') || 
+                       unitType.toLowerCase().includes('people') ||
+                       unitType.toLowerCase().includes('child') ||
+                       unitType.toLowerCase().includes('children');
+  
+  if (isPersonType) {
+    // People: Whole number if ≥1, else decimal
+    if (calculatedImpact >= 1) {
+      return Math.floor(calculatedImpact).toString();
+    } else {
+      return calculatedImpact.toFixed(2); // For tooltip
+    }
+  } else if (unitType.toLowerCase() === 'kg' || 
+             unitType.toLowerCase() === 'liter' || 
+             unitType.toLowerCase() === 'l') {
+    // kg/Liter: 1 decimal place
+    return calculatedImpact.toFixed(1);
+  } else {
+    // Other: Whole number if possible, else 1 decimal
+    return calculatedImpact % 1 === 0 
+      ? calculatedImpact.toString() 
+      : calculatedImpact.toFixed(1);
+  }
+}
+
+/**
+ * Gets unit (Singular or Plural) based on calculated impact
+ */
+function getUnit(
+  calculatedImpact: number,
+  singular: string,
+  plural: string
+): string {
+  return calculatedImpact === 1 ? singular : plural;
+}
+
+/**
+ * Renders Past template: "{impact} {unit} {freitext_past}"
+ */
+function renderPastTemplate(
+  template: string, // Only free-text part
+  formattedImpact: string,
+  unit: string
+): string {
+  return `${formattedImpact} ${unit} ${template}`;
+}
+
+/**
+ * Renders CTA template: "Support {project} with ${amount} and help {impact} {unit} {freitext_cta} — earn {points} Impact Points"
+ */
+function renderCtaTemplate(
+  template: string, // Only free-text part
+  projectTitle: string,
+  amount: number,
+  formattedImpact: string,
+  unit: string,
+  points: number
+): string {
+  return `Support ${projectTitle} with $${amount} and help ${formattedImpact} ${unit} ${template} — earn ${points} Impact Points`;
+}
+
+/**
+ * Generates impact snapshot for a donation
+ * 
+ * @param project - Project object with impact tracking data (any type - no @shared/schema dependency)
+ * @param amount - Donation amount in USD
+ * @param language - Language ('en' | 'de')
+ * @returns Impact snapshot with calculated impact and generated texts
+ * @throws Error if project doesn't have impact tracking data
+ * 
+ * FALLBACK: This function throws errors which are caught by the caller.
+ * Donations proceed even if impact generation fails.
+ */
+function generateImpactSnapshot(
+  project: any,
+  amount: number,
+  language: 'en' | 'de'
+): ImpactSnapshot {
+  // Validate that project has impact tracking data
+  if (!hasImpact(project)) {
+    const hasTiers = project.impactTiers && Array.isArray(project.impactTiers) && project.impactTiers.length > 0;
+    const hasFactor = project.impactFactor != null;
+    throw new Error(
+      `Project ${project.id} (${project.title}) does not have impact tracking data. ` +
+      `Required: (impactFactor OR impactTiers) AND impactUnitSingularEn, impactUnitPluralEn, pastTemplateEn, ctaTemplateEn. ` +
+      `Found: impactFactor=${hasFactor}, impactTiers=${hasTiers}`
+    );
+  }
+
+  let calculatedImpact: number;
+  let impactFactor: number;
+  let ctaTemplate: string;
+  let pastTemplate: string;
+  let unitSingular: string;
+  let unitPlural: string;
+
+  // 1. Check Impact-Tiers (for non-linear projects)
+  if (project.impactTiers && Array.isArray(project.impactTiers) && project.impactTiers.length > 0) {
+    const tiers = project.impactTiers as ImpactTier[];
+    
+    // Find matching tier based on amount
+    const tier = tiers.find(t => 
+      amount >= t.min_amount && amount < t.max_amount
+    ) || tiers[tiers.length - 1]; // Fallback: last tier (for amounts >= max)
+    
+    calculatedImpact = amount * tier.impact_factor;
+    impactFactor = tier.impact_factor;
+    
+    // Use templates from tier
+    ctaTemplate = language === 'de' ? tier.cta_template_de : tier.cta_template_en;
+    pastTemplate = language === 'de' ? tier.past_template_de : tier.past_template_en;
+    
+    // Use units from project (tiers don't have separate units)
+    unitSingular = language === 'de' 
+      ? (project.impactUnitSingularDe || project.impactUnitSingularEn || 'Einheit')
+      : (project.impactUnitSingularEn || 'unit');
+    unitPlural = language === 'de'
+      ? (project.impactUnitPluralDe || project.impactUnitPluralEn || 'Einheiten')
+      : (project.impactUnitPluralEn || 'units');
+  } 
+  // 2. Fallback: Linear calculation (Standard)
+  else if (project.impactFactor != null) {
+    impactFactor = Number(project.impactFactor);
+    calculatedImpact = amount * impactFactor;
+    
+    // Use standard templates from project
+    ctaTemplate = language === 'de' 
+      ? (project.ctaTemplateDe || project.ctaTemplateEn || '')
+      : (project.ctaTemplateEn || '');
+    pastTemplate = language === 'de'
+      ? (project.pastTemplateDe || project.pastTemplateEn || '')
+      : (project.pastTemplateEn || '');
+    
+    unitSingular = language === 'de'
+      ? (project.impactUnitSingularDe || project.impactUnitSingularEn || 'Einheit')
+      : (project.impactUnitSingularEn || 'unit');
+    unitPlural = language === 'de'
+      ? (project.impactUnitPluralDe || project.impactUnitPluralEn || 'Einheiten')
+      : (project.impactUnitPluralEn || 'units');
+  } 
+  // 3. This should not happen if hasImpact() check passed, but safety fallback
+  else {
+    throw new Error(
+      `Project ${project.id} (${project.title}) has no impact_factor or impact_tiers`
+    );
+  }
+
+  // Validate templates exist
+  if (!ctaTemplate || !pastTemplate) {
+    throw new Error(
+      `Project ${project.id} (${project.title}) is missing templates for language ${language}`
+    );
+  }
+
+  // Format impact value
+  const formattedImpact = formatImpact(calculatedImpact, unitSingular);
+
+  // Choose unit (Singular or Plural)
+  const unit = getUnit(calculatedImpact, unitSingular, unitPlural);
+
+  // Calculate impact points (default multiplier: 10)
+  const points = amount * (project.impactPointsMultiplier || 10);
+
+  // Generate texts
+  const generatedTextPast = renderPastTemplate(pastTemplate, formattedImpact, unit);
+  const generatedTextCta = renderCtaTemplate(
+    ctaTemplate,
+    project.title,
+    amount,
+    formattedImpact,
+    unit,
+    points
+  );
+
+  return {
+    calculated_impact: calculatedImpact,
+    impact_factor: impactFactor,
+    impact_unit_singular: unitSingular,
+    impact_unit_plural: unitPlural,
+    unit,
+    generated_text_cta: generatedTextCta,
+    generated_text_past: generatedTextPast,
+    timestamp: new Date().toISOString()
   };
 }
 
@@ -113,17 +380,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ message: 'Project not found' });
     }
 
-    const actualProjectId = project.id;
+    // TypeScript: project is guaranteed to be non-null after the check above
+    const actualProjectId = (project as any).id;
     const mappedProject = mapProjectImpactFields(project);
     const impactMultiplier = (mappedProject.impactPointsMultiplier ?? 10) || 10;
     const impactPoints = Math.floor(amount * impactMultiplier);
 
-    // Impact snapshot generation (optional, safe fallback if data missing)
+    // ============================================================================
+    // IMPACT SNAPSHOT GENERATION (OPTIONAL - WITH FALLBACK GUARANTEE)
+    // ============================================================================
+    // 
+    // This section generates impact snapshots for donations IF the project has
+    // impact tracking data. If generation fails for ANY reason, the donation
+    // still proceeds successfully without impact data.
+    //
+    // FALLBACK GUARANTEE:
+    // - If project has no impact data → donation proceeds without snapshot
+    // - If impact generation throws error → caught and logged, donation proceeds
+    // - If templates are missing → caught and logged, donation proceeds
+    // - Donation is NEVER blocked by impact generation failures
+    //
+    // ============================================================================
     let calculatedImpact: number | undefined;
     let impactSnapshot: any = null;
     let generatedPastEn: string | undefined;
     let generatedPastDe: string | undefined;
     try {
+      // Only attempt generation if project has impact data
       if (hasImpact(mappedProject as any)) {
         const snapshotEn = generateImpactSnapshot(mappedProject as any, amount, 'en');
         const snapshotDe = generateImpactSnapshot(mappedProject as any, amount, 'de');
@@ -140,7 +423,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         };
       }
     } catch (impactError) {
-      console.warn('[donate] Impact snapshot generation skipped:', impactError);
+      // FALLBACK: Log warning but continue with donation
+      // Impact snapshot generation is optional - donation proceeds without it
+      console.warn('[donate] Impact snapshot generation skipped (donation will proceed):', impactError);
     }
 
     // Update project stats (raised, donors)
