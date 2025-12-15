@@ -17,8 +17,11 @@ import SocialEnterprisesPage from "@/pages/social-enterprises-page";
 import FAQPage from "@/pages/faq-page";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import CookiePolicy from "@/pages/cookie-policy";
+import TermsAndConditions from "@/pages/terms";
+import LegalNotice from "@/pages/legal-notice";
 import EligibilityGuidelines from "@/pages/eligibility-guidelines";
 import AuthCallback from "@/pages/auth-callback";
+import ResetPasswordPage from "@/pages/reset-password";
 import PerformanceTestPage from "@/pages/performance-test";
 import AnalyticsTestPage from "@/pages/analytics-test";
 import SupportPage from "@/pages/support-page";
@@ -106,8 +109,11 @@ function Router({ onOpenAuthModal }: { onOpenAuthModal: (tab: "login" | "registe
       <Route path="/faq" component={FAQPage} />
       <Route path="/privacy" component={PrivacyPolicy} />
       <Route path="/cookies" component={CookiePolicy} />
+      <Route path="/terms" component={TermsAndConditions} />
+      <Route path="/legal" component={LegalNotice} />
       <Route path="/eligibility" component={EligibilityGuidelines} />
       <Route path="/auth/callback" component={AuthCallback} />
+      <Route path="/reset-password" component={ResetPasswordPage} />
       <Route path="/performance-test" component={PerformanceTestPage} />
       <Route path="/analytics-test" component={AnalyticsTestPage} />
       <Route path="/support/:slug" component={SupportPage} />
@@ -130,6 +136,8 @@ function Router({ onOpenAuthModal }: { onOpenAuthModal: (tab: "login" | "registe
       <Route path="/de/faq" component={FAQPage} />
       <Route path="/de/privacy" component={PrivacyPolicy} />
       <Route path="/de/cookies" component={CookiePolicy} />
+      <Route path="/de/terms" component={TermsAndConditions} />
+      <Route path="/de/legal" component={LegalNotice} />
       <Route path="/de/eligibility" component={EligibilityGuidelines} />
       <Route path="/de/support/:slug" component={SupportPage} />
       

@@ -273,6 +273,20 @@ export function FooterTapedDesign() {
               <LanguageLink 
                 className='font-medium hover:underline transition-all' 
                 style={{ color: BRAND_COLORS.textSecondary }}
+                href="/terms"
+              >
+                {t("footer.termsAndConditions")}
+              </LanguageLink>
+              <LanguageLink 
+                className='font-medium hover:underline transition-all' 
+                style={{ color: BRAND_COLORS.textSecondary }}
+                href="/legal"
+              >
+                {t("footer.legalNotice")}
+              </LanguageLink>
+              <LanguageLink 
+                className='font-medium hover:underline transition-all' 
+                style={{ color: BRAND_COLORS.textSecondary }}
                 href="/cookies"
               >
                 {t("footer.cookiePolicy")}
