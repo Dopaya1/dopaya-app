@@ -1,11 +1,31 @@
 // Import for Supabase API connection
 import { testSupabaseApiConnection } from './supabase-api';
 import { supabaseApi } from './supabase-api';
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './secrets';
 import { createClient } from '@supabase/supabase-js';
 
 export async function testDatabaseConnection() {
   try {
+    // Read directly from process.env at runtime to ensure .env is loaded (not from secrets.ts which evaluates before .env loads)
+    const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
+    const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
+    
+    // Validate environment variables are set
+    if (!SUPABASE_URL) {
+      return {
+        success: false,
+        message: 'Failed to connect to Supabase',
+        error: 'supabaseUrl is required. Check VITE_SUPABASE_URL or SUPABASE_URL environment variable.'
+      };
+    }
+    
+    if (!SUPABASE_ANON_KEY) {
+      return {
+        success: false,
+        message: 'Failed to connect to Supabase',
+        error: 'supabaseAnonKey is required. Check VITE_SUPABASE_ANON_KEY or SUPABASE_ANON_KEY environment variable.'
+      };
+    }
+    
     // Use Supabase API directly as the primary connection method
     // This is more reliable with Supabase's connection model
     try {
@@ -120,6 +140,17 @@ export async function testDatabaseConnection() {
 
 export async function fetchDatabaseStats() {
   try {
+    // Read directly from process.env at runtime to ensure .env is loaded
+    const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
+    const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
+    
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      return {
+        success: false,
+        error: 'Missing Supabase environment variables'
+      };
+    }
+    
     // Use Supabase client directly for better reliability
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     

@@ -22,9 +22,10 @@ This guide covers everything needed to deploy the optimized homepage and future 
 #### For Local Development:
 ```bash
 # Required for Supabase integration
-VITE_SUPABASE_URL=https://mpueatfperbxbbojlrwd.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wdWVhdGZwZXJieGJib2pscndkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYwODk3NzAsImV4cCI6MjA2MTY2NTc3MH0.GPBxZ2yEbtB3Ws_nKWeDaE-yuyH-uvufV-Mq9aN8hEc
-DATABASE_URL="postgresql://postgres:QQc1c%25GTS%3CsVL@db.mpueatfperbxbbojlrwd.supabase.co:5432/postgres"
+# ⚠️ Replace these placeholders with your actual Supabase credentials
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
+VITE_SUPABASE_ANON_KEY=your-supabase-anon-key-here
+DATABASE_URL="postgresql://postgres:your-password@db.your-project-id.supabase.co:5432/postgres"
 
 # Optional (for payment functionality)
 STRIPE_SECRET_KEY=(not required for homepage viewing)
@@ -63,7 +64,8 @@ STRIPE_WEBHOOK_SECRET=(not required for homepage viewing)
 ### Option 1: Frontend Only (Recommended for UI changes)
 ```bash
 # Build and serve frontend only
-VITE_SUPABASE_URL=https://mpueatfperbxbbojlrwd.supabase.co VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wdWVhdGZwZXJieGJib2pscndkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYwODk3NzAsImV4cCI6MjA2MTY2NTc3MH0.GPBxZ2yEbtB3Ws_nKWeDaE-yuyH-uvufV-Mq9aN8hEc npm run build:frontend
+# ⚠️ Replace placeholders with your actual Supabase credentials
+VITE_SUPABASE_URL=https://your-project-id.supabase.co VITE_SUPABASE_ANON_KEY=your-supabase-anon-key-here npm run build:frontend
 
 # Serve locally
 cd dist && python3 -m http.server 8080
@@ -73,7 +75,8 @@ cd dist && python3 -m http.server 8080
 ### Option 2: Full Stack Development
 ```bash
 # Full development server with all environment variables
-VITE_SUPABASE_URL=https://mpueatfperbxbbojlrwd.supabase.co VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wdWVhdGZwZXJieGJib2pscndkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYwODk3NzAsImV4cCI6MjA2MTY2NTc3MH0.GPBxZ2yEbtB3Ws_nKWeDaE-yuyH-uvufV-Mq9aN8hEc DATABASE_URL="postgresql://postgres:QQc1c%25GTS%3CsVL@db.mpueatfperbxbbojlrwd.supabase.co:5432/postgres" npm run dev
+# ⚠️ Replace placeholders with your actual Supabase credentials
+VITE_SUPABASE_URL=https://your-project-id.supabase.co VITE_SUPABASE_ANON_KEY=your-supabase-anon-key-here DATABASE_URL="postgresql://postgres:your-password@db.your-project-id.supabase.co:5432/postgres" npm run dev
 ```
 
 ### Environment-Based Development Script (Recommended)
@@ -81,9 +84,10 @@ VITE_SUPABASE_URL=https://mpueatfperbxbbojlrwd.supabase.co VITE_SUPABASE_ANON_KE
 Create a `.env.local` file:
 ```bash
 # .env.local
-VITE_SUPABASE_URL=https://mpueatfperbxbbojlrwd.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wdWVhdGZwZXJieGJibo2pscndkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYwODk3NzAsImV4cCI6MjA2MTY2NTc3MH0.GPBxZ2yEbtB3Ws_nKWeDaE-yuyH-uvufV-Mq9aN8hEc
-DATABASE_URL="postgresql://postgres:QQc1c%25GTS%3CsVL@db.mpueatfperbxbbojlrwd.supabase.co:5432/postgres"
+# ⚠️ Replace placeholders with your actual Supabase credentials
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
+VITE_SUPABASE_ANON_KEY=your-supabase-anon-key-here
+DATABASE_URL="postgresql://postgres:your-password@db.your-project-id.supabase.co:5432/postgres"
 ```
 
 Then use: `source .env.local && npm run dev`
@@ -128,9 +132,10 @@ Create `vercel.json` in project root:
 
 In Vercel dashboard, add these environment variables:
 ```
-VITE_SUPABASE_URL = https://mpueatfperbxbbojlrwd.supabase.co
-VITE_SUPABASE_ANON_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wdWVhdGZwZXJieGJib2pscndkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYwODk3NzAsImV4cCI6MjA2MTY2NTc3MH0.GPBxZ2yEbtB3Ws_nKWeDaE-yuyH-uvufV-Mq9aN8hEc
-DATABASE_URL = postgresql://postgres:QQc1c%25GTS%3CsVL@db.mpueatfperbxbbojlrwd.supabase.co:5432/postgres
+# ⚠️ Replace placeholders with your actual Supabase credentials
+VITE_SUPABASE_URL = https://your-project-id.supabase.co
+VITE_SUPABASE_ANON_KEY = your-supabase-anon-key-here
+DATABASE_URL = postgresql://postgres:your-password@db.your-project-id.supabase.co:5432/postgres
 ```
 
 ### Step 4: Deploy

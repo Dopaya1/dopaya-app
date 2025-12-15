@@ -33,7 +33,7 @@ try {
     connect_timeout: 30, // Increase timeout to 30 seconds
     idle_timeout: 20, // 20 seconds before connection is closed when idle
     onnotice: msg => console.log('Database notice:', msg),
-    ssl: { rejectUnauthorized: false } // Add SSL option for Supabase
+    // SSL verification enabled by default - Supabase uses valid certificates
   });
   db = drizzle(sql);
   console.log('PostgreSQL connection initialized');

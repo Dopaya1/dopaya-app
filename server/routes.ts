@@ -1081,188 +1081,219 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Redeem rewards
-  app.post("/api/rewards/:id/redeem", async (req, res) => {
-    try {
-      console.log('[POST /api/rewards/:id/redeem] ========== REQUEST ==========');
-      console.log('[POST /api/rewards/:id/redeem] Authorization header:', req.headers.authorization ? 'Present' : 'Missing');
+  // Shared handler function for reward redemption (used by both routes)
+  async function handleRewardRedemption(req: Request, rewardId: number, routeName: string) {
+    console.log(`[${routeName}] ========== REQUEST ==========`);
+    console.log(`[${routeName}] Authorization header:`, req.headers.authorization ? 'Present' : 'Missing');
+    
+    // Try Supabase auth first
+    const supabaseUser = await getSupabaseUser(req);
+    console.log(`[${routeName}] Supabase user:`, supabaseUser ? { email: supabaseUser.email, id: supabaseUser.id } : 'null');
+    
+    let userId: number | undefined;
+    
+    if (supabaseUser) {
+      let dbUser: User | undefined;
       
-      // Try Supabase auth first (same pattern as /api/projects/:id/donate)
-      const supabaseUser = await getSupabaseUser(req);
-      console.log('[POST /api/rewards/:id/redeem] Supabase user:', supabaseUser ? { email: supabaseUser.email, id: supabaseUser.id } : 'null');
-      
-      let userId: number | undefined;
-      
-      if (supabaseUser) {
-        let dbUser: User | undefined;
-        
-        // ========== USER LOOKUP FLOW (Step 3.7.5) ==========
-        // Step 1: Try lookup by auth_user_id first (preferred - more reliable)
-        console.log('[POST /api/rewards/:id/redeem] 🔍 Step 1: Looking up user by auth_user_id:', supabaseUser.id);
-        if (storage.getUserByAuthId && typeof storage.getUserByAuthId === 'function') {
-          dbUser = await storage.getUserByAuthId(supabaseUser.id);
-          if (dbUser) {
-            console.log('[POST /api/rewards/:id/redeem] ✅ Step 1 SUCCESS: User found by auth_user_id:', { id: dbUser.id, email: dbUser.email, auth_user_id: dbUser.auth_user_id });
-          } else {
-            console.log('[POST /api/rewards/:id/redeem] ⚠️ Step 1: User NOT found by auth_user_id');
-          }
+      // Step 1: Try lookup by auth_user_id first
+      console.log(`[${routeName}] 🔍 Step 1: Looking up user by auth_user_id:`, supabaseUser.id);
+      if (storage.getUserByAuthId && typeof storage.getUserByAuthId === 'function') {
+        dbUser = await storage.getUserByAuthId(supabaseUser.id);
+        if (dbUser) {
+          console.log(`[${routeName}] ✅ Step 1 SUCCESS: User found by auth_user_id:`, { id: dbUser.id, email: dbUser.email, auth_user_id: dbUser.auth_user_id });
         } else {
-          console.warn('[POST /api/rewards/:id/redeem] ⚠️ Step 1 SKIPPED: getUserByAuthId method not available');
+          console.log(`[${routeName}] ⚠️ Step 1: User NOT found by auth_user_id`);
         }
-        
-        // Step 2: Fallback to email lookup if auth_user_id lookup fails
-        if (!dbUser && supabaseUser.email) {
-          console.log('[POST /api/rewards/:id/redeem] 🔍 Step 2: Fallback - Looking up user by email:', supabaseUser.email);
-          dbUser = await storage.getUserByEmail(supabaseUser.email);
-          if (dbUser) {
-            console.log('[POST /api/rewards/:id/redeem] ✅ Step 2 SUCCESS: User found by email:', { id: dbUser.id, email: dbUser.email, auth_user_id: dbUser.auth_user_id || 'NOT SET' });
-          } else {
-            console.log('[POST /api/rewards/:id/redeem] ⚠️ Step 2: User NOT found by email');
-          }
-        }
-        
-        // Step 3: If still not found, create minimal user on-the-fly
-        if (!dbUser) {
-          console.log('[POST /api/rewards/:id/redeem] 🔍 Step 3: User not found in DB, creating minimal user on-the-fly...');
-          try {
-            // Derive username from email prefix
-            const username = supabaseUser.email?.split('@')[0] || `user_${Date.now()}`;
-            
-            // Derive name from metadata
-            const fullName = supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name || '';
-            const nameParts = fullName.split(' ').filter(Boolean);
-            const firstName = nameParts[0] || '';
-            const lastName = nameParts.slice(1).join(' ') || '';
-            
-            // Try createUserMinimal first (if available - SupabaseStorage)
-            if (storage.createUserMinimal && typeof storage.createUserMinimal === 'function') {
-              console.log('[POST /api/rewards/:id/redeem] Using createUserMinimal method');
-              dbUser = await storage.createUserMinimal({
-                username,
-                email: supabaseUser.email || '',
-                firstName,
-                lastName,
-                auth_user_id: supabaseUser.id
-              });
-              console.log('[POST /api/rewards/:id/redeem] ✅ Step 3 SUCCESS: User created via createUserMinimal:', { id: dbUser.id, email: dbUser.email, auth_user_id: dbUser.auth_user_id || 'NOT SET' });
-            } else {
-              // Fallback: Use standard createUser method
-              console.log('[POST /api/rewards/:id/redeem] createUserMinimal not available, using createUser fallback');
-              const userData: any = {
-                username,
-                email: supabaseUser.email || '',
-                firstName,
-                lastName,
-                password: '' // Empty password for Supabase auth users
-              };
-              dbUser = await storage.createUser(userData);
-              // Update auth_user_id after creation
-              if (supabaseUser.id && dbUser) {
-                try {
-                  const { createClient } = await import('@supabase/supabase-js');
-                  const { SUPABASE_URL, SUPABASE_ANON_KEY } = await import('./secrets');
-                  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || '';
-                  const supabaseKey = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
-                  const supabase = createClient(SUPABASE_URL, supabaseKey);
-                  
-                  const { error: updateError } = await supabase
-                    .from('users')
-                    .update({ auth_user_id: supabaseUser.id })
-                    .eq('id', dbUser.id);
-                  
-                  if (updateError) {
-                    console.warn('[POST /api/rewards/:id/redeem] ⚠️ Could not update auth_user_id:', updateError);
-                  } else {
-                    console.log('[POST /api/rewards/:id/redeem] ✅ Updated auth_user_id for user:', dbUser.id);
-                    const updatedUser = await storage.getUser(dbUser.id);
-                    if (updatedUser) dbUser = updatedUser;
-                  }
-                } catch (updateErr) {
-                  console.warn('[POST /api/rewards/:id/redeem] ⚠️ Could not update auth_user_id:', updateErr);
-                }
-              }
-              console.log('[POST /api/rewards/:id/redeem] ✅ Step 3 SUCCESS: User created via createUser fallback:', { id: dbUser.id, email: dbUser.email, auth_user_id: dbUser.auth_user_id || 'NOT SET' });
-            }
-          } catch (createError) {
-            console.error('[POST /api/rewards/:id/redeem] ❌ Failed to create user:', createError);
-            // If it's a unique constraint violation, try to fetch the existing user
-            if (createError instanceof Error && (createError.message.includes('unique') || createError.message.includes('duplicate')) || 
-                (createError as any)?.code === '23505') {
-              console.log('[POST /api/rewards/:id/redeem] Unique constraint violation, fetching existing user...');
-              if (supabaseUser.email) {
-                dbUser = await storage.getUserByEmail(supabaseUser.email);
-                if (dbUser) {
-                  console.log('[POST /api/rewards/:id/redeem] ✅ Step 3 RECOVERED: User found after unique constraint violation:', { id: dbUser.id, email: dbUser.email });
-                }
-              }
-            }
-            
-            if (!dbUser) {
-              console.error('[POST /api/rewards/:id/redeem] ❌ CRITICAL: Failed to resolve user after all steps');
-              return res.status(500).json({ message: "Failed to resolve user" });
-            }
-          }
-        }
-        
-        if (!dbUser) {
-          console.error('[POST /api/rewards/:id/redeem] ❌ CRITICAL: Failed to resolve user after all steps');
-          return res.status(500).json({ message: "Failed to resolve user" });
-        }
-        
-        console.log('[POST /api/rewards/:id/redeem] ✅ USER RESOLVED: Using user ID:', dbUser.id);
-        userId = dbUser.id;
       } else {
-        // Fallback to Passport auth
-        console.log('[POST /api/rewards/:id/redeem] Checking Passport auth...');
-        if (!req.isAuthenticated()) {
-          console.log('[POST /api/rewards/:id/redeem] ❌ Not authenticated (neither Supabase nor Passport)');
-          return res.status(401).json({ message: "You must be logged in to redeem rewards" });
-        }
-        userId = req.user!.id;
-        console.log('[POST /api/rewards/:id/redeem] Using Passport user ID:', userId);
+        console.warn(`[${routeName}] ⚠️ Step 1 SKIPPED: getUserByAuthId method not available`);
       }
       
+      // Step 2: Fallback to email lookup
+      if (!dbUser && supabaseUser.email) {
+        console.log(`[${routeName}] 🔍 Step 2: Fallback - Looking up user by email:`, supabaseUser.email);
+        dbUser = await storage.getUserByEmail(supabaseUser.email);
+        if (dbUser) {
+          console.log(`[${routeName}] ✅ Step 2 SUCCESS: User found by email:`, { id: dbUser.id, email: dbUser.email, auth_user_id: dbUser.auth_user_id || 'NOT SET' });
+        } else {
+          console.log(`[${routeName}] ⚠️ Step 2: User NOT found by email`);
+        }
+      }
+      
+      // Step 3: Create user if not found
+      if (!dbUser) {
+        console.log(`[${routeName}] 🔍 Step 3: User not found in DB, creating minimal user on-the-fly...`);
+        try {
+          const username = supabaseUser.email?.split('@')[0] || `user_${Date.now()}`;
+          const fullName = supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name || '';
+          const nameParts = fullName.split(' ').filter(Boolean);
+          const firstName = nameParts[0] || '';
+          const lastName = nameParts.slice(1).join(' ') || '';
+          
+          if (storage.createUserMinimal && typeof storage.createUserMinimal === 'function') {
+            console.log(`[${routeName}] Using createUserMinimal method`);
+            dbUser = await storage.createUserMinimal({
+              username,
+              email: supabaseUser.email || '',
+              firstName,
+              lastName,
+              auth_user_id: supabaseUser.id
+            });
+            console.log(`[${routeName}] ✅ Step 3 SUCCESS: User created via createUserMinimal:`, { id: dbUser.id, email: dbUser.email, auth_user_id: dbUser.auth_user_id || 'NOT SET' });
+          } else {
+            console.log(`[${routeName}] createUserMinimal not available, using createUser fallback`);
+            const userData: any = {
+              username,
+              email: supabaseUser.email || '',
+              firstName,
+              lastName,
+              password: ''
+            };
+            dbUser = await storage.createUser(userData);
+            if (supabaseUser.id && dbUser) {
+              try {
+                const { createClient } = await import('@supabase/supabase-js');
+                const { SUPABASE_URL, SUPABASE_ANON_KEY } = await import('./secrets');
+                const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || '';
+                const supabaseKey = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
+                const supabase = createClient(SUPABASE_URL, supabaseKey);
+                
+                const { error: updateError } = await supabase
+                  .from('users')
+                  .update({ auth_user_id: supabaseUser.id })
+                  .eq('id', dbUser.id);
+                
+                if (updateError) {
+                  console.warn(`[${routeName}] ⚠️ Could not update auth_user_id:`, updateError);
+                } else {
+                  console.log(`[${routeName}] ✅ Updated auth_user_id for user:`, dbUser.id);
+                  const updatedUser = await storage.getUser(dbUser.id);
+                  if (updatedUser) dbUser = updatedUser;
+                }
+              } catch (updateErr) {
+                console.warn(`[${routeName}] ⚠️ Could not update auth_user_id:`, updateErr);
+              }
+            }
+            console.log(`[${routeName}] ✅ Step 3 SUCCESS: User created via createUser fallback:`, { id: dbUser.id, email: dbUser.email, auth_user_id: dbUser.auth_user_id || 'NOT SET' });
+          }
+        } catch (createError) {
+          console.error(`[${routeName}] ❌ Failed to create user:`, createError);
+          if (createError instanceof Error && (createError.message.includes('unique') || createError.message.includes('duplicate')) || 
+              (createError as any)?.code === '23505') {
+            console.log(`[${routeName}] Unique constraint violation, fetching existing user...`);
+            if (supabaseUser.email) {
+              dbUser = await storage.getUserByEmail(supabaseUser.email);
+              if (dbUser) {
+                console.log(`[${routeName}] ✅ Step 3 RECOVERED: User found after unique constraint violation:`, { id: dbUser.id, email: dbUser.email });
+              }
+            }
+          }
+          
+          if (!dbUser) {
+            throw new Error("Failed to resolve user after all steps");
+          }
+        }
+      }
+      
+      if (!dbUser) {
+        throw new Error("Failed to resolve user after all steps");
+      }
+      
+      console.log(`[${routeName}] ✅ USER RESOLVED: Using user ID:`, dbUser.id);
+      userId = dbUser.id;
+    } else {
+      // Fallback to Passport auth
+      console.log(`[${routeName}] Checking Passport auth...`);
+      if (!req.isAuthenticated()) {
+        throw new Error("You must be logged in to redeem rewards");
+      }
+      userId = req.user!.id;
+      console.log(`[${routeName}] Using Passport user ID:`, userId);
+    }
+    
+    // Validate rewardId
+    if (isNaN(rewardId)) {
+      throw new Error("Invalid reward ID");
+    }
+    
+    // Get reward
+    const reward = await storage.getReward(rewardId);
+    if (!reward) {
+      throw new Error("Reward not found");
+    }
+    
+    // Check if user has enough points
+    const userImpact = await storage.getUserImpact(userId);
+    if (userImpact.impactPoints < reward.pointsCost) {
+      throw new Error("Insufficient impact points");
+    }
+    
+    // Create redemption
+    console.log(`[${routeName}] ========== REDEMPTION REQUEST ==========`);
+    console.log(`[${routeName}] Parsed rewardId:`, rewardId);
+    console.log(`[${routeName}] Reward from DB:`, { id: reward.id, title: reward.title, pointsCost: reward.pointsCost });
+    console.log(`[${routeName}] Calling createRedemption with:`, { userId, rewardId, pointsSpent: reward.pointsCost, status: "pending" });
+    
+    const redemption = await storage.createRedemption({
+      userId,
+      rewardId,
+      pointsSpent: reward.pointsCost,
+      status: "pending"
+    });
+    
+    console.log(`[${routeName}] Redemption returned from createRedemption:`, { id: redemption.id, rewardId: redemption.rewardId, userId: redemption.userId });
+    console.log(`[${routeName}] ✅ Redemption created successfully:`, redemption);
+    
+    return redemption;
+  }
+
+  // Redeem rewards (flat route for frontend compatibility - localhost only)
+  // Production uses Tech/api/rewards-redeem.ts (serverless function)
+  app.post("/api/rewards-redeem", async (req, res) => {
+    try {
+      // Get rewardId from body (frontend sends it in body, not URL)
+      const rewardId = typeof req.body?.rewardId === 'number' 
+        ? req.body.rewardId 
+        : Number(req.body?.rewardId);
+      
+      if (!rewardId || isNaN(rewardId)) {
+        return res.status(400).json({ message: 'Invalid reward ID' });
+      }
+      
+      const redemption = await handleRewardRedemption(req, rewardId, '[POST /api/rewards-redeem]');
+      res.status(201).json(redemption);
+    } catch (error) {
+      console.error('[POST /api/rewards-redeem] ❌ Error:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const statusCode = errorMessage.includes('logged in') ? 401 : 
+                        errorMessage.includes('not found') ? 404 :
+                        errorMessage.includes('Insufficient') ? 400 : 500;
+      res.status(statusCode).json({ 
+        message: errorMessage.includes('logged in') ? errorMessage : "Failed to redeem reward", 
+        error: errorMessage 
+      });
+    }
+  });
+
+  // Redeem rewards (original route - keep for backwards compatibility)
+  app.post("/api/rewards/:id/redeem", async (req, res) => {
+    try {
       const rewardId = parseInt(req.params.id);
       if (isNaN(rewardId)) {
         return res.status(400).json({ message: "Invalid reward ID" });
       }
       
-      const reward = await storage.getReward(rewardId);
-      if (!reward) {
-        return res.status(404).json({ message: "Reward not found" });
-      }
-      
-      // Check if user has enough points
-      const userImpact = await storage.getUserImpact(userId);
-      if (userImpact.impactPoints < reward.pointsCost) {
-        return res.status(400).json({ message: "Insufficient impact points" });
-      }
-      
-      // Create redemption
-      console.log('[POST /api/rewards/:id/redeem] ========== REDEMPTION REQUEST ==========');
-      console.log('[POST /api/rewards/:id/redeem] Request params.id:', req.params.id);
-      console.log('[POST /api/rewards/:id/redeem] Parsed rewardId:', rewardId);
-      console.log('[POST /api/rewards/:id/redeem] Reward from DB:', { id: reward.id, title: reward.title, pointsCost: reward.pointsCost });
-      console.log('[POST /api/rewards/:id/redeem] Calling createRedemption with:', { userId, rewardId, pointsSpent: reward.pointsCost, status: "pending" });
-      console.log('[POST /api/rewards/:id/redeem] VERIFY rewardId before createRedemption:', rewardId);
-      
-      const redemption = await storage.createRedemption({
-        userId,
-        rewardId, // Make absolutely sure this is the correct rewardId
-        pointsSpent: reward.pointsCost,
-        status: "pending" // Set status to pending (will be fulfilled when user uses the code)
-      });
-      
-      console.log('[POST /api/rewards/:id/redeem] Redemption returned from createRedemption:', { id: redemption.id, rewardId: redemption.rewardId, userId: redemption.userId });
-      
-      console.log('[POST /api/rewards/:id/redeem] ✅ Redemption created successfully:', redemption);
-      console.log('[POST /api/rewards/:id/redeem] Redemption ID:', redemption.id);
+      const redemption = await handleRewardRedemption(req, rewardId, '[POST /api/rewards/:id/redeem]');
       res.status(201).json(redemption);
     } catch (error) {
       console.error('[POST /api/rewards/:id/redeem] ❌ Error:', error);
-      console.error('[POST /api/rewards/:id/redeem] ❌ Error message:', error instanceof Error ? error.message : String(error));
-      console.error('[POST /api/rewards/:id/redeem] ❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-      res.status(500).json({ message: "Failed to redeem reward", error: error instanceof Error ? error.message : String(error) });
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const statusCode = errorMessage.includes('logged in') ? 401 : 
+                        errorMessage.includes('not found') ? 404 :
+                        errorMessage.includes('Insufficient') ? 400 : 500;
+      res.status(statusCode).json({ 
+        message: errorMessage.includes('logged in') ? errorMessage : "Failed to redeem reward", 
+        error: errorMessage 
+      });
     }
   });
 
