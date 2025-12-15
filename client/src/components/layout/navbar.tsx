@@ -28,6 +28,7 @@ export function Navbar() {
   const { user, logoutMutation } = useAuth();
   const previewEnabled = isOnboardingPreviewEnabled();
   const { t } = useTranslation();
+  const isResetPage = location === "/reset-password";
   
   // Fetch user impact data for rank display
   const { data: impact, error: impactError } = useQuery<UserImpact>({
@@ -125,9 +126,9 @@ export function Navbar() {
             <LanguageSwitcher />
             
             {user ? (
-              <>
-                {/* Rank Display (preview only) */}
-                {previewEnabled && (
+              previewEnabled ? (
+                <>
+                  {/* Rank Display (preview only) */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-200 hover:border-orange-300 transition-all">
@@ -181,18 +182,38 @@ export function Navbar() {
                           </LanguageLink>
                           <button
                             type="button"
-                  onClick={handleLogout} 
+                            onClick={handleLogout} 
                             className="mt-2 w-full text-xs text-gray-500 hover:text-gray-800 pt-2 border-t border-gray-100"
-                  disabled={logoutMutation.isPending}
-                >
+                            disabled={logoutMutation.isPending}
+                          >
                             {logoutMutation.isPending ? t("nav.loggingOut") : t("nav.logOut")}
                           </button>
                         </div>
                       </div>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                )}
-              </>
+                </>
+              ) : (
+                // Fallback when preview is off: always show dashboard + logout for signed-in users (except on reset page)
+                isResetPage ? null : (
+                  <div className="flex items-center gap-2">
+                    <LanguageLink
+                      href="/dashboard"
+                      className="text-sm font-medium text-dark hover:text-primary"
+                    >
+                      {t("nav.dashboard")}
+                    </LanguageLink>
+                    <Button
+                      variant="ghost"
+                      onClick={handleLogout}
+                      disabled={logoutMutation.isPending}
+                      className="text-sm"
+                    >
+                      {logoutMutation.isPending ? t("nav.loggingOut") : t("nav.logOut")}
+                    </Button>
+                  </div>
+                )
+              )
             ) : (
               <>
                 {/* Join us dropdown - always visible when not logged in */}
