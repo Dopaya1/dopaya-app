@@ -830,6 +830,23 @@ export class SupabaseStorage implements IStorage {
         status: donation.status || 'pending' // ✅ matches actual DB
       };
       
+      // Add optional impact tracking fields (Phase 1 Migration)
+      if (donation.tipAmount !== undefined) {
+        donationForInsert.tipAmount = donation.tipAmount;
+      }
+      if (donation.calculatedImpact !== undefined) {
+        donationForInsert.calculated_impact = donation.calculatedImpact;
+      }
+      if (donation.impactSnapshot) {
+        donationForInsert.impact_snapshot = donation.impactSnapshot;
+      }
+      if (donation.generatedTextPastEn) {
+        donationForInsert.generated_text_past_en = donation.generatedTextPastEn;
+      }
+      if (donation.generatedTextPastDe) {
+        donationForInsert.generated_text_past_de = donation.generatedTextPastDe;
+      }
+      
       // Check service role key for logging
       const SUPABASE_URL_FOR_LOG = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
       const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || '';
@@ -839,7 +856,7 @@ export class SupabaseStorage implements IStorage {
       console.log('[createDonation] Using key type:', SUPABASE_SERVICE_ROLE_KEY ? 'SERVICE_ROLE_KEY ✅' : 'ANON_KEY ⚠️');
       console.log('[createDonation] Inserting with camelCase (actual DB format):', JSON.stringify(donationForInsert, null, 2));
       console.log('[createDonation] Table: donations');
-      console.log('[createDonation] Columns being inserted: userId, projectId, amount, impactPoints, status');
+      console.log('[createDonation] Columns being inserted:', Object.keys(donationForInsert).join(', '));
       
       const { data, error } = await getSupabaseClient()
         .from('donations')

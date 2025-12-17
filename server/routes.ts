@@ -14,24 +14,7 @@ import { setupStripeRoutes } from "./stripe-routes";
 import { subscribeNewsletter, getNewsletterStats } from "./newsletter";
 import { getSitemapXML } from "./sitemap-generator";
 import { generateImpactSnapshot, hasImpact } from "./impact-generator";
-
-// Normalize Supabase snake_case fields to camelCase for impact generator
-function mapProjectImpactFields(project: any) {
-  return {
-    ...project,
-    impactFactor: project.impactFactor ?? project.impact_factor,
-    impactUnitSingularEn: project.impactUnitSingularEn ?? project.impact_unit_singular_en,
-    impactUnitPluralEn: project.impactUnitPluralEn ?? project.impact_unit_plural_en,
-    impactUnitSingularDe: project.impactUnitSingularDe ?? project.impact_unit_singular_de,
-    impactUnitPluralDe: project.impactUnitPluralDe ?? project.impact_unit_plural_de,
-    ctaTemplateEn: project.ctaTemplateEn ?? project.cta_template_en,
-    ctaTemplateDe: project.ctaTemplateDe ?? project.cta_template_de,
-    pastTemplateEn: project.pastTemplateEn ?? project.past_template_en,
-    pastTemplateDe: project.pastTemplateDe ?? project.past_template_de,
-    impactTiers: project.impactTiers ?? project.impact_tiers,
-    impactPointsMultiplier: project.impactPointsMultiplier ?? project.impact_points_multiplier,
-  };
-}
+import { mapProjectImpactFields } from "./project-mapper";
 
 
 

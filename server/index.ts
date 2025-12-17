@@ -45,6 +45,17 @@ app.use((req, res, next) => {
   next();
 });
 
+// IMPORTANT: Register Stripe webhook BEFORE express.json()
+// Stripe needs the raw body for signature verification
+app.post("/api/stripe/webhook", 
+  express.raw({ type: 'application/json' }), 
+  async (req, res) => {
+    // Import stripe handler dynamically to avoid circular dependency
+    const { handleStripeWebhook } = await import("./stripe-routes.js");
+    return handleStripeWebhook(req, res);
+  }
+);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 

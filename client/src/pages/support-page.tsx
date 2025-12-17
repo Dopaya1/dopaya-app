@@ -19,6 +19,7 @@ import { AuthModal } from "@/components/auth/auth-modal";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { useI18n } from "@/lib/i18n/i18n-context";
+import { EmbeddedPaymentForm } from "@/components/payment/embedded-payment-form";
 
 // Feature flag: controls whether the post-support mini-journey is shown.
 // Set to false to fall back to the simple redirect-to-rewards behavior.
@@ -81,6 +82,10 @@ export default function SupportPage() {
   const [showProcessingImpact, setShowProcessingImpact] = useState<boolean>(false);
   const [showMiniJourney, setShowMiniJourney] = useState<boolean>(false);
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
+  
+  // NEW: Payment modal state
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [paymentProcessing, setPaymentProcessing] = useState<boolean>(false);
 
   const predefinedAmounts = [50, 100, 200, 300, 500, 1000];
 
@@ -657,14 +662,20 @@ export default function SupportPage() {
                     }
 
                     try {
-                      console.log('[TEST MODE] Creating donation via support page');
+                      console.log('[Payment] Creating payment intent...');
+                      setPaymentProcessing(true);
 
-                      // Use direct API endpoint (bypasses Stripe, creates donation + transaction automatically)
-                      // Include slug in request body for fallback lookup if project ID is wrong
-                      const response = await apiRequest("POST", `/api/projects-donate`, {
+                      // Create Payment Intent on backend
+                      const response = await apiRequest("POST", `/api/create-payment-intent`, {
                         projectId: project.id,
+                        projectTitle: project.title,
+                        projectSlug: project.slug,
                         amount: currentSupportAmount,
-                        slug: project.slug // Include slug for fallback lookup
+                        tipAmount: tipAmount,
+                        totalAmount: totalAmount,
+                        impactPoints: impactPoints,
+                        userEmail: user.email,
+                        userId: user.id,
                       });
 
                       if (!response.ok) {
@@ -672,20 +683,16 @@ export default function SupportPage() {
                         throw new Error(errorData.message || `Server error: ${response.status}`);
                       }
 
-                      const donation = await response.json();
-                      console.log('[TEST MODE] ✅ Donation created:', donation);
+                      const { clientSecret } = await response.json();
+                      console.log('[Payment] ✅ Payment intent created');
 
-                      // Invalidate impact query to update navbar immediately
-                      queryClient.invalidateQueries({ queryKey: ["/api/user/impact"] });
-                      console.log('[TEST MODE] ✅ Invalidated impact query - navbar will update');
-
-                      // Show processing animation after successful donation
-                      setShowProcessingImpact(true);
+                      // Show payment modal
+                      setClientSecret(clientSecret);
+                      setPaymentProcessing(false);
                     } catch (error: any) {
-                      console.error('[TEST MODE] Donation failed:', error);
-                      alert(`Donation failed: ${error.message || 'Unknown error'}`);
-                      // Don't show animation on error
-                      return;
+                      console.error('[Payment] Failed to create payment intent:', error);
+                      alert(`Failed to initialize payment: ${error.message || 'Unknown error'}`);
+                      setPaymentProcessing(false);
                     }
                   }}
                 >
@@ -714,6 +721,40 @@ export default function SupportPage() {
         }}
         defaultTab="register"
       />
+
+      {/* Payment Modal - shown when payment intent is created */}
+      {clientSecret && project && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 py-8">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-8 animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              Complete Payment
+            </h2>
+            
+            <EmbeddedPaymentForm
+              clientSecret={clientSecret}
+              totalAmount={totalAmount}
+              projectTitle={project.title}
+              onSuccess={() => {
+                console.log('[Payment] ✅ Payment successful');
+                
+                // Close payment modal
+                setClientSecret(null);
+                
+                // Invalidate queries to update navbar
+                queryClient.invalidateQueries({ queryKey: ["/api/user/impact"] });
+                
+                // Show processing animation
+                setShowProcessingImpact(true);
+              }}
+              onCancel={() => {
+                console.log('[Payment] ❌ Payment cancelled');
+                setClientSecret(null);
+                setPaymentProcessing(false);
+              }}
+            />
+          </div>
+        </div>
+      )}
     </>
   );
 }

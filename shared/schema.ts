@@ -164,7 +164,8 @@ export const donations = pgTable("donations", {
   id: serial("id").primaryKey(),
   userId: integer("userId").notNull(),      // Actual DB column is "userId" (camelCase)
   projectId: integer("projectId").notNull(), // Actual DB column is "projectId" (camelCase)
-  amount: integer("amount").notNull(),
+  amount: integer("amount").notNull(),       // Support amount (goes to project)
+  tipAmount: integer("tipAmount").default(0), // Tip amount (goes to Dopaya)
   impactPoints: integer("impactPoints").notNull(), // Actual DB column is "impactPoints" (camelCase)
   // stripeSessionId removed - column doesn't exist in database
   status: text("status").default("pending"),
