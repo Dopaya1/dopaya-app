@@ -8,11 +8,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
 
-// Initialize Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-07-30.basil",
-});
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -32,10 +27,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   // Check Stripe API key
-  if (!process.env.STRIPE_SECRET_KEY) {
+  const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
+  if (!STRIPE_SECRET_KEY) {
     console.error('[Payment Intent] STRIPE_SECRET_KEY not configured');
     return res.status(503).json({ error: "Payment processing is currently unavailable" });
   }
+
+  // Initialize Stripe INSIDE handler function
+  const stripe = new Stripe(STRIPE_SECRET_KEY, {
+    apiVersion: "2025-07-30.basil",
+  });
 
   try {
     console.log('[Payment Intent] Request received:', req.body);

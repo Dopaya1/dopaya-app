@@ -9,26 +9,138 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-07-30.basil",
-});
-
-// Initialize Supabase
-const supabaseUrl = process.env.VITE_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-// Import impact generator utilities
-import { generateImpactSnapshot, hasImpact } from '../server/impact-generator';
-import { mapProjectImpactFields } from '../server/project-mapper';
-
 // Disable body parsing - we need raw body for Stripe
 export const config = {
   api: {
     bodyParser: false,
   },
 };
+
+// ========== INLINE UTILITY FUNCTIONS ==========
+// These are copied from server/project-mapper.ts and server/impact-generator.ts
+// to avoid import issues in Vercel serverless functions
+
+/**
+ * Maps Supabase snake_case fields to camelCase for impact generator
+ */
+function mapProjectImpactFields(project: any) {
+  return {
+    ...project,
+    impactFactor: project.impactFactor ?? project.impact_factor,
+    impactUnitSingularEn: project.impactUnitSingularEn ?? project.impact_unit_singular_en,
+    impactUnitPluralEn: project.impactUnitPluralEn ?? project.impact_unit_plural_en,
+    impactUnitSingularDe: project.impactUnitSingularDe ?? project.impact_unit_singular_de,
+    impactUnitPluralDe: project.impactUnitPluralDe ?? project.impact_unit_plural_de,
+    ctaTemplateEn: project.ctaTemplateEn ?? project.cta_template_en,
+    ctaTemplateDe: project.ctaTemplateDe ?? project.cta_template_de,
+    pastTemplateEn: project.pastTemplateEn ?? project.past_template_en,
+    pastTemplateDe: project.pastTemplateDe ?? project.past_template_de,
+    impactTiers: project.impactTiers ?? project.impact_tiers,
+    impactPointsMultiplier: project.impactPointsMultiplier ?? project.impact_points_multiplier,
+  };
+}
+
+/**
+ * Checks if project has impact tracking data
+ */
+function hasImpact(project: any): boolean {
+  // Check if project has impact_tiers (non-linear)
+  if (project.impactTiers && Array.isArray(project.impactTiers) && project.impactTiers.length > 0) {
+    return !!(
+      project.impactUnitSingularEn &&
+      project.impactUnitPluralEn &&
+      project.pastTemplateEn &&
+      project.ctaTemplateEn
+    );
+  }
+  
+  // Check if project has impact_factor (linear)
+  return !!(
+    project.impactFactor != null &&
+    project.impactUnitSingularEn &&
+    project.impactUnitPluralEn &&
+    project.pastTemplateEn &&
+    project.ctaTemplateEn
+  );
+}
+
+/**
+ * Formats impact value
+ */
+function formatImpact(calculatedImpact: number, unitType: string): string {
+  const isPersonType = unitType.toLowerCase().includes('person') || 
+                       unitType.toLowerCase().includes('people') ||
+                       unitType.toLowerCase().includes('child') ||
+                       unitType.toLowerCase().includes('children');
+  
+  if (isPersonType) {
+    if (calculatedImpact >= 1) {
+      return Math.floor(calculatedImpact).toString();
+    } else {
+      return calculatedImpact.toFixed(2);
+    }
+  } else if (unitType.toLowerCase() === 'kg' || 
+             unitType.toLowerCase() === 'liter' || 
+             unitType.toLowerCase() === 'l') {
+    return calculatedImpact.toFixed(1);
+  } else {
+    return calculatedImpact % 1 === 0 
+      ? calculatedImpact.toString() 
+      : calculatedImpact.toFixed(1);
+  }
+}
+
+/**
+ * Gets unit (Singular or Plural)
+ */
+function getUnit(calculatedImpact: number, singular: string, plural: string): string {
+  return calculatedImpact === 1 ? singular : plural;
+}
+
+/**
+ * Generates impact snapshot for a donation
+ */
+function generateImpactSnapshot(project: any, amount: number, language: 'en' | 'de'): any {
+  let calculatedImpact: number;
+  let impactFactor: number;
+  let unitSingular: string;
+  let unitPlural: string;
+  let pastTemplate: string;
+
+  // Simple linear impact (most common)
+  if (project.impactFactor != null) {
+    impactFactor = parseFloat(project.impactFactor);
+    calculatedImpact = amount * impactFactor;
+    
+    if (language === 'de') {
+      unitSingular = project.impactUnitSingularDe || project.impactUnitSingularEn;
+      unitPlural = project.impactUnitPluralDe || project.impactUnitPluralEn;
+      pastTemplate = project.pastTemplateDe || project.pastTemplateEn;
+    } else {
+      unitSingular = project.impactUnitSingularEn;
+      unitPlural = project.impactUnitPluralEn;
+      pastTemplate = project.pastTemplateEn;
+    }
+  } else {
+    throw new Error('Project has no impact tracking data');
+  }
+
+  const unit = getUnit(calculatedImpact, unitSingular, unitPlural);
+  const formattedImpact = formatImpact(calculatedImpact, unit);
+  const generatedTextPast = `${formattedImpact} ${unit} ${pastTemplate}`;
+
+  return {
+    calculated_impact: calculatedImpact,
+    impact_factor: impactFactor,
+    impact_unit_singular: unitSingular,
+    impact_unit_plural: unitPlural,
+    unit,
+    generated_text_past: generatedTextPast,
+    timestamp: new Date().toISOString()
+  };
+}
+
+// ========== END INLINE UTILITY FUNCTIONS ==========
 
 // Read raw body buffer
 async function getRawBody(req: VercelRequest): Promise<Buffer> {
@@ -47,15 +159,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   // Check configuration
-  if (!process.env.STRIPE_WEBHOOK_SECRET) {
+  const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
+  const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
+  const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
+  const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!STRIPE_WEBHOOK_SECRET) {
     console.warn('[Stripe Webhook] ⚠️ STRIPE_WEBHOOK_SECRET not configured');
     return res.status(400).send('Webhook secret not configured');
   }
 
-  if (!process.env.STRIPE_SECRET_KEY) {
+  if (!STRIPE_SECRET_KEY) {
     console.error('[Stripe Webhook] STRIPE_SECRET_KEY not configured');
     return res.status(503).json({ error: "Payment processing is currently unavailable" });
   }
+
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+    console.error('[Stripe Webhook] Supabase not configured');
+    return res.status(503).json({ error: "Database is currently unavailable" });
+  }
+
+  // Initialize Stripe and Supabase INSIDE handler function
+  const stripe = new Stripe(STRIPE_SECRET_KEY, {
+    apiVersion: "2025-07-30.basil",
+  });
+  
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
   try {
     // Get raw body and signature
@@ -65,7 +194,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Verify webhook signature
     let event: Stripe.Event;
     try {
-      event = stripe.webhooks.constructEvent(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET);
+      event = stripe.webhooks.constructEvent(rawBody, sig, STRIPE_WEBHOOK_SECRET);
       console.log(`[Stripe Webhook] ✅ Event verified: ${event.type} (ID: ${event.id})`);
     } catch (err: any) {
       console.error('[Stripe Webhook] ❌ Signature verification failed:', err.message);
@@ -137,7 +266,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           let finalImpactPoints = parsedImpactPoints;
           
           if (!finalImpactPoints && project) {
-            finalImpactPoints = Math.floor(parsedSupportAmount * (project.impactPointsMultiplier || 10));
+            finalImpactPoints = Math.floor(parsedSupportAmount * (project.impact_points_multiplier || project.impactPointsMultiplier || 10));
           }
           
           // Generate impact snapshot (if project has impact data)
@@ -255,4 +384,3 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(500).json({ error: 'Internal server error' });
   }
 }
-
