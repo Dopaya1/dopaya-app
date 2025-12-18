@@ -399,6 +399,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                       })
                       .eq('id', numericUserId);
                   }
+                  
+                  // Create transaction record (matches localhost behavior)
+                  try {
+                    await supabase
+                      .from('user_transactions')
+                      .insert([{
+                        user_id: numericUserId,
+                        transaction_type: 'donation',
+                        amount: impactPointsToAward,
+                        donation_id: splitDonation.id,
+                        project_id: targetProject.id,
+                        description: `Support: $${Math.round(splitAmount)} for project ${targetProject.id}`
+                      }]);
+                    console.log(`[Stripe Webhook] ✅ Transaction created for donation ${splitDonation.id}`);
+                  } catch (txError: any) {
+                    console.warn(`[Stripe Webhook] ⚠️ Failed to create transaction:`, txError.message);
+                    // Non-critical: continue even if transaction creation fails
+                  }
                 }
                 
                 return splitDonation;
@@ -510,6 +528,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 impactPoints: (currentUser.impactPoints || 0) + finalImpactPoints 
               })
               .eq('id', numericUserId);
+          }
+          
+          // Create transaction record (matches localhost behavior)
+          if (finalImpactPoints > 0) {
+            try {
+              await supabase
+                .from('user_transactions')
+                .insert([{
+                  user_id: numericUserId,
+                  transaction_type: 'donation',
+                  amount: finalImpactPoints,
+                  donation_id: donation.id,
+                  project_id: parsedProjectId,
+                  description: `Support: $${Math.round(parsedSupportAmount)} for project ${parsedProjectId}`
+                }]);
+              console.log(`[Stripe Webhook] ✅ Transaction created for donation ${donation.id}, user ${numericUserId}, +${finalImpactPoints} points`);
+            } catch (txError: any) {
+              console.warn(`[Stripe Webhook] ⚠️ Failed to create transaction for donation ${donation.id}:`, txError.message);
+              // Non-critical: continue even if transaction creation fails
+            }
           }
           
           // Update project stats
