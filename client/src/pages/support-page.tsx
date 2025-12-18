@@ -9,7 +9,6 @@ import { isOnboardingPreviewEnabled } from "@/lib/feature-flags";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import dopayaLogo from "@assets/Dopaya Logo.png";
@@ -512,32 +511,84 @@ export default function SupportPage() {
                           ${tipAmount.toFixed(2)}
                         </span>
                       </div>
-                      {/* Slider with 10% recommended marker */}
+                      {/* Native HTML5 Range Slider */}
                       <div className="relative w-full">
-                        <Slider
-                          value={tipSliderValue}
-                          onValueChange={(value) => {
-                            setTipSliderValue(value);
+                        <input
+                          type="range"
+                          value={tipSliderValue[0]}
+                          onChange={(e) => {
+                            const value = Number(e.target.value);
+                            setTipSliderValue([value]);
                             setHasInteractedWithTip(true);
                           }}
                           min={0}
                           max={30}
                           step={1}
-                          className="w-full"
+                          className="w-full h-2 rounded-lg appearance-none cursor-pointer"
+                          style={{
+                            background: `linear-gradient(to right, 
+                              #f2662d 0%, 
+                              #f2662d ${(tipSliderValue[0] / 30) * 100}%, 
+                              #e5e7eb ${(tipSliderValue[0] / 30) * 100}%, 
+                              #e5e7eb 100%)`
+                          }}
                         />
                         {/* Recommended marker at 10% */}
                         <div
-                          className="absolute top-0 flex flex-col items-center"
+                          className="absolute top-0 flex flex-col items-center pointer-events-none"
                           style={{ left: '33.33%', transform: 'translateX(-50%)' }}
                         >
                           {/* Vertical line marker */}
-                          <div className="w-0.5 h-6 bg-secondary mb-1" />
-                          {/* Recommended label - styled like suggested badge */}
+                          <div className="w-0.5 h-6 bg-gray-400 mb-1" />
+                          {/* Recommended label */}
                           <div className="flex items-center gap-1 bg-green-100 text-green-700 text-[10px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap">
                             <Heart className="w-3 h-3" />
                             <span>10% {t("support.recommended")}</span>
                           </div>
                         </div>
+                        
+                        {/* CSS for native slider styling */}
+                        <style jsx>{`
+                          input[type="range"]::-webkit-slider-thumb {
+                            -webkit-appearance: none;
+                            appearance: none;
+                            width: 20px;
+                            height: 20px;
+                            border-radius: 50%;
+                            background: #f2662d;
+                            cursor: pointer;
+                            border: 3px solid white;
+                            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+                            transition: transform 0.1s ease;
+                          }
+                          
+                          input[type="range"]::-webkit-slider-thumb:hover {
+                            transform: scale(1.1);
+                          }
+                          
+                          input[type="range"]::-webkit-slider-thumb:active {
+                            transform: scale(1.05);
+                          }
+                          
+                          input[type="range"]::-moz-range-thumb {
+                            width: 20px;
+                            height: 20px;
+                            border-radius: 50%;
+                            background: #f2662d;
+                            cursor: pointer;
+                            border: 3px solid white;
+                            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+                            transition: transform 0.1s ease;
+                          }
+                          
+                          input[type="range"]::-moz-range-thumb:hover {
+                            transform: scale(1.1);
+                          }
+                          
+                          input[type="range"]::-moz-range-thumb:active {
+                            transform: scale(1.05);
+                          }
+                        `}</style>
                       </div>
                     </div>
                     <button
