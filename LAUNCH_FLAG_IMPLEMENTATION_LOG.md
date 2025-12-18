@@ -8,15 +8,16 @@
 
 ## 📋 **What Was Changed**
 
-### **File Modified:**
-`client/src/lib/feature-flags.ts`
+### **Files Modified:**
+1. `client/src/lib/feature-flags.ts` - Feature flag simplification
+2. `client/src/components/layout/navbar.tsx` - Reset page security fix
 
 ### **Change Type:**
-Single function simplification (Strategy 1 from LAUNCH_PREVIEW_FLAG_REMOVAL.md)
+Strategy 1 from LAUNCH_PREVIEW_FLAG_REMOVAL.md + Security Enhancement
 
 ---
 
-## 🔧 **The Change**
+## 🔧 **The Changes**
 
 ### **BEFORE (Lines 1-34):**
 ```typescript
@@ -68,6 +69,51 @@ export function isOnboardingPreviewEnabled(): boolean {
   return true; // LAUNCH: Always enabled for all users
 }
 ```
+
+---
+
+### **CHANGE 2: Navbar Reset Page Fix**
+
+**File:** `client/src/components/layout/navbar.tsx`
+
+**Problem:**
+With `isOnboardingPreviewEnabled()` now always returning `true`, the navbar was showing dashboard/rewards links on the reset-password page, allowing users to bypass password change.
+
+**Solution:**
+Added `isResetPage` check to the preview-enabled block.
+
+**BEFORE (Line 129):**
+```typescript
+{user ? (
+  previewEnabled ? (
+    <>
+      {/* Dropdown with Dashboard/Rewards links */}
+    </>
+  ) : (
+    isResetPage ? null : (...)  // Check only in fallback
+  )
+)}
+```
+
+**AFTER (Line 129-131):**
+```typescript
+{user ? (
+  previewEnabled ? (
+    isResetPage ? null : (  // ✅ Added check here too!
+      <>
+        {/* Dropdown with Dashboard/Rewards links */}
+      </>
+    )
+  ) : (
+    isResetPage ? null : (...)  // Check remains in fallback
+  )
+)}
+```
+
+**Result:**
+- ✅ Navbar links hidden on `/reset-password` page
+- ✅ Users must complete password change before navigating
+- ✅ All other pages unaffected
 
 ---
 
@@ -190,10 +236,10 @@ export function isOnboardingPreviewEnabled(): boolean {
 
 | Aspect | Value |
 |--------|-------|
-| **Files Changed** | 1 |
-| **Lines Removed** | 25 |
-| **Lines Added** | 1 |
-| **Net Change** | -24 lines |
+| **Files Changed** | 2 |
+| **Lines Removed** | 25 (feature-flags) + 0 (navbar) |
+| **Lines Added** | 1 (feature-flags) + 3 (navbar) |
+| **Net Change** | -21 lines total |
 | **Risk Level** | 🟢 Very Low |
 | **Reversibility** | ✅ Easy |
 | **Testing Time** | 10 minutes |
