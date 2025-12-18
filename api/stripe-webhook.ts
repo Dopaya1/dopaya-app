@@ -269,6 +269,160 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             finalImpactPoints = Math.floor(parsedSupportAmount * (project.impact_points_multiplier || project.impactPointsMultiplier || 10));
           }
           
+          // =====================================================
+          // UNIVERSAL FUND SPLIT LOGIC
+          // =====================================================
+          // Check if this is a universal fund donation (split across all projects)
+          if (project && (project.isUniversalFund === true || project.is_universal_fund === true)) {
+            console.log('[Stripe Webhook] 🌍 Universal Fund detected - splitting donation across all active projects');
+            
+            try {
+              // Get all active projects EXCEPT the universal fund itself
+              const { data: allProjectsData, error: projectsError } = await supabase
+                .from('projects')
+                .select('*')
+                .eq('status', 'active');
+              
+              if (projectsError) {
+                throw new Error(`Failed to fetch projects: ${projectsError.message}`);
+              }
+              
+              const activeProjects = (allProjectsData || []).filter(
+                (p: any) => !p.isUniversalFund && !p.is_universal_fund
+              );
+              
+              if (activeProjects.length === 0) {
+                throw new Error('No active projects found to split universal fund donation');
+              }
+              
+              console.log(`[Stripe Webhook] Splitting $${parsedSupportAmount} across ${activeProjects.length} projects`);
+              
+              // Calculate split amount (support amount only, tip goes to Dopaya)
+              const splitAmount = parsedSupportAmount / activeProjects.length;
+              const splitTipAmount = parsedTipAmount / activeProjects.length;
+              
+              // Create individual donations for each project
+              const donationPromises = activeProjects.map(async (targetProject: any, index: number) => {
+                // Calculate impact points for this split
+                const projectImpactPoints = Math.floor(
+                  splitAmount * (targetProject.impact_points_multiplier || targetProject.impactPointsMultiplier || 10)
+                );
+                
+                // Award full impact points ONLY on first project donation (to avoid duplication)
+                const impactPointsToAward = index === 0 ? finalImpactPoints : 0;
+                
+                // Generate impact snapshot for each project (if they have impact data)
+                let projectCalculatedImpact: number | undefined;
+                let projectImpactSnapshot: any = null;
+                let projectGeneratedPastEn: string | undefined;
+                let projectGeneratedPastDe: string | undefined;
+                
+                try {
+                  const mappedProject = mapProjectImpactFields(targetProject);
+                  if (hasImpact(mappedProject)) {
+                    const snapshotEn = generateImpactSnapshot(mappedProject, splitAmount, 'en');
+                    const snapshotDe = generateImpactSnapshot(mappedProject, splitAmount, 'de');
+                    
+                    projectCalculatedImpact = snapshotEn.calculated_impact;
+                    projectGeneratedPastEn = snapshotEn.generated_text_past;
+                    projectGeneratedPastDe = snapshotDe.generated_text_past;
+                    
+                    projectImpactSnapshot = {
+                      en: snapshotEn,
+                      de: snapshotDe,
+                      amount: splitAmount,
+                      projectId: targetProject.id,
+                      timestamp: new Date().toISOString(),
+                      sourceType: 'universal_fund'
+                    };
+                  }
+                } catch (impactError: any) {
+                  console.warn(`[Stripe Webhook] ⚠️ Impact snapshot generation failed for project ${targetProject.id}:`, impactError.message);
+                }
+                
+                // Create donation for this specific project
+                const donationData: any = {
+                  userId: numericUserId,
+                  projectId: targetProject.id,
+                  amount: Math.round(splitAmount),
+                  tipAmount: Math.round(splitTipAmount),
+                  impactPoints: impactPointsToAward, // Award full points only on first donation
+                  status: 'completed'
+                };
+                
+                // Add impact fields if available
+                if (projectCalculatedImpact !== undefined) {
+                  donationData.calculated_impact = projectCalculatedImpact;
+                }
+                if (projectImpactSnapshot) {
+                  donationData.impact_snapshot = projectImpactSnapshot;
+                }
+                if (projectGeneratedPastEn) {
+                  donationData.generated_text_past_en = projectGeneratedPastEn;
+                }
+                if (projectGeneratedPastDe) {
+                  donationData.generated_text_past_de = projectGeneratedPastDe;
+                }
+                
+                const { data: splitDonation, error: splitError } = await supabase
+                  .from('donations')
+                  .insert([donationData])
+                  .select()
+                  .single();
+                
+                if (splitError) {
+                  throw new Error(`Failed to create split donation: ${splitError.message}`);
+                }
+                
+                // Update project stats
+                await supabase
+                  .from('projects')
+                  .update({
+                    raised: (targetProject.raised || 0) + Math.round(splitAmount),
+                    donors: (targetProject.donors || 0) + 1
+                  })
+                  .eq('id', targetProject.id);
+                
+                // Update user impact points (only on first donation)
+                if (impactPointsToAward > 0) {
+                  const { data: currentUser } = await supabase
+                    .from('users')
+                    .select('impactPoints')
+                    .eq('id', numericUserId)
+                    .single();
+                  
+                  if (currentUser) {
+                    await supabase
+                      .from('users')
+                      .update({ 
+                        impactPoints: (currentUser.impactPoints || 0) + impactPointsToAward 
+                      })
+                      .eq('id', numericUserId);
+                  }
+                }
+                
+                return splitDonation;
+              });
+              
+              // Execute all donations in parallel
+              const splitDonations = await Promise.all(donationPromises);
+              
+              console.log(`[Stripe Webhook] ✅ Universal Fund split complete: ${splitDonations.length} donations created`);
+              console.log(`[Stripe Webhook] ✅ Each project received: $${splitAmount.toFixed(2)}`);
+              console.log(`[Stripe Webhook] ✅ Awarded ${finalImpactPoints} Impact Points to user ${numericUserId}`);
+              
+              // IMPORTANT: Return early - don't create regular donation
+              return res.json({ received: true, universalFundSplit: true, donationCount: splitDonations.length });
+            } catch (splitError: any) {
+              console.error('[Stripe Webhook] ❌ Universal Fund split failed:', splitError.message);
+              // Fall back to regular donation creation
+              console.warn('[Stripe Webhook] ⚠️ Falling back to regular donation creation');
+            }
+          }
+          // =====================================================
+          // END UNIVERSAL FUND SPLIT LOGIC
+          // =====================================================
+          
           // Generate impact snapshot (if project has impact data)
           let calculatedImpact: number | undefined;
           let impactSnapshot: any = null;
