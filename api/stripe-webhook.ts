@@ -391,26 +391,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     .eq('id', numericUserId)
                     .single();
                   
+                  const currentBalance = (currentUser?.impactPoints || 0);
+                  const newBalance = currentBalance + impactPointsToAward;
+                  
                   if (currentUser) {
                     await supabase
                       .from('users')
                       .update({ 
-                        impactPoints: (currentUser.impactPoints || 0) + impactPointsToAward 
+                        impactPoints: newBalance
                       })
                       .eq('id', numericUserId);
                   }
                   
-                  // Create transaction record (matches localhost behavior)
+                  // Create transaction record (matches localhost behavior with CORRECT field names)
                   try {
                     await supabase
                       .from('user_transactions')
                       .insert([{
                         user_id: numericUserId,
                         transaction_type: 'donation',
-                        amount: impactPointsToAward,
+                        points_change: impactPointsToAward,
+                        points_balance_after: newBalance,
+                        support_amount: Math.round(splitAmount),
                         donation_id: splitDonation.id,
                         project_id: targetProject.id,
-                        description: `Support: $${Math.round(splitAmount)} for project ${targetProject.id}`
+                        reward_id: null,
+                        redemption_id: null,
+                        description: `Support: $${Math.round(splitAmount)} for project ${targetProject.id}`,
+                        metadata: null
                       }]);
                     console.log(`[Stripe Webhook] ✅ Transaction created for donation ${splitDonation.id}`);
                   } catch (txError: any) {
@@ -521,16 +529,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             .eq('id', numericUserId)
             .single();
           
+          const currentBalance = (currentUser?.impactPoints || 0);
+          const newBalance = currentBalance + finalImpactPoints;
+          
           if (currentUser) {
             await supabase
               .from('users')
               .update({ 
-                impactPoints: (currentUser.impactPoints || 0) + finalImpactPoints 
+                impactPoints: newBalance
               })
               .eq('id', numericUserId);
           }
           
-          // Create transaction record (matches localhost behavior)
+          // Create transaction record (matches localhost behavior with CORRECT field names)
           if (finalImpactPoints > 0) {
             try {
               await supabase
@@ -538,10 +549,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 .insert([{
                   user_id: numericUserId,
                   transaction_type: 'donation',
-                  amount: finalImpactPoints,
+                  points_change: finalImpactPoints,
+                  points_balance_after: newBalance,
+                  support_amount: Math.round(parsedSupportAmount),
                   donation_id: donation.id,
                   project_id: parsedProjectId,
-                  description: `Support: $${Math.round(parsedSupportAmount)} for project ${parsedProjectId}`
+                  reward_id: null,
+                  redemption_id: null,
+                  description: `Support: $${Math.round(parsedSupportAmount)} for project ${parsedProjectId}`,
+                  metadata: null
                 }]);
               console.log(`[Stripe Webhook] ✅ Transaction created for donation ${donation.id}, user ${numericUserId}, +${finalImpactPoints} points`);
             } catch (txError: any) {
