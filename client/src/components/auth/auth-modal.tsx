@@ -191,11 +191,9 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
       setAuthError("");
       setAuthLoading(true);
       
-      // Build redirect URL with preview flag if enabled
-      let redirectUrl = `${window.location.origin}/auth/callback`;
-      if (previewEnabled) {
-        redirectUrl += '?previewOnboarding=1';
-      }
+      // LAUNCH: Always use base callback URL (Supabase whitelist requirement)
+      const redirectUrl = `${window.location.origin}/auth/callback`;
+      // Note: Query parameters removed - preview is now enabled for all users via feature flag
       
       console.log('Starting Google OAuth with redirect:', redirectUrl);
       
@@ -226,12 +224,8 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
         onClose();
         setAuthEmail("");
         setAuthPassword("");
-        // Redirect immediately after login for preview flow
-        if (previewEnabled) {
-          window.location.href = '/dashboard?previewOnboarding=1';
-        } else {
-          window.location.href = '/dashboard';
-        }
+        // LAUNCH: Always redirect to dashboard (preview enabled for all users)
+        window.location.href = '/dashboard';
       }
     } catch (e: any) {
       setAuthError(e?.message || t("auth.errors.emailSignInFailed"));
