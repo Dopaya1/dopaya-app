@@ -1,8 +1,8 @@
 {
-  "buildCommand": "npm run build:frontend",
+  "buildCommand": "rm -rf node_modules/.vite && npm run build:frontend",
   "outputDirectory": "dist",
   "framework": "vite",
-  "installCommand": "npm install",
+  "installCommand": "npm ci",
   "devCommand": "npm run dev",
   "redirects": [
     {
