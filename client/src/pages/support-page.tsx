@@ -515,14 +515,10 @@ export default function SupportPage() {
                       {/* Slider with 10% recommended marker */}
                       <div className="relative w-full">
                         <Slider
-                          key={`tip-slider-${tipSliderValue[0]}`}
                           value={tipSliderValue}
                           onValueChange={(value) => {
                             setTipSliderValue(value);
                             setHasInteractedWithTip(true);
-                          }}
-                          onValueCommit={(value) => {
-                            setTipSliderValue(value);
                           }}
                           min={0}
                           max={30}
