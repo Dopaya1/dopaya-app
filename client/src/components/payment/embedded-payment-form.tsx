@@ -91,6 +91,23 @@ function PaymentFormInner({
         />
       </div>
 
+      {/* Legal Info: Impaktera & Withdrawal Right */}
+      <div className="text-xs bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <p className="text-gray-700 leading-relaxed">
+          ℹ️ Your payment goes to <strong className="text-gray-900">Impaktera</strong>{' '}
+          (Swiss nonprofit), which allocates funds to {projectTitle}. 
+          You have a 14-day withdrawal right.{' '}
+          <a 
+            href="https://impaktera.org/terms" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-[#f2662d] underline hover:text-[#d44d1a]"
+          >
+            View Terms
+          </a>
+        </p>
+      </div>
+
       {/* Error Message */}
       {errorMessage && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-3">

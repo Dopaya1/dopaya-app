@@ -86,6 +86,9 @@ export default function SupportPage() {
   // NEW: Payment modal state
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [paymentProcessing, setPaymentProcessing] = useState<boolean>(false);
+  
+  // NEW: Legal compliance - Terms acceptance
+  const [acceptedTerms, setAcceptedTerms] = useState<boolean>(false);
 
   const predefinedAmounts = [50, 100, 200, 300, 500, 1000];
 
@@ -464,25 +467,27 @@ export default function SupportPage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-1 text-sm text-gray-600">
-                <span>
-                  {t("support.goesToProject")}
-                </span>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button className="text-gray-500 hover:text-gray-700 flex-shrink-0">
-                      <Info className="h-3 w-3" />
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80 text-sm">
-                    <div className="space-y-2">
-                      <p className="font-semibold mb-2">{t("support.aboutImpaktera")}</p>
-                      <p>
-                        {t("support.impakteraDescription")}
-                      </p>
-                    </div>
-                  </PopoverContent>
-                </Popover>
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                <div className="flex items-center gap-2 text-sm text-gray-700">
+                  <span className="font-medium">
+                    {t("support.goesToProject")}
+                  </span>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className="text-gray-500 hover:text-gray-700 flex-shrink-0">
+                        <Info className="h-3 w-3" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80 text-sm">
+                      <div className="space-y-2">
+                        <p className="font-semibold mb-2">{t("support.aboutImpaktera")}</p>
+                        <p>
+                          {t("support.impakteraDescription")}
+                        </p>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
               </div>
             </div>
           )}
@@ -649,9 +654,49 @@ export default function SupportPage() {
                 </div>
               </div>
 
+              {/* Legal Compliance: Terms Acceptance Checkbox */}
+              <div className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <Checkbox
+                  id="acceptTerms"
+                  checked={acceptedTerms}
+                  onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
+                  className="mt-0.5 shrink-0"
+                />
+                <label 
+                  htmlFor="acceptTerms" 
+                  className="text-xs text-gray-700 leading-relaxed cursor-pointer"
+                >
+                  I have read and agree to{' '}
+                  <a 
+                    href="/terms" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-[#f2662d] underline hover:text-[#d44d1a]"
+                  >
+                    Dopaya's Terms
+                  </a>,{' '}
+                  <a 
+                    href="/privacy" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-[#f2662d] underline hover:text-[#d44d1a]"
+                  >
+                    Privacy Policy
+                  </a>, and{' '}
+                  <a 
+                    href="https://impaktera.org/terms" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-[#f2662d] underline hover:text-[#d44d1a]"
+                  >
+                    Impaktera's Donation Terms
+                  </a>.
+                </label>
+              </div>
+
               <div className="space-y-2">
                 <Button
-                  disabled={!hasSelectedAmount || currentSupportAmount <= 0 || !meetsMinimumAmount}
+                  disabled={!acceptedTerms || !hasSelectedAmount || currentSupportAmount <= 0 || !meetsMinimumAmount}
                   className="w-full h-14 text-base font-semibold bg-yellow-400 hover:bg-yellow-500 text-gray-900 disabled:opacity-60"
                   style={{ backgroundColor: "#FFC107", color: "#1a1a3a" }}
                   onClick={async () => {
