@@ -614,26 +614,6 @@ export default function SupportPage() {
             </div>
           )}
 
-          {/* Privacy & updates */}
-          {hasSelectedAmount && currentSupportAmount > 0 && meetsMinimumAmount && (
-            <div className="space-y-4">
-              <div className="flex items-start space-x-3">
-                <Checkbox
-                  id="signUpUpdates"
-                  checked={signUpForUpdates}
-                  onCheckedChange={(checked) => setSignUpForUpdates(checked === true)}
-                  className="mt-0.5"
-                />
-                <label
-                  htmlFor="signUpUpdates"
-                  className="text-sm text-gray-700 cursor-pointer leading-relaxed"
-                >
-                  {t("support.signUpForUpdates")}
-                </label>
-              </div>
-            </div>
-          )}
-
           {/* Summary + CTA - preview only (with processing animation on click) */}
           {hasSelectedAmount && currentSupportAmount > 0 && meetsMinimumAmount && (
             <div className="space-y-4 pt-4 border-t border-gray-200">
@@ -654,7 +634,23 @@ export default function SupportPage() {
                 </div>
               </div>
 
-              {/* Legal Compliance: Terms Acceptance Checkbox */}
+              {/* Newsletter Signup (Optional) */}
+              <div className="flex items-start space-x-3">
+                <Checkbox
+                  id="signUpUpdates"
+                  checked={signUpForUpdates}
+                  onCheckedChange={(checked) => setSignUpForUpdates(checked === true)}
+                  className="mt-0.5"
+                />
+                <label
+                  htmlFor="signUpUpdates"
+                  className="text-sm text-gray-700 cursor-pointer leading-relaxed"
+                >
+                  {t("support.signUpForUpdates")}
+                </label>
+              </div>
+
+              {/* Legal Compliance: Terms Acceptance Checkbox (Mandatory) */}
               <div className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
                 <Checkbox
                   id="acceptTerms"
@@ -743,9 +739,6 @@ export default function SupportPage() {
                 >
                   {t("support.continue")}
                 </Button>
-                <p className="text-[11px] text-center text-gray-500">
-                  {t("support.termsAgreement")}
-                </p>
               </div>
             </div>
           )}

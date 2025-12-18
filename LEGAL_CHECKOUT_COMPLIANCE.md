@@ -31,6 +31,15 @@ This document tracks the implementation of legal compliance features for the Dop
 
 ## ✅ **Implemented Changes**
 
+### **UPDATE (December 18, 2025 - 2nd iteration):**
+
+**Additional UX Improvements:**
+1. ✅ **Removed redundant text** below button ("By clicking 'Continue'...")
+2. ✅ **Moved newsletter checkbox** to summary section (before Terms)
+3. ✅ **Better logical flow:** Optional (newsletter) → Mandatory (terms) → Action (button)
+
+---
+
 ### **CHANGE 1: Terms Acceptance Checkbox (Support Page)**
 
 **File:** `client/src/pages/support-page.tsx`
