@@ -634,60 +634,63 @@ export default function SupportPage() {
                 </div>
               </div>
 
-              {/* Newsletter Signup (Optional) */}
-              <div className="flex items-start space-x-3">
-                <Checkbox
-                  id="signUpUpdates"
-                  checked={signUpForUpdates}
-                  onCheckedChange={(checked) => setSignUpForUpdates(checked === true)}
-                  className="mt-0.5"
-                />
-                <label
-                  htmlFor="signUpUpdates"
-                  className="text-sm text-gray-700 cursor-pointer leading-relaxed"
-                >
-                  {t("support.signUpForUpdates")}
-                </label>
-              </div>
+              {/* Newsletter & Legal Compliance - Combined Box */}
+              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 space-y-4">
+                {/* Newsletter Signup (Optional) */}
+                <div className="flex items-start space-x-3">
+                  <Checkbox
+                    id="signUpUpdates"
+                    checked={signUpForUpdates}
+                    onCheckedChange={(checked) => setSignUpForUpdates(checked === true)}
+                    className="mt-0.5"
+                  />
+                  <label
+                    htmlFor="signUpUpdates"
+                    className="text-sm text-gray-700 cursor-pointer leading-relaxed"
+                  >
+                    {t("support.signUpForUpdates")}
+                  </label>
+                </div>
 
-              {/* Legal Compliance: Terms Acceptance Checkbox (Mandatory) */}
-              <div className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                <Checkbox
-                  id="acceptTerms"
-                  checked={acceptedTerms}
-                  onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
-                  className="mt-0.5 shrink-0"
-                />
-                <label 
-                  htmlFor="acceptTerms" 
-                  className="text-xs text-gray-700 leading-relaxed cursor-pointer"
-                >
-                  I have read and agree to{' '}
-                  <a 
-                    href="/terms" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-[#f2662d] underline hover:text-[#d44d1a]"
+                {/* Terms Acceptance Checkbox (Mandatory) */}
+                <div className="flex items-start space-x-3">
+                  <Checkbox
+                    id="acceptTerms"
+                    checked={acceptedTerms}
+                    onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
+                    className="mt-0.5 shrink-0"
+                  />
+                  <label 
+                    htmlFor="acceptTerms" 
+                    className="text-xs text-gray-700 leading-relaxed cursor-pointer"
                   >
-                    Dopaya's Terms
-                  </a>,{' '}
-                  <a 
-                    href="/privacy" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-[#f2662d] underline hover:text-[#d44d1a]"
-                  >
-                    Privacy Policy
-                  </a>, and{' '}
-                  <a 
-                    href="https://impaktera.org/terms" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-[#f2662d] underline hover:text-[#d44d1a]"
-                  >
-                    Impaktera's Donation Terms
-                  </a>.
-                </label>
+                    I have read and agree to{' '}
+                    <a 
+                      href="/terms" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-[#f2662d] underline hover:text-[#d44d1a]"
+                    >
+                      Dopaya's Terms
+                    </a>,{' '}
+                    <a 
+                      href="/privacy" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-[#f2662d] underline hover:text-[#d44d1a]"
+                    >
+                      Privacy Policy
+                    </a>, and{' '}
+                    <a 
+                      href="https://impaktera.org/terms" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-[#f2662d] underline hover:text-[#d44d1a]"
+                    >
+                      Impaktera's Donation Terms
+                    </a>.
+                  </label>
+                </div>
               </div>
 
               <div className="space-y-2">
