@@ -129,7 +129,13 @@ export const updateUserData = async (
 // Reset password
 export const resetPassword = async (email: string): Promise<void> => {
   try {
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    // Include redirectTo so Supabase knows where to send the user after clicking the reset link
+    // The reset-password page will handle the password reset token and allow user to set new password
+    const redirectTo = `${window.location.origin}/reset-password`;
+    
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: redirectTo,
+    });
     
     if (error) throw error;
   } catch (error: any) {

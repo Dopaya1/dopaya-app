@@ -5,17 +5,18 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, CheckCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { isOnboardingPreviewEnabled } from "@/lib/feature-flags";
 import { supabase } from "@/lib/supabase";
 import { useLocation } from "wouter";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { resetPassword } from "@/lib/auth/supabaseAuthService";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -61,6 +62,13 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
   const [authError, setAuthError] = useState<string>("");
   const [isSignUp, setIsSignUp] = useState<boolean>(defaultTab === "register");
   const [showResendEmail, setShowResendEmail] = useState<boolean>(false);
+  
+  // Password reset states
+  const [showPasswordResetDialog, setShowPasswordResetDialog] = useState<boolean>(false);
+  const [resetEmail, setResetEmail] = useState<string>("");
+  const [resetLoading, setResetLoading] = useState<boolean>(false);
+  const [resetSuccess, setResetSuccess] = useState<boolean>(false);
+  const [resetError, setResetError] = useState<string>("");
 
   // Create schemas with translated messages
   const loginSchema = z.object({
@@ -86,8 +94,46 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
       setRegisterError(null);
       setShowResendEmail(false);
       setAuthError("");
+      // Reset password reset dialog state
+      setShowPasswordResetDialog(false);
+      setResetEmail("");
+      setResetSuccess(false);
+      setResetError("");
     }
   }, [isOpen, defaultTab]);
+
+  // Handle password reset
+  const handlePasswordReset = async () => {
+    if (!resetEmail.trim()) {
+      setResetError(t("auth.validation.validEmailRequired"));
+      return;
+    }
+
+    try {
+      setResetLoading(true);
+      setResetError("");
+      setResetSuccess(false);
+      
+      // Use the existing resetPassword function from supabaseAuthService
+      await resetPassword(resetEmail.trim());
+      
+      setResetSuccess(true);
+      setResetError("");
+      
+      // Auto-close dialog after 3 seconds
+      setTimeout(() => {
+        setShowPasswordResetDialog(false);
+        setResetEmail("");
+        setResetSuccess(false);
+      }, 3000);
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      setResetError(error?.message || t("auth.errors.resetPasswordFailed"));
+      setResetSuccess(false);
+    } finally {
+      setResetLoading(false);
+    }
+  };
 
   // Login form
   const loginForm = useForm<LoginFormValues>({
@@ -295,18 +341,100 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
     }
   };
 
+  // Password Reset Dialog (used in both preview and normal mode)
+  // IMPORTANT: Defined BEFORE use to avoid "Cannot access before initialization" error
+  const PasswordResetDialog = (
+    <Dialog open={showPasswordResetDialog} onOpenChange={setShowPasswordResetDialog}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{t("auth.errors.resetPasswordTitle")}</DialogTitle>
+          <DialogDescription>
+            {t("auth.errors.resetPasswordDescription")}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          {resetSuccess ? (
+            <Alert className="border-green-200 bg-green-50">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-800">
+                {t("auth.errors.resetPasswordSent")}
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <>
+              {resetError && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{resetError}</AlertDescription>
+                </Alert>
+              )}
+              <div className="space-y-2">
+                <Label htmlFor="reset-email">{t("auth.email")}</Label>
+                <Input
+                  id="reset-email"
+                  type="email"
+                  placeholder={t("auth.placeholders.email")}
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  disabled={resetLoading}
+                  className="bg-white"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !resetLoading) {
+                      handlePasswordReset();
+                    }
+                  }}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  onClick={handlePasswordReset}
+                  disabled={resetLoading || !resetEmail.trim()}
+                  className="flex-1 bg-[#f2662d] hover:bg-[#d9551f]"
+                  style={{ backgroundColor: '#f2662d' }}
+                >
+                  {resetLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      {t("auth.errors.resettingPassword")}
+                    </>
+                  ) : (
+                    t("auth.errors.resetPasswordTitle")
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowPasswordResetDialog(false);
+                    setResetEmail("");
+                    setResetError("");
+                    setResetSuccess(false);
+                  }}
+                  disabled={resetLoading}
+                  className="bg-white"
+                >
+                  {t("common.cancel")}
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
   // If preview mode, show inline auth UI (matching payment flow)
   if (previewEnabled) {
     return (
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-center">
-              {isSignUp ? t("auth.createYourAccount") : t("auth.welcomeBack")}
-            </DialogTitle>
-          </DialogHeader>
+      <>
+        <Dialog open={isOpen} onOpenChange={onClose}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold text-center">
+                {isSignUp ? t("auth.createYourAccount") : t("auth.welcomeBack")}
+              </DialogTitle>
+            </DialogHeader>
 
-          <div className="space-y-6 py-4">
+            <div className="space-y-6 py-4">
             {/* Google Sign In (Primary) */}
             <Button
               onClick={handleGoogleSignIn}
@@ -381,7 +509,21 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">{t("auth.password")}</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">{t("auth.password")}</Label>
+                  {!isSignUp && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setResetEmail(authEmail.trim());
+                        setShowPasswordResetDialog(true);
+                      }}
+                      className="text-sm text-[#f2662d] hover:text-[#d9551f] underline"
+                    >
+                      {t("auth.errors.forgotPassword")}
+                    </button>
+                  )}
+                </div>
                 <Input
                   id="password"
                   type="password"
@@ -433,6 +575,8 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
           </div>
         </DialogContent>
       </Dialog>
+      {PasswordResetDialog}
+    </>
     );
   }
 
@@ -486,7 +630,19 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
                         name="password"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t("auth.password")}</FormLabel>
+                            <div className="flex items-center justify-between">
+                              <FormLabel>{t("auth.password")}</FormLabel>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setResetEmail(loginForm.getValues("email") || "");
+                                  setShowPasswordResetDialog(true);
+                                }}
+                                className="text-sm text-[#f2662d] hover:text-[#d9551f] underline"
+                              >
+                                {t("auth.errors.forgotPassword")}
+                              </button>
+                            </div>
                             <FormControl>
                               <Input type="password" placeholder={t("auth.enterYourPassword")} className="bg-white" {...field} />
                             </FormControl>
@@ -608,6 +764,7 @@ export function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalPr
           </Tabs>
         </div>
       </DialogContent>
+      {PasswordResetDialog}
     </Dialog>
   );
 }

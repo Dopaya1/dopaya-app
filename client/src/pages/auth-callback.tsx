@@ -60,9 +60,18 @@ export default function AuthCallback() {
           return;
         }
 
-        // Check for access token in URL hash (Supabase email confirmation)
+        // Check for access token in URL hash (Supabase email confirmation or password reset)
         const accessToken = hashParams.get('access_token');
         const refreshToken = hashParams.get('refresh_token');
+        const type = hashParams.get('type');
+        
+        // IMPORTANT: If this is a password reset (type=recovery), redirect to reset-password page
+        if (type === 'recovery' && accessToken && refreshToken) {
+          console.log('[auth-callback] Password reset detected, redirecting to reset-password page...');
+          // Preserve the hash so reset-password page can process it
+          navigate(`/reset-password${window.location.hash ? `#${window.location.hash.substring(1)}` : ''}`);
+          return;
+        }
         
         if (accessToken && refreshToken) {
           console.log('Found tokens in URL, setting session...');

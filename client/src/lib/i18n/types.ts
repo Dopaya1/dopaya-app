@@ -293,7 +293,25 @@ export type TranslationKeys = {
       emailResent: string;
       resendingEmail: string;
       resendFailed: string;
+      forgotPassword: string;
+      resetPasswordTitle: string;
+      resetPasswordDescription: string;
+      resetPasswordSent: string;
+      resetPasswordFailed: string;
+      resettingPassword: string;
+      enterNewPassword: string;
+      passwordResetSuccess: string;
+      resetPasswordButton: string;
+      passwordsDoNotMatch: string;
     };
+    placeholders: {
+      email: string;
+      password: string;
+      firstName: string;
+      lastName: string;
+      confirmPassword: string;
+    };
+    confirmPassword: string;
   };
   common: {
     loading: string;
@@ -302,6 +320,7 @@ export type TranslationKeys = {
     cancel: string;
     confirm: string;
     close: string;
+    goHome: string;
   };
   footer: {
     stayUpdated: string;

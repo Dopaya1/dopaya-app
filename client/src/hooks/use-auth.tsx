@@ -48,6 +48,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Initialize auth state on component mount
   useEffect(() => {
+    let isMounted = true;
+    
     const initAuth = async () => {
       try {
         setIsLoading(true);
@@ -55,6 +57,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         // Get current user from Supabase
         const currentUser = await getCurrentUser();
+        
+        if (!isMounted) return;
         
         if (currentUser) {
           console.log('Auth initialization completed. User found:', currentUser);
@@ -74,14 +78,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setError(e instanceof Error ? e : new Error('Failed to initialize auth'));
         setUser(null);
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
-    // Initialize auth
+    // Initialize auth FIRST (original order)
     initAuth();
     
-    // Listen for auth state changes from Supabase
+    // Listen for auth state changes from Supabase (AFTER initAuth)
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log("Supabase auth event:", event);
@@ -95,6 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             };
             setUser(authUser);
             queryClient.setQueryData(["/api/user"], authUser);
+            console.log('Auth state updated from event:', event, authUser.email);
           }
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
@@ -104,6 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
     
     return () => {
+      isMounted = false;
       // Cleanup subscription
       authListener.subscription.unsubscribe();
     };
