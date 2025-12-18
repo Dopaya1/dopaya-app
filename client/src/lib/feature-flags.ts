@@ -1,36 +1,11 @@
 /**
  * Feature flags helper for onboarding preview.
  *
- * Preview is enabled when:
- * - URL contains ?previewOnboarding=1 (persisted to sessionStorage), OR
- * - sessionStorage has onboardingPreview=1 (set in a prior navigation)
- *
- * Default: disabled (returns false) so public UX remains unchanged.
+ * LAUNCH MODE: Always enabled for all users.
+ * Full platform access (Login, Support pages, Dashboard, Rewards) is now public.
  */
 export function isOnboardingPreviewEnabled(): boolean {
-  try {
-    if (typeof window === "undefined") return false;
-    const SESSION_KEY = "onboardingPreview";
-    const url = new URL(window.location.href);
-    const param = url.searchParams.get("previewOnboarding");
-
-    if (param === "1") {
-      try {
-        window.sessionStorage.setItem(SESSION_KEY, "1");
-      } catch {
-        // Ignore storage errors (e.g., private mode)
-      }
-      return true;
-    }
-
-    try {
-      return window.sessionStorage.getItem(SESSION_KEY) === "1";
-    } catch {
-      return false;
-    }
-  } catch {
-    return false;
-  }
+  return true; // LAUNCH: Always enabled for all users
 }
 
 /**

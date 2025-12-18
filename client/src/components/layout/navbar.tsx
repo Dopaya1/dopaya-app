@@ -127,72 +127,75 @@ export function Navbar() {
             
             {user ? (
               previewEnabled ? (
-                <>
-                  {/* Rank Display (preview only) */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-200 hover:border-orange-300 transition-all">
-                        <Star className="w-4 h-4 text-[#f2662d]" />
-                        <span className="text-sm font-semibold text-gray-900">{statusDisplayName}</span>
-                        <ChevronDown className="w-3 h-3 text-gray-500" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-64 p-4">
-                      <div className="space-y-3">
-                        <div className="text-center">
-                          <div className="flex items-center justify-center gap-2 mb-2">
-                            <Star className="w-5 h-5 text-[#f2662d]" />
-                            <h4 className="font-semibold text-gray-900">{statusDisplayName}</h4>
-                          </div>
-                          <p className="text-sm text-gray-600">
-                            {impactPoints.toLocaleString()} Impact Points
-                          </p>
-                        </div>
-                        
-                        {showProgress && (
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between text-xs text-gray-600">
-                              <span>{t("nav.progressToUnlockRewards")}</span>
-                              <span className="font-medium">{progress}%</span>
+                // Hide navbar links on reset-password page to prevent bypassing password change
+                isResetPage ? null : (
+                  <>
+                    {/* Rank Display (preview only) */}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-200 hover:border-orange-300 transition-all">
+                          <Star className="w-4 h-4 text-[#f2662d]" />
+                          <span className="text-sm font-semibold text-gray-900">{statusDisplayName}</span>
+                          <ChevronDown className="w-3 h-3 text-gray-500" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-64 p-4">
+                        <div className="space-y-3">
+                          <div className="text-center">
+                            <div className="flex items-center justify-center gap-2 mb-2">
+                              <Star className="w-5 h-5 text-[#f2662d]" />
+                              <h4 className="font-semibold text-gray-900">{statusDisplayName}</h4>
                             </div>
-                            <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                              <div 
-                                className="h-full bg-gradient-to-r from-[#f2662d] to-yellow-400 rounded-full transition-all duration-300"
-                                style={{ width: `${progress}%` }}
-                              />
-                            </div>
-                            <p className="text-xs text-center text-gray-500">
-                              {t("nav.ipToUnlockRewards", { points: nextThreshold - impactPoints })}
+                            <p className="text-sm text-gray-600">
+                              {impactPoints.toLocaleString()} Impact Points
                             </p>
                           </div>
-                        )}
-                        
-                        <div className="pt-3 border-t space-y-2">
-                          <LanguageLink 
-                            href="/dashboard" 
-                            className="block w-full text-sm font-semibold text-[#f2662d] bg-orange-50 hover:bg-orange-100 text-center rounded-full px-3 py-2 transition-colors"
-                          >
-                            {t("nav.viewFullImpactDashboard")}
-                          </LanguageLink>
-                          <LanguageLink 
-                            href="/rewards" 
-                            className="block w-full text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 text-center rounded-full px-3 py-2 transition-colors"
-                          >
-                            {t("nav.redeemRewards")}
-                          </LanguageLink>
-                          <button
-                            type="button"
-                            onClick={handleLogout} 
-                            className="mt-2 w-full text-xs text-gray-500 hover:text-gray-800 pt-2 border-t border-gray-100"
-                            disabled={logoutMutation.isPending}
-                          >
-                            {logoutMutation.isPending ? t("nav.loggingOut") : t("nav.logOut")}
-                          </button>
+                          
+                          {showProgress && (
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between text-xs text-gray-600">
+                                <span>{t("nav.progressToUnlockRewards")}</span>
+                                <span className="font-medium">{progress}%</span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                                <div 
+                                  className="h-full bg-gradient-to-r from-[#f2662d] to-yellow-400 rounded-full transition-all duration-300"
+                                  style={{ width: `${progress}%` }}
+                                />
+                              </div>
+                              <p className="text-xs text-center text-gray-500">
+                                {t("nav.ipToUnlockRewards", { points: nextThreshold - impactPoints })}
+                              </p>
+                            </div>
+                          )}
+                          
+                          <div className="pt-3 border-t space-y-2">
+                            <LanguageLink 
+                              href="/dashboard" 
+                              className="block w-full text-sm font-semibold text-[#f2662d] bg-orange-50 hover:bg-orange-100 text-center rounded-full px-3 py-2 transition-colors"
+                            >
+                              {t("nav.viewFullImpactDashboard")}
+                            </LanguageLink>
+                            <LanguageLink 
+                              href="/rewards" 
+                              className="block w-full text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 text-center rounded-full px-3 py-2 transition-colors"
+                            >
+                              {t("nav.redeemRewards")}
+                            </LanguageLink>
+                            <button
+                              type="button"
+                              onClick={handleLogout} 
+                              className="mt-2 w-full text-xs text-gray-500 hover:text-gray-800 pt-2 border-t border-gray-100"
+                              disabled={logoutMutation.isPending}
+                            >
+                              {logoutMutation.isPending ? t("nav.loggingOut") : t("nav.logOut")}
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </>
+                )
               ) : (
                 // Fallback when preview is off: always show dashboard + logout for signed-in users (except on reset page)
                 isResetPage ? null : (
