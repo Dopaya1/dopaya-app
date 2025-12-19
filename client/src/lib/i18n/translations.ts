@@ -789,6 +789,8 @@ export const translations: Record<'en' | 'de', TranslationKeys> = {
       loadingRewardDetails: 'Loading reward details...',
       viewMore: 'View more...',
       viewBrandRewards: 'View brand rewards',
+      morePartnersBannerTitle: 'More reward partners are joining soon.',
+      morePartnersBannerDescription: 'We\'re carefully onboarding brands that truly align with our values.',
     },
     homeSections: {
       caseStudy: {
@@ -1713,6 +1715,8 @@ export const translations: Record<'en' | 'de', TranslationKeys> = {
       loadingRewardDetails: 'Reward-Details werden geladen...',
       viewMore: 'Mehr anzeigen...',
       viewBrandRewards: 'Brand Rewards ansehen',
+      morePartnersBannerTitle: 'Weitere Reward-Partner kommen bald hinzu.',
+      morePartnersBannerDescription: 'Wir integrieren sorgfältig Marken, die wirklich mit unseren Werten übereinstimmen.',
     },
     homeSections: {
       caseStudy: {

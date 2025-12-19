@@ -3,7 +3,6 @@ import { CaseStudyModernSectionV3 } from "@/components/home/case-study-modern-se
 import { PartnerShowcaseSection } from "@/components/home/partner-showcase-section-optimized";
 import { ImpactDashboardSection } from "@/components/home/impact-dashboard-section-optimized";
 import { InstitutionalProofSimple } from "@/components/home/institutional-proof-simple";
-import { FoundingMemberCTA } from "@/components/home/founding-member-cta";
 import { FAQSection } from "@/components/home/faq-section";
 import { SEOHead } from "@/components/seo/seo-head";
 import { useQuery } from "@tanstack/react-query";
@@ -533,9 +532,6 @@ export default function HomePage() {
       
       {/* 6. FAQ Section */}
       <FAQSection />
-      
-      {/* 7. Founding Member CTA */}
-      <FoundingMemberCTA />
       </div>
     </>
   );

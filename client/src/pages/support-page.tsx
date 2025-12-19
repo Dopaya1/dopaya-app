@@ -469,23 +469,23 @@ export default function SupportPage() {
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
                 <div className="flex items-center gap-2 text-sm text-gray-700">
                   <span className="font-medium">
-                    {t("support.goesToProject")}
-                  </span>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button className="text-gray-500 hover:text-gray-700 flex-shrink-0">
-                        <Info className="h-3 w-3" />
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80 text-sm">
-                      <div className="space-y-2">
-                        <p className="font-semibold mb-2">{t("support.aboutImpaktera")}</p>
-                        <p>
-                          {t("support.impakteraDescription")}
-                        </p>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
+                  {t("support.goesToProject")}
+                </span>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button className="text-gray-500 hover:text-gray-700 flex-shrink-0">
+                      <Info className="h-3 w-3" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 text-sm">
+                    <div className="space-y-2">
+                      <p className="font-semibold mb-2">{t("support.aboutImpaktera")}</p>
+                      <p>
+                        {t("support.impakteraDescription")}
+                      </p>
+                    </div>
+                  </PopoverContent>
+                </Popover>
                 </div>
               </div>
             </div>
@@ -828,6 +828,30 @@ export default function SupportPage() {
               projectTitle={project.title}
               onSuccess={() => {
                 console.log('[Payment] ✅ Payment successful');
+                
+                // Save newsletter subscription if user opted in (non-blocking)
+                if (signUpForUpdates && user?.email) {
+                  fetch('/api/newsletter/subscribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                      email: user.email, 
+                      source: 'checkout' 
+                    })
+                  })
+                  .then(async res => {
+                    const result = await res.json();
+                    if (res.ok) {
+                      console.log('[Payment] Newsletter subscription saved');
+                    } else {
+                      console.warn('[Payment] Newsletter subscription failed:', result.error);
+                    }
+                  })
+                  .catch(err => {
+                    console.warn('[Payment] Newsletter subscription error:', err);
+                    // Non-critical - don't block payment success
+                  });
+                }
                 
                 // Close payment modal
                 setClientSecret(null);

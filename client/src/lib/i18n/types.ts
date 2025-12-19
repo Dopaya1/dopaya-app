@@ -748,6 +748,8 @@ export type TranslationKeys = {
     loadingRewardDetails: string;
     viewMore: string;
     viewBrandRewards: string;
+    morePartnersBannerTitle: string;
+    morePartnersBannerDescription: string;
   };
   homeSections: {
     caseStudy: {

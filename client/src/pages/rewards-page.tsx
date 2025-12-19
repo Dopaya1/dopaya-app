@@ -647,6 +647,20 @@ export default function RewardsPage() {
       <div className="container mx-auto py-24 px-4">
         <div className="max-w-7xl mx-auto">
 
+          {/* More Partners Banner */}
+          <section className="py-3 md:py-6 mb-8 md:flex md:items-center" style={{ backgroundColor: '#ebe8df' }}>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+              <div className="text-center">
+                <p className="text-base lg:text-xl text-gray-800 font-bold mb-2">
+                  {t("rewardsPage.morePartnersBannerTitle")}
+                </p>
+                <p className="text-sm lg:text-base text-gray-700">
+                  {t("rewardsPage.morePartnersBannerDescription")}
+                </p>
+              </div>
+            </div>
+          </section>
+
           {/* Unlock Banner - REMOVED per user request */}
           {/* {showUnlockBanner && (
             <Alert className="mb-8 bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-200">
