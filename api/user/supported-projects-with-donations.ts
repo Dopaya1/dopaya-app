@@ -136,6 +136,7 @@ async function getUserSupportedProjectsWithDonations(userId: number) {
     }
     
     // Aggregate data per project
+    // Universal Fund is treated like a normal project - no special aggregation needed
     const result = (projects || []).map((project: any) => {
       const projectDonations = donationsByProject.get(project.id) || [];
       

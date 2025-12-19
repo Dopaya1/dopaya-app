@@ -81,6 +81,13 @@ export function ImpactSummaryModal({ isOpen, onClose, impact, onShareStat }: Imp
     supportedProjectsWithDonations.forEach((item) => {
       const { project, donations } = item;
       
+      // Skip Universal Fund projects (no detailed impact tracking)
+      const isUniversalFund = project?.isUniversalFund === true || project?.is_universal_fund === true;
+      if (isUniversalFund) {
+        console.log('[ImpactSummaryModal] Skipping Universal Fund project:', project?.title);
+        return;
+      }
+      
       console.log('[ImpactSummaryModal] Processing project:', {
         projectTitle: project?.title,
         donationsCount: donations?.length,
