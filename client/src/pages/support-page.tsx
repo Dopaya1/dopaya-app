@@ -129,6 +129,70 @@ export default function SupportPage() {
     }
   }, [user, showAuthModal]);
 
+  // Check for PayPal redirect after payment (PayPal requires redirect even with 'if_required')
+  useEffect(() => {
+    // Check URL parameters for payment success (Stripe adds these after PayPal redirect)
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentIntent = urlParams.get('payment_intent');
+    const paymentIntentClientSecret = urlParams.get('payment_intent_client_secret');
+    const redirectStatus = urlParams.get('redirect_status');
+    
+    // If we have payment intent parameters, payment was successful via redirect (PayPal)
+    if (paymentIntent && redirectStatus === 'succeeded') {
+      console.log('[Support Page] ✅ PayPal payment successful via redirect:', {
+        paymentIntent,
+        redirectStatus,
+        paymentIntentClientSecret
+      });
+      
+      // Clean up URL parameters
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, '', cleanUrl);
+      
+      // Invalidate queries to update navbar
+      queryClient.invalidateQueries({ queryKey: ["/api/user/impact"] });
+      
+      // Save newsletter subscription if user opted in (non-blocking)
+      // Note: We need to check if this was set before redirect
+      const signUpForUpdates = sessionStorage.getItem('signUpForUpdates') === 'true';
+      if (signUpForUpdates && user?.email) {
+        fetch('/api/newsletter/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            email: user.email, 
+            source: 'checkout' 
+          })
+        })
+        .then(async res => {
+          const result = await res.json();
+          if (res.ok) {
+            console.log('[Support Page] Newsletter subscription saved after PayPal redirect');
+          } else {
+            console.warn('[Support Page] Newsletter subscription failed:', result.error);
+          }
+        })
+        .catch(err => {
+          console.warn('[Support Page] Newsletter subscription error:', err);
+        });
+        sessionStorage.removeItem('signUpForUpdates');
+      }
+      
+      // Show processing animation and then redirect to dashboard
+      setShowProcessingImpact(true);
+      
+      // After processing animation, show mini-journey or redirect
+      setTimeout(() => {
+        setShowProcessingImpact(false);
+        if (USE_MINI_JOURNEY_PREVIEW) {
+          setShowMiniJourney(true);
+        } else {
+          navigate("/rewards?unlock=1&maxPoints=100");
+        }
+      }, 2000);
+    }
+  }, []); // Run once on mount
+
   // --- Early returns AFTER all hooks (keep hook order stable) ---
   if (!previewEnabled) {
     return (
@@ -760,6 +824,12 @@ export default function SupportPage() {
                       console.log('[Payment] Creating payment intent...');
                       setPaymentProcessing(true);
 
+                      // Store signUpForUpdates in sessionStorage for PayPal redirect handling
+                      if (signUpForUpdates) {
+                        sessionStorage.setItem('signUpForUpdates', 'true');
+                        console.log('[Payment] Stored signUpForUpdates in sessionStorage for PayPal redirect');
+                      }
+
                       // Create Payment Intent on backend
                       const response = await apiRequest("POST", `/api/create-payment-intent`, {
                         projectId: project.id,
@@ -852,6 +922,9 @@ export default function SupportPage() {
                     // Non-critical - don't block payment success
                   });
                 }
+                
+                // Clean up sessionStorage
+                sessionStorage.removeItem('signUpForUpdates');
                 
                 // Close payment modal
                 setClientSecret(null);
