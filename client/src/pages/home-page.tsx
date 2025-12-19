@@ -88,8 +88,17 @@ export default function HomePage() {
         .eq('status', 'active')
         .eq('featured', true)
         .order('createdAt', { ascending: false })
-        .limit(6);
-      return data || [];
+        .limit(10); // Fetch more to ensure we have enough after filtering
+      
+      // Client-side filter to exclude Universal Fund projects
+      // Check both camelCase and snake_case variants
+      const filtered = (data || []).filter((project: any) => {
+        const isUniversalFund = project.is_universal_fund === true || project.isUniversalFund === true;
+        return !isUniversalFund;
+      });
+      
+      // Return only first 6 after filtering
+      return filtered.slice(0, 6);
     },
     staleTime: 60_000,
   });

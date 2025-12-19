@@ -32,6 +32,7 @@ export function CaseStudyModernSectionV3() {
 
   // Featured projects for case study section (up to 3, plus "All Projects" box)
   // Fetch latest featured projects ordered by creation date
+  // Exclude Universal Fund projects
   const { data: projects = [] } = useQuery<Project[]>({
     queryKey: ["projects-case-study-modern-v3-latest"],
     queryFn: async () => {
@@ -42,7 +43,7 @@ export function CaseStudyModernSectionV3() {
         .eq('status', 'active')
         .eq('featured', true)
         .order('created_at', { ascending: false })
-        .limit(5);
+        .limit(10); // Fetch more to ensure we have enough after filtering
       
       // If that fails, try with createdAt (camelCase)
       if (error) {
@@ -53,7 +54,7 @@ export function CaseStudyModernSectionV3() {
           .eq('status', 'active')
           .eq('featured', true)
           .order('createdAt', { ascending: false })
-          .limit(5);
+          .limit(10);
         data = result.data;
         error = result.error;
       }
@@ -64,19 +65,32 @@ export function CaseStudyModernSectionV3() {
         return [];
       }
       
-      // If no featured projects found, fallback to any active projects
-      if (!data || data.length === 0) {
-        console.warn('No featured projects found, fetching latest active projects as fallback');
+      // Client-side filter to exclude Universal Fund projects
+      // Check both camelCase and snake_case variants
+      const filtered = (data || []).filter((project: any) => {
+        const isUniversalFund = project.is_universal_fund === true || project.isUniversalFund === true;
+        return !isUniversalFund;
+      });
+      
+      // If no featured projects found after filtering, fallback to any active projects (excluding Universal Fund)
+      if (filtered.length === 0) {
+        console.warn('No featured projects found after filtering, fetching latest active projects as fallback');
         const fallback = await supabase
           .from('projects')
           .select('*')
           .eq('status', 'active')
           .order('created_at', { ascending: false })
-          .limit(5);
-        return (fallback.data || []) as Project[];
+          .limit(10);
+        
+        const fallbackFiltered = (fallback.data || []).filter((project: any) => {
+          const isUniversalFund = project.is_universal_fund === true || project.isUniversalFund === true;
+          return !isUniversalFund;
+        });
+        
+        return (fallbackFiltered.slice(0, 5)) as Project[];
       }
       
-      const result = (data || []) as Project[];
+      const result = filtered.slice(0, 5) as Project[];
       console.log(`Case Study: Found ${result.length} featured projects:`, result.map(p => p.title));
       return result;
     },

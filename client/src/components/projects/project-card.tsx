@@ -29,8 +29,20 @@ export function ProjectCard({ project }: ProjectCardProps) {
     trackProjectClick(project.slug, project.title);
   };
   
+  // For Universal Fund: navigate directly to support page
+  // Check both camelCase (schema) and snake_case (database) variants
+  const isUniversalFund = project.isUniversalFund === true || (project as any).is_universal_fund === true;
+  const projectLink = isUniversalFund 
+    ? `/support/${project.slug}`
+    : `/project/${project.slug}`;
+  
+  // Gold border only for Universal Fund projects
+  const cardClassName = isUniversalFund 
+    ? "impact-card overflow-hidden flex flex-col h-full border-amber-300"
+    : "impact-card overflow-hidden flex flex-col h-full";
+  
   return (
-    <Card className="impact-card overflow-hidden flex flex-col h-full">
+    <Card className={cardClassName}>
       <div className="w-full h-48 overflow-hidden">
         <OptimizedImage
           src={projectImageUrl || '/placeholder-project.png'}
@@ -64,7 +76,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
         )}
       </CardContent>
       <CardFooter className="p-4 pt-0 mt-auto">
-        <LanguageLink href={`/project/${project.slug}`}>
+        <LanguageLink href={projectLink}>
           <Button 
             className="w-full text-white" 
             style={{ backgroundColor: '#f2662d' }}

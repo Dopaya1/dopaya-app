@@ -10,13 +10,13 @@ let stripe: Stripe | null = null;
 // Initialize Stripe lazily (after env vars are loaded)
 function getStripe(): Stripe | null {
   if (stripe) return stripe;
-  
-  if (process.env.STRIPE_SECRET_KEY) {
+
+if (process.env.STRIPE_SECRET_KEY) {
     console.log('[Stripe] ✅ Initializing with API key:', process.env.STRIPE_SECRET_KEY.substring(0, 12) + '...');
-    stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: "2025-07-30.basil",
-    });
-  } else {
+  stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: "2025-07-30.basil",
+  });
+} else {
     console.warn('[Stripe] ❌ STRIPE_SECRET_KEY not found - Payment processing disabled');
   }
   
@@ -178,27 +178,27 @@ export function setupStripeRoutes(app: Express) {
  */
 export async function handleStripeWebhook(req: Request, res: Response) {
   const stripe = getStripe();
-  if (!stripe) {
-    return res.status(503).json({ error: "Payment processing is currently unavailable" });
-  }
+    if (!stripe) {
+      return res.status(503).json({ error: "Payment processing is currently unavailable" });
+    }
 
-  const sig = req.headers['stripe-signature'] as string;
-  
-  if (!process.env.STRIPE_WEBHOOK_SECRET) {
+    const sig = req.headers['stripe-signature'] as string;
+    
+    if (!process.env.STRIPE_WEBHOOK_SECRET) {
     console.warn('[Stripe Webhook] ⚠️ STRIPE_WEBHOOK_SECRET not configured');
-    return res.status(400).send('Webhook secret not configured');
-  }
+      return res.status(400).send('Webhook secret not configured');
+    }
 
-  let event: Stripe.Event;
+    let event: Stripe.Event;
 
-  try {
+    try {
     // req.body is raw buffer here (express.raw middleware)
-    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+      event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
     console.log(`[Stripe Webhook] ✅ Event verified: ${event.type} (ID: ${event.id})`);
-  } catch (err: any) {
+    } catch (err: any) {
     console.error('[Stripe Webhook] ❌ Signature verification failed:', err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
 
   // Handle Payment Intent succeeded (embedded payment form)
   if (event.type === 'payment_intent.succeeded') {
@@ -321,96 +321,96 @@ export async function handleStripeWebhook(req: Request, res: Response) {
   }
 
   // Handle Checkout Session completed (hosted payment page)
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as Stripe.Checkout.Session;
-    
-    try {
-      const { userId, projectId, amount } = session.metadata || {};
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object as Stripe.Checkout.Session;
       
-      if (userId && amount) {
+      try {
+        const { userId, projectId, amount } = session.metadata || {};
+        
+        if (userId && amount) {
         console.log(`[Stripe Webhook] 🛒 Checkout session completed: User ${userId}, Amount $${amount}, Project ${projectId || 'General'}`);
-        
-        // Convert userId from metadata (might be UUID string or numeric string)
-        let numericUserId: number;
-        
-        if (typeof userId === 'string') {
-          // Try to parse as number first (if it's already numeric ID)
-          const parsed = parseInt(userId, 10);
-          if (!isNaN(parsed)) {
-            numericUserId = parsed;
-          } else {
-            // userId is UUID from Supabase Auth - need to get numeric ID from users table
-            const userEmail = session.customer_email;
-            if (userEmail) {
-              const dbUser = await storage.getUserByEmail(userEmail);
-              if (dbUser) {
-                numericUserId = dbUser.id;
-                console.log(`[Stripe Webhook] Converted UUID ${userId} to numeric ID ${numericUserId} via email ${userEmail}`);
-              } else {
-                console.error(`[Stripe Webhook] User not found in database for email: ${userEmail}`);
-                throw new Error(`User not found for email: ${userEmail}`);
-              }
+          
+          // Convert userId from metadata (might be UUID string or numeric string)
+          let numericUserId: number;
+          
+          if (typeof userId === 'string') {
+            // Try to parse as number first (if it's already numeric ID)
+            const parsed = parseInt(userId, 10);
+            if (!isNaN(parsed)) {
+              numericUserId = parsed;
             } else {
-              throw new Error('Cannot determine user ID: userId is UUID and no email available');
+              // userId is UUID from Supabase Auth - need to get numeric ID from users table
+              const userEmail = session.customer_email;
+              if (userEmail) {
+                const dbUser = await storage.getUserByEmail(userEmail);
+                if (dbUser) {
+                  numericUserId = dbUser.id;
+                  console.log(`[Stripe Webhook] Converted UUID ${userId} to numeric ID ${numericUserId} via email ${userEmail}`);
+                } else {
+                  console.error(`[Stripe Webhook] User not found in database for email: ${userEmail}`);
+                  throw new Error(`User not found for email: ${userEmail}`);
+                }
+              } else {
+                throw new Error('Cannot determine user ID: userId is UUID and no email available');
+              }
             }
-          }
-        } else {
-          numericUserId = userId as number;
-        }
-        
-        // Parse projectId and amount
-        const parsedProjectId = projectId ? parseInt(projectId, 10) : null;
-        const parsedAmount = parseFloat(amount);
-        
-        if (isNaN(parsedAmount) || parsedAmount <= 0) {
-          throw new Error(`Invalid donation amount: ${amount}`);
-        }
-        
-        const amountInDollars = Math.round(parsedAmount);
-        
-        // Get project to calculate impact points
-        let impactPoints = 0;
-        let finalProjectId: number;
-        
-        if (parsedProjectId && !isNaN(parsedProjectId)) {
-          finalProjectId = parsedProjectId;
-          const project = await storage.getProject(parsedProjectId);
-          if (project) {
-            impactPoints = Math.floor(amountInDollars * (project.impactPointsMultiplier || 10));
           } else {
-            console.warn(`[Stripe Webhook] Project ${parsedProjectId} not found, using default multiplier`);
+            numericUserId = userId as number;
+          }
+          
+          // Parse projectId and amount
+          const parsedProjectId = projectId ? parseInt(projectId, 10) : null;
+          const parsedAmount = parseFloat(amount);
+          
+          if (isNaN(parsedAmount) || parsedAmount <= 0) {
+            throw new Error(`Invalid donation amount: ${amount}`);
+          }
+          
+          const amountInDollars = Math.round(parsedAmount);
+          
+        // Get project to calculate impact points
+          let impactPoints = 0;
+          let finalProjectId: number;
+          
+          if (parsedProjectId && !isNaN(parsedProjectId)) {
+            finalProjectId = parsedProjectId;
+            const project = await storage.getProject(parsedProjectId);
+            if (project) {
+              impactPoints = Math.floor(amountInDollars * (project.impactPointsMultiplier || 10));
+            } else {
+              console.warn(`[Stripe Webhook] Project ${parsedProjectId} not found, using default multiplier`);
             impactPoints = Math.floor(amountInDollars * 10);
           }
         } else {
           console.warn('[Stripe Webhook] No projectId provided - general donations not fully supported yet');
           impactPoints = Math.floor(amountInDollars * 10);
-          const projects = await storage.getProjects();
-          if (projects.length > 0) {
-            finalProjectId = projects[0].id;
-            console.log(`[Stripe Webhook] Using first project (${finalProjectId}) as fallback for general donation`);
-          } else {
-            throw new Error('Cannot create general donation: no projects available and projectId is required');
+            const projects = await storage.getProjects();
+            if (projects.length > 0) {
+              finalProjectId = projects[0].id;
+              console.log(`[Stripe Webhook] Using first project (${finalProjectId}) as fallback for general donation`);
+            } else {
+              throw new Error('Cannot create general donation: no projects available and projectId is required');
+            }
           }
-        }
-        
-        // Create donation record
-        const donation = await storage.createDonation({
-          userId: numericUserId,
+          
+          // Create donation record
+          const donation = await storage.createDonation({
+            userId: numericUserId,
           projectId: finalProjectId,
           amount: amountInDollars,
-          impactPoints: impactPoints,
+            impactPoints: impactPoints,
           status: 'completed'
-        });
-        
-        console.log(`[Stripe Webhook] ✅ Donation created: ID ${donation.id}, User ${numericUserId}, +${impactPoints} Impact Points`);
-      } else {
-        console.warn('[Stripe Webhook] Missing required metadata: userId or amount');
-      }
+          });
+          
+          console.log(`[Stripe Webhook] ✅ Donation created: ID ${donation.id}, User ${numericUserId}, +${impactPoints} Impact Points`);
+        } else {
+          console.warn('[Stripe Webhook] Missing required metadata: userId or amount');
+        }
     } catch (error: any) {
       console.error('[Stripe Webhook] Error processing checkout session:', error.message);
-      // Don't throw - return success to Stripe to prevent retries
+        // Don't throw - return success to Stripe to prevent retries
+      }
     }
-  }
 
-  res.json({ received: true });
+    res.json({ received: true });
 }

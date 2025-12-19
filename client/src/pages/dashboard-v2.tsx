@@ -639,6 +639,7 @@ export default function DashboardV2() {
   }, [user?.id]);
 
   // Fetch featured projects from Supabase (featured = true)
+  // Exclude Universal Fund projects (is_universal_fund = true)
   const { data: featuredProjects, isLoading: isLoadingFeatured } = useQuery<Project[]>({
     queryKey: ["dashboard-v2-featured-projects"],
     queryFn: async () => {
@@ -648,6 +649,7 @@ export default function DashboardV2() {
         .select('*')
         .eq('status', 'active')
         .eq('featured', true)
+        .or('is_universal_fund.is.null,is_universal_fund.eq.false')
         .order('created_at', { ascending: false })
         .limit(6);
       
@@ -659,6 +661,7 @@ export default function DashboardV2() {
           .select('*')
           .eq('status', 'active')
           .eq('featured', true)
+          .or('is_universal_fund.is.null,is_universal_fund.eq.false')
           .order('createdAt', { ascending: false })
           .limit(6);
         data = result.data;
