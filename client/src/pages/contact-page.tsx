@@ -1,56 +1,9 @@
 import { SEOHead } from "@/components/seo/seo-head";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Mail, Calendar, MessageSquare } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "@/lib/i18n/use-translation";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 
 export default function ContactPage() {
   const { t } = useTranslation();
-  
-  const contactFormSchema = z.object({
-    firstName: z.string().min(1, t("contact.firstNameRequired")),
-    lastName: z.string().min(1, t("contact.lastNameRequired")),
-    email: z.string().email(t("contact.emailInvalid")),
-    message: z.string().min(10, t("contact.messageMinLength")),
-  });
-
-  type ContactFormValues = z.infer<typeof contactFormSchema>;
-
-  const form = useForm<ContactFormValues>({
-    resolver: zodResolver(contactFormSchema),
-    defaultValues: {
-      firstName: "",
-      lastName: "",
-      email: "",
-      message: "",
-    },
-  });
-
-  const onSubmit = (data: ContactFormValues) => {
-    toast({
-      title: t("contact.messageSentTitle"),
-      description: t("contact.messageSentDescription"),
-    });
-    console.log(data);
-    form.reset();
-  };
-
-  const handleCalendlyClick = () => {
-    window.open("https://www.calendly.com/dopaya/vc-30", "_blank");
-  };
 
   return (
     <>
@@ -121,7 +74,7 @@ export default function ContactPage() {
                 <div>
                   <h3 className="font-semibold uppercase text-sm tracking-wider mb-2">{t("contact.calendlyLabel")}</h3>
                   <button
-                    onClick={handleCalendlyClick}
+                    onClick={() => window.open("https://www.calendly.com/dopaya/vc-30", "_blank")}
                     className="text-primary hover:text-primary/80 font-medium transition-colors"
                   >
                     {t("contact.calendlyButton")}
@@ -131,76 +84,20 @@ export default function ContactPage() {
             </div>
           </div>
 
-          {/* Right column - Contact form */}
+          {/* Right column - Google Form iframe */}
           <div className="bg-card p-6 rounded-lg shadow-sm">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="firstName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("contact.firstNameLabel")}</FormLabel>
-                        <FormControl>
-                          <Input placeholder={t("contact.firstNamePlaceholder")} {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="lastName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("contact.lastNameLabel")}</FormLabel>
-                        <FormControl>
-                          <Input placeholder={t("contact.lastNamePlaceholder")} {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("contact.emailFieldLabel")}</FormLabel>
-                      <FormControl>
-                        <Input placeholder={t("contact.emailPlaceholder")} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="message"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("contact.messageLabel")}</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder={t("contact.messagePlaceholder")}
-                          className="min-h-[150px]"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <Button type="submit" className="w-full md:w-auto bg-primary">
-                  {t("contact.submitButton")}
-                </Button>
-              </form>
-            </Form>
+            <iframe 
+              src="https://docs.google.com/forms/d/e/1FAIpQLSeyueWb3jtRUZ0d0UGYWfno0sRY-wRz5eOYGUGuri3L2K4ssA/viewform?embedded=true" 
+              width="100%" 
+              height="600" 
+              frameBorder="0" 
+              marginHeight={0} 
+              marginWidth={0}
+              className="w-full min-h-[600px] rounded-lg"
+              title="Contact Form"
+            >
+              Loading…
+            </iframe>
           </div>
         </div>
       </div>

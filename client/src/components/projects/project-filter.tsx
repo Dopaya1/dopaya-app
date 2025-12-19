@@ -32,6 +32,7 @@ export function ProjectFilter({ onFilterChange }: ProjectFilterProps) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [country, setCountry] = useState("all");
+  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [availableCountries, setAvailableCountries] = useState<string[]>([]);
   const [availableCountriesDisplay, setAvailableCountriesDisplay] = useState<Map<string, string>>(new Map());
 
@@ -50,9 +51,19 @@ export function ProjectFilter({ onFilterChange }: ProjectFilterProps) {
     },
   });
 
-  // Extract unique countries from projects with language-specific display names
+  // Extract unique categories and countries from projects
   useEffect(() => {
     if (projects) {
+      // Extract unique categories
+      const categories = projects
+        .map(project => project.category || '')
+        .filter((category): category is string => Boolean(category)) // Filter out null/undefined
+        .filter((value, index, self) => self.indexOf(value) === index) // Get unique values
+        .sort(); // Sort alphabetically
+      
+      setAvailableCategories(categories);
+
+      // Extract unique countries with language-specific display names
       const countryMap = new Map<string, string>();
       const countries = projects
         .map(project => {
@@ -112,19 +123,11 @@ export function ProjectFilter({ onFilterChange }: ProjectFilterProps) {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{t("projects.allCategories")}</SelectItem>
-            <SelectItem value="Agriculture">Agriculture</SelectItem>
-            <SelectItem value="Conservation">Conservation</SelectItem>
-            <SelectItem value="Education">Education</SelectItem>
-            <SelectItem value="Energy">Energy</SelectItem>
-            <SelectItem value="Environment">Environment</SelectItem>
-            <SelectItem value="Finance">Finance</SelectItem>
-            <SelectItem value="Health">Health</SelectItem>
-            <SelectItem value="Housing">Housing</SelectItem>
-            <SelectItem value="Livelihood">Livelihood</SelectItem>
-            <SelectItem value="Sanitation">Sanitation</SelectItem>
-            <SelectItem value="Technology">Technology</SelectItem>
-            <SelectItem value="Water">Water</SelectItem>
-            <SelectItem value="Women Empowerment">Women Empowerment</SelectItem>
+            {availableCategories.map((categoryName) => (
+              <SelectItem key={categoryName} value={categoryName}>
+                {categoryName}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
 
