@@ -46,6 +46,7 @@ export type TranslationKeys = {
     joinWaitlistShort: string;
     seeSocialEnterprises: string;
     seeSocialEnterprisesShort: string;
+    supportSocialEnterprises: string;
     infoBar1: string;
     infoBar2: string;
     infoBar3: string;

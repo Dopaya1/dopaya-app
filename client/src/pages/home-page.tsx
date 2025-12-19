@@ -239,8 +239,7 @@ export default function HomePage() {
                 </h1>
                 <p className="text-[28px] text-gray-700 mb-6 max-w-xl mx-auto">{t("home.heroSubtitle")}</p>
                 <div className="flex flex-row gap-4 justify-center">
-                  <a href="https://tally.so/r/m6MqAe" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center px-6 py-3 rounded-md bg-[#F05304] text-white hover:bg-[#e14c03]">{t("home.joinWaitlistShort")}</a>
-                  <LanguageLink href="/projects" className="inline-flex items-center justify-center px-6 py-3 rounded-md border border-gray-300 text-gray-800 hover:bg-gray-50">{t("home.seeSocialEnterprisesShort")}</LanguageLink>
+                  <LanguageLink href="/projects" className="inline-flex items-center justify-center px-6 py-3 rounded-md bg-[#F05304] text-white hover:bg-[#e14c03]">{t("home.supportSocialEnterprises")}</LanguageLink>
                 </div>
               </div>
 
@@ -338,8 +337,7 @@ export default function HomePage() {
                 </h1>
                 <p className="text-lg text-gray-700 mb-5">{t("home.heroSubtitle")}</p>
                 <div className="flex flex-col gap-3 w-full">
-                  <a href="https://tally.so/r/m6MqAe" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center px-6 py-3 rounded-md bg-[#F05304] text-white hover:bg-[#e14c03] w-full">{t("home.joinWaitlistShort")}</a>
-                  <LanguageLink href="/projects" className="inline-flex items-center justify-center px-6 py-3 rounded-md border border-gray-300 text-gray-800 hover:bg-gray-50 w-full">{t("home.seeSocialEnterprisesShort")}</LanguageLink>
+                  <LanguageLink href="/projects" className="inline-flex items-center justify-center px-6 py-3 rounded-md bg-[#F05304] text-white hover:bg-[#e14c03] w-full">{t("home.supportSocialEnterprises")}</LanguageLink>
                 </div>
               </div>
 
