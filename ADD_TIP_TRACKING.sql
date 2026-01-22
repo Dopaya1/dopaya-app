@@ -26,3 +26,4 @@ AND column_name = 'tipAmount';
 -- tipAmount   | integer   | 0
 -- ============================================
 
+

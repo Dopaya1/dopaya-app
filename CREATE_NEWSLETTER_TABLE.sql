@@ -39,3 +39,4 @@ CREATE POLICY IF NOT EXISTS "Users can read their own subscription"
   FOR SELECT
   USING (auth.uid()::text = (SELECT email FROM auth.users WHERE email = newsletter_subscribers.email LIMIT 1)::text);
 
+

@@ -1829,6 +1829,23 @@ ${url}
                   </div>
                 </div>
               )}
+              
+              {/* Disclaimer - Show if backers or press mentions exist */}
+              {(backers.length > 0 || pressMentions.length > 0) && (
+                <div className="mt-6 w-full">
+                  <p className="text-xs text-gray-500 leading-relaxed">
+                    {language === 'de' ? (
+                      <>
+                        <strong>Anerkennung und Unterstützung:</strong> Die in diesem Bereich aufgeführten Logos, Organisationen und Medienberichte repräsentieren historische Unterstützung, Förderungen oder Auszeichnungen, die das jeweilige Sozialunternehmen erhalten hat. Deren Abbildung stellt keine Empfehlung oder Partnerschaft mit Dopaya, seiner Plattform oder seinen Finanzdienstleistungen durch diese Drittorganisationen oder Medienhäuser dar.
+                      </>
+                    ) : (
+                      <>
+                        <strong>Recognition and Support:</strong> The logos, organizations, and media mentions featured here represent historical support, awards, or public recognition received by the social enterprise specifically. Their appearance does not constitute an endorsement of Dopaya, its platform, or its financial services by these third-party organizations or media outlets.
+                      </>
+                    )}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Interactive Impact Calculator Box - Bottom of left side */}

@@ -383,6 +383,8 @@ export default function TermsAndConditions() {
 
             <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6">9. INTELLECTUAL PROPERTY</h2>
             
+            <h3 className="text-xl font-semibold text-gray-900 mt-8 mb-4">9.1 Platform Content and User License</h3>
+            
             <p>
               All Platform content and software are owned or licensed by SoVent UG.
             </p>
@@ -393,6 +395,26 @@ export default function TermsAndConditions() {
             
             <p>
               Non-commercial sharing (e.g. links, screenshots for reviews) is permitted.
+            </p>
+
+            <h3 className="text-xl font-semibold text-gray-900 mt-8 mb-4">9.2 Third-Party Trademarks and Recognition</h3>
+            
+            <p>
+              The Platform may display logos and names of third-party organizations (such as government agencies, foundations, or investors) in connection with specific Social Enterprises. These marks are used for informational and nominative purposes only to describe the public recognition, awards, or historical support received by the respective Social Enterprise.
+            </p>
+            
+            <p>
+              Unless explicitly stated otherwise, the display of these trademarks does not imply:
+            </p>
+            
+            <ul className="list-disc pl-6 space-y-2">
+              <li>(a) an endorsement of the Dopaya Platform by said third party;</li>
+              <li>(b) a formal partnership or legal affiliation between Dopaya and said third party; or</li>
+              <li>(c) that the third party has audited or verified the specific activities or financial handling of the Dopaya Platform.</li>
+            </ul>
+            
+            <p>
+              All trademarks remain the property of their respective owners.
             </p>
 
             <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6">10. DATA PROTECTION</h2>

@@ -429,3 +429,4 @@ ALTER COLUMN "tipAmount" SET DEFAULT 0;
 **Migration Time:** < 1 minute  
 **Risk Level:** Low (safe, tested)
 
+

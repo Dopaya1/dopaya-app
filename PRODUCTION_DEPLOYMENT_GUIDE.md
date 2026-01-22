@@ -248,3 +248,4 @@ Bei Problemen:
 **Deployment Date:** {{ Heute }}
 **Version:** 1.0.0 - Stripe Embedded Payments
 
+
