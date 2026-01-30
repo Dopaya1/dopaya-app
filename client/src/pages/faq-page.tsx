@@ -106,7 +106,7 @@ export default function FAQPage() {
         keywords="FAQ, frequently asked questions, social enterprise contributions, platform fees, NGO vs social enterprise, supporter questions, impact points, social impact platform, how does dopaya work"
         canonicalUrl="https://dopaya.com/faq"
         ogType="website"
-        ogImage="https://dopaya.com/og-faq.jpg"
+        ogImage="https://dopaya.com/og-image.png"
         structuredData={{
           "@context": "https://schema.org",
           "@type": "FAQPage",

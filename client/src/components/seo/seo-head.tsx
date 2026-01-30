@@ -22,7 +22,7 @@ export function SEOHead({
   title,
   description,
   keywords,
-  ogImage = "https://dopaya.com/og-default.jpg", // Updated to dopaya.com
+  ogImage = "https://dopaya.com/og-image.png", // Updated to use actual OG image
   ogImageWidth = 1200, // Standard OG image width
   ogImageHeight = 630, // Standard OG image height (1.91:1 aspect ratio)
   ogType = "website",
