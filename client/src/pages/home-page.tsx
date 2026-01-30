@@ -129,32 +129,39 @@ export default function HomePage() {
           "@context": "https://schema.org",
           "@type": "Organization",
           "name": "Dopaya",
-          "description": "Social impact platform connecting supporters with verified social enterprises",
+          "alternateName": "Dopaya Social Impact Platform",
+          "description": "Platform connecting supporters with verified social enterprises, enabling donations while earning rewards from sustainable brands.",
           "url": "https://dopaya.com",
-          "logo": "https://dopaya.com/logo.png",
+          "logo": "https://dopaya.com/assets/Dopaya%20Logo-IS_kpXiQ.png",
           "foundingDate": "2024",
-          "industry": "Social Impact Technology",
-          "sameAs": [
-            "https://twitter.com/dopaya",
-            "https://linkedin.com/company/dopaya"
-          ],
+          "foundingLocation": {
+            "@type": "Place",
+            "address": {
+              "@type": "PostalAddress",
+              "addressCountry": "CH"
+            }
+          },
+          "areaServed": "Worldwide",
+          "slogan": "Supporting real impact made rewarding",
           "contactPoint": {
             "@type": "ContactPoint",
-            "contactType": "customer service",
-            "email": "hello@dopaya.org"
+            "contactType": "customer support",
+            "email": "hello@dopaya.com",
+            "url": "https://dopaya.com/contact"
           },
-          "offers": {
-            "@type": "Offer",
-            "description": "Support social enterprises and earn impact points",
-            "price": "0",
-            "priceCurrency": "USD"
-          },
+          "sameAs": [
+            "https://www.linkedin.com/company/dopaya",
+            "https://www.instagram.com/dopaya"
+          ],
           "knowsAbout": [
             "Social Impact",
             "Social Enterprise Funding",
             "Impact Investing",
             "Sustainable Development",
-            "Community Development"
+            "Community Development",
+            "Social Entrepreneurship",
+            "Impact Rewards",
+            "Transparent Philanthropy"
           ],
           "areaServed": "Global",
           "serviceType": "Social Impact Platform"

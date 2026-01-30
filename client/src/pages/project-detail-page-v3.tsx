@@ -102,7 +102,7 @@ export default function ProjectDetailPageV3() {
           "publisher": {
             "@type": "Organization",
             "name": "Dopaya",
-            "logo": "https://dopaya.com/logo.png"
+            "logo": "https://dopaya.com/assets/Dopaya%20Logo-IS_kpXiQ.png"
           },
           "mainEntityOfPage": canonicalUrl,
           "about": {
@@ -111,6 +111,54 @@ export default function ProjectDetailPageV3() {
           }
         }}
       />
+      
+      {/* BreadcrumbList Schema */}
+      <script type="application/ld+json">
+        {JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": t("breadcrumb.home"),
+              "item": "https://dopaya.com"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": t("breadcrumb.projects"),
+              "item": "https://dopaya.com/projects"
+            },
+            {
+              "@type": "ListItem",
+              "position": 3,
+              "name": projectTitle,
+              "item": canonicalUrl
+            }
+          ]
+        })}
+      </script>
+      
+      {/* Social Enterprise Organization Schema */}
+      <script type="application/ld+json">
+        {JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          "@id": `${canonicalUrl}#organization`,
+          "name": projectTitle,
+          "description": projectDescription || projectSummary,
+          "url": canonicalUrl,
+          "image": project.imageUrl,
+          "areaServed": project.location || "Global",
+          "knowsAbout": [project.category, project.primarySdg ? `SDG ${project.primarySdg}` : "Social Impact"].filter(Boolean),
+          "parentOrganization": {
+            "@type": "Organization",
+            "name": "Dopaya",
+            "url": "https://dopaya.com"
+          }
+        })}
+      </script>
       
       <ProjectDetailNewV3 project={project} />
     </>
