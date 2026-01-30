@@ -229,6 +229,8 @@ export function CaseStudyModernSectionV2() {
                       <img 
                         src={sdgWheelImg} 
                         alt="SDG Wheel" 
+                        loading="lazy"
+                        decoding="async"
                         className="w-12 h-12 object-contain"
                       />
                     </div>
@@ -267,6 +269,8 @@ export function CaseStudyModernSectionV2() {
                       <img
                         src={project.imageUrl}
                         alt={project.title}
+                        loading="lazy"
+                        decoding="async"
                         className="absolute inset-0 w-full h-full object-cover"
                       />
                     ) : (
@@ -306,6 +310,8 @@ export function CaseStudyModernSectionV2() {
                       <img 
                         src="/src/assets/sdg-wheel.svg" 
                         alt="SDG Wheel" 
+                        loading="lazy"
+                        decoding="async"
                         className="w-10 h-10 object-contain"
                       />
                     </div>

@@ -1,13 +1,8 @@
 // Removed old HeroSectionV3 import as we use the duplicated hero below
-import { CaseStudyModernSectionV3 } from "@/components/home/case-study-modern-section-v3";
-import { PartnerShowcaseSection } from "@/components/home/partner-showcase-section-optimized";
-import { ImpactDashboardSection } from "@/components/home/impact-dashboard-section-optimized";
-import { InstitutionalProofSimple } from "@/components/home/institutional-proof-simple";
-import { FAQSection } from "@/components/home/faq-section";
 import { SEOHead } from "@/components/seo/seo-head";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo, lazy, Suspense } from "react";
 import { BRAND_COLORS } from "@/constants/colors";
 import { getProjectImageUrl } from "@/lib/image-utils";
 import { ShieldCheck, Gift, Leaf } from "lucide-react";
@@ -16,6 +11,37 @@ import { useI18n } from "@/lib/i18n/i18n-context";
 import { LanguageLink } from "@/components/ui/language-link";
 import { translations } from "@/lib/i18n/translations";
 import { getRewardTitle } from "@/lib/i18n/project-content";
+
+// Lazily loaded below-the-fold sections to improve initial load performance
+const CaseStudyModernSectionV3 = lazy(() =>
+  import("@/components/home/case-study-modern-section-v3").then((m) => ({
+    default: m.CaseStudyModernSectionV3,
+  })),
+);
+
+const PartnerShowcaseSection = lazy(() =>
+  import("@/components/home/partner-showcase-section-optimized").then((m) => ({
+    default: m.PartnerShowcaseSection,
+  })),
+);
+
+const ImpactDashboardSection = lazy(() =>
+  import("@/components/home/impact-dashboard-section-optimized").then((m) => ({
+    default: m.ImpactDashboardSection,
+  })),
+);
+
+const InstitutionalProofSimple = lazy(() =>
+  import("@/components/home/institutional-proof-simple").then((m) => ({
+    default: m.InstitutionalProofSimple,
+  })),
+);
+
+const FAQSection = lazy(() =>
+  import("@/components/home/faq-section").then((m) => ({
+    default: m.FAQSection,
+  })),
+);
 
 export default function HomePage() {
   const { t } = useTranslation();
@@ -533,19 +559,29 @@ export default function HomePage() {
         </section>
         
         {/* 2. Case Study Section - New layout with ExpandableGallery */}
-        <CaseStudyModernSectionV3 />
+        <Suspense fallback={null}>
+          <CaseStudyModernSectionV3 />
+        </Suspense>
       
       {/* 3. Partner Showcase Section */}
-      <PartnerShowcaseSection />
+      <Suspense fallback={null}>
+        <PartnerShowcaseSection />
+      </Suspense>
       
       {/* 4. Impact Dashboard Section */}
-      <ImpactDashboardSection />
+      <Suspense fallback={null}>
+        <ImpactDashboardSection />
+      </Suspense>
       
       {/* 5. Institutional Proof Section */}
-      <InstitutionalProofSimple />
+      <Suspense fallback={null}>
+        <InstitutionalProofSimple />
+      </Suspense>
       
       {/* 6. FAQ Section */}
-      <FAQSection />
+      <Suspense fallback={null}>
+        <FAQSection />
+      </Suspense>
       </div>
     </>
   );

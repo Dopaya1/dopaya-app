@@ -460,7 +460,13 @@ export function CaseStudyModernSectionV3() {
                 <div className="space-y-6 order-1 lg:order-2">
                   <div className="rounded-lg overflow-hidden relative" style={{ border: `1px solid ${BRAND_COLORS.borderSubtle}` }}>
                     {getProjectImageUrl(selectedProject) ? (
-                      <img src={getProjectImageUrl(selectedProject) || ''} alt={selectedProject.title} className="w-full h-72 lg:h-80 object-cover" />
+                      <img
+                        src={getProjectImageUrl(selectedProject) || ''}
+                        alt={selectedProject.title}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-72 lg:h-80 object-cover"
+                      />
                     ) : (
                       <div className="w-full h-72 lg:h-80 flex items-center justify-center" style={{ backgroundColor: BRAND_COLORS.bgCool }}>
                         <Target className="h-16 w-16" />

@@ -472,13 +472,25 @@ export function PartnerShowcaseSection() {
               <div key={`${brand.id}-lg-${idx}`} className="px-0">
                 <div className="cursor-pointer" onClick={() => { setSelectedBrand(selectedBrand === brand.id ? null : brand.id); setIsPaused(true); }}>
                     <div className="flex items-center justify-center p-6 h-24 rounded-lg" style={{ backgroundColor: BRAND_COLORS.bgWhite }}>
-                      <img src={brand.logo} alt={`${brand.name} - ${brand.category} sustainable brand`} className="max-h-12 max-w-full object-contain" />
+                      <img
+                        src={brand.logo}
+                        alt={`${brand.name} - ${brand.category} sustainable brand`}
+                        loading="lazy"
+                        decoding="async"
+                        className="max-h-12 max-w-full object-contain"
+                      />
                     </div>
                   </div>
                   {/* Always-visible info box */}
                   <div className="mt-3 w-full p-4 rounded-lg shadow-sm" style={{ backgroundColor: BRAND_COLORS.bgWhite, border: `1px solid ${BRAND_COLORS.borderSubtle}` }}>
                     <div className="flex items-start gap-3 mb-2">
-                      <img src={brand.logo} alt={`${brand.name} - ${brand.category} sustainable brand`} className="w-6 h-6 object-contain" />
+                      <img
+                        src={brand.logo}
+                        alt={`${brand.name} - ${brand.category} sustainable brand`}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-6 h-6 object-contain"
+                      />
                       <div className="flex-1">
                         <h4 className="font-semibold text-sm" style={{ color: BRAND_COLORS.textPrimary }}>{renderBrandName(brand)}</h4>
                         <span className="text-xs" style={{ color: BRAND_COLORS.textMuted }}>{brand.category}</span>
@@ -500,12 +512,24 @@ export function PartnerShowcaseSection() {
               <div key={`${brand.id}-md-${idx}`}>{/* same card */}
                 <div className="cursor-pointer" onClick={() => { setSelectedBrand(selectedBrand === brand.id ? null : brand.id); setIsPaused(true); }}>
                   <div className="flex items-center justify-center p-6 h-24 rounded-lg" style={{ backgroundColor: BRAND_COLORS.bgWhite }}>
-                    <img src={brand.logo} alt={`${brand.name} - ${brand.category} sustainable brand`} className="max-h-12 max-w-full object-contain" />
+                    <img
+                      src={brand.logo}
+                      alt={`${brand.name} - ${brand.category} sustainable brand`}
+                      loading="lazy"
+                      decoding="async"
+                      className="max-h-12 max-w-full object-contain"
+                    />
                   </div>
                 </div>
                 <div className="mt-3 w-full p-4 rounded-lg shadow-sm" style={{ backgroundColor: BRAND_COLORS.bgWhite, border: `1px solid ${BRAND_COLORS.borderSubtle}` }}>
                   <div className="flex items-start gap-3 mb-2">
-                    <img src={brand.logo} alt={`${brand.name} - ${brand.category} sustainable brand`} className="w-6 h-6 object-contain" />
+                    <img
+                      src={brand.logo}
+                      alt={`${brand.name} - ${brand.category} sustainable brand`}
+                      loading="lazy"
+                      decoding="async"
+                      className="w-6 h-6 object-contain"
+                    />
                     <div className="flex-1">
                       <h4 className="font-semibold text-sm" style={{ color: BRAND_COLORS.textPrimary }}>{renderBrandName(brand)}</h4>
                       <span className="text-xs" style={{ color: BRAND_COLORS.textMuted }}>{brand.category}</span>
@@ -537,7 +561,13 @@ export function PartnerShowcaseSection() {
                 >
                   <div className="relative">
                     <div className="flex items-center justify-center p-6 h-24 rounded-lg" style={{ backgroundColor: BRAND_COLORS.bgWhite }}>
-                      <img src={brand.logo} alt={`${brand.name} - ${brand.category} sustainable brand`} className="max-h-12 max-w-full object-contain" />
+                      <img
+                        src={brand.logo}
+                        alt={`${brand.name} - ${brand.category} sustainable brand`}
+                        loading="lazy"
+                        decoding="async"
+                        className="max-h-12 max-w-full object-contain"
+                      />
                     </div>
                     {/* Info button - only way to open popup on mobile */}
                     <button
@@ -560,7 +590,13 @@ export function PartnerShowcaseSection() {
                   </div>
                   <div className="mt-3 w-full p-4 rounded-lg shadow-sm" style={{ backgroundColor: BRAND_COLORS.bgWhite, border: `1px solid ${BRAND_COLORS.borderSubtle}` }}>
                     <div className="flex items-start gap-3 mb-2">
-                      <img src={brand.logo} alt={`${brand.name} - ${brand.category} sustainable brand`} className="w-6 h-6 object-contain" />
+                      <img
+                        src={brand.logo}
+                        alt={`${brand.name} - ${brand.category} sustainable brand`}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-6 h-6 object-contain"
+                      />
                       <div className="flex-1">
                         <h4 className="font-semibold text-base" style={{ color: BRAND_COLORS.textPrimary }}>{renderBrandName(brand)}</h4>
                         <span className="text-xs" style={{ color: BRAND_COLORS.textMuted }}>{brand.category}</span>

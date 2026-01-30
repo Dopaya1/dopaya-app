@@ -84,6 +84,8 @@ export function InstitutionalProofSimple() {
                         <img 
                           src={logoUrl} 
                           alt={`${backer.name} logo`}
+                          loading="lazy"
+                          decoding="async"
                           className="max-h-16 max-w-full object-contain transition-all duration-300"
                           onError={(e) => {
                             e.currentTarget.style.display = 'none';
@@ -136,6 +138,8 @@ export function InstitutionalProofSimple() {
                         <img 
                           src={logoUrl} 
                           alt={`${selectedBacker.name} logo`}
+                          loading="lazy"
+                          decoding="async"
                           className="w-full h-full object-contain"
                           onError={(e) => {
                             e.currentTarget.style.display = 'none';
@@ -202,6 +206,8 @@ export function InstitutionalProofSimple() {
                               <img 
                                 src={projectImage} 
                                 alt={project.title || 'Project'}
+                                loading="lazy"
+                                decoding="async"
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
                                   e.currentTarget.style.display = 'none';
