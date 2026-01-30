@@ -221,7 +221,14 @@ export default function HomePage() {
                 <div className="absolute left-2 top-6">
                   {bubbleProjects[0] && (
                     <div className="relative group cursor-pointer">
-                      <img src={getProjectImageUrl(bubbleProjects[0]) || ''} alt={`${bubbleProjects[0].title} - ${bubbleProjects[0].category} social enterprise`} className="w-32 h-32 rounded-full object-cover ring-4 ring-orange-100 transition-transform duration-300 group-hover:scale-110" />
+                      <img 
+                        src={getProjectImageUrl(bubbleProjects[0]) || ''} 
+                        alt={`${bubbleProjects[0].title} - ${bubbleProjects[0].category} social enterprise`} 
+                        width="128" 
+                        height="128"
+                        fetchPriority="high"
+                        className="w-32 h-32 rounded-full object-cover ring-4 ring-orange-100 transition-transform duration-300 group-hover:scale-110" 
+                      />
                       <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white text-gray-800 px-2 py-0.5 rounded border border-gray-200 whitespace-nowrap">
                         {t("home.impactLabel")} {bubbleProjects[0].category || 'Impact'}
                       </span>
@@ -231,7 +238,13 @@ export default function HomePage() {
                 <div className="absolute left-32 top-40">
                   {bubbleProjects[1] && (
                     <div className="relative group cursor-pointer">
-                      <img src={getProjectImageUrl(bubbleProjects[1]) || ''} alt={`${bubbleProjects[1].title} - ${bubbleProjects[1].category} social enterprise`} className="w-28 h-28 rounded-full object-cover ring-4 ring-orange-100 transition-transform duration-300 group-hover:scale-110" />
+                      <img 
+                        src={getProjectImageUrl(bubbleProjects[1]) || ''} 
+                        alt={`${bubbleProjects[1].title} - ${bubbleProjects[1].category} social enterprise`} 
+                        width="112" 
+                        height="112"
+                        className="w-28 h-28 rounded-full object-cover ring-4 ring-orange-100 transition-transform duration-300 group-hover:scale-110" 
+                      />
                       <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white text-gray-800 px-2 py-0.5 rounded border border-gray-200 whitespace-nowrap">
                         {t("home.impactLabel")} {bubbleProjects[1].category || 'Impact'}
                       </span>
@@ -241,7 +254,13 @@ export default function HomePage() {
                 <div className="absolute left-0 bottom-4">
                   {bubbleProjects[2] && (
                     <div className="relative group cursor-pointer">
-                      <img src={getProjectImageUrl(bubbleProjects[2]) || ''} alt={`${bubbleProjects[2].title} - ${bubbleProjects[2].category} social enterprise`} className="w-32 h-32 rounded-full object-cover ring-4 ring-orange-100 transition-transform duration-300 group-hover:scale-110" />
+                      <img 
+                        src={getProjectImageUrl(bubbleProjects[2]) || ''} 
+                        alt={`${bubbleProjects[2].title} - ${bubbleProjects[2].category} social enterprise`} 
+                        width="128" 
+                        height="128"
+                        className="w-32 h-32 rounded-full object-cover ring-4 ring-orange-100 transition-transform duration-300 group-hover:scale-110" 
+                      />
                       <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white text-gray-800 px-2 py-0.5 rounded border border-gray-200 whitespace-nowrap">
                         {t("home.impactLabel")} {bubbleProjects[2].category || 'Impact'}
                       </span>
@@ -281,7 +300,13 @@ export default function HomePage() {
                 <div className="absolute right-2 top-8">
                   {bubbleRewards[0] && (
                     <div className="relative group cursor-pointer">
-                      <img src={bubbleRewards[0].imageUrl || ''} alt={`${getRewardTitle(bubbleRewards[0], language)} - ${bubbleRewards[0].category} reward`} className="w-32 h-32 rounded-full object-cover ring-4 ring-orange-100 transition-transform duration-300 group-hover:scale-110" />
+                      <img 
+                        src={bubbleRewards[0].imageUrl || ''} 
+                        alt={`${getRewardTitle(bubbleRewards[0], language)} - ${bubbleRewards[0].category} reward`} 
+                        width="128" 
+                        height="128"
+                        className="w-32 h-32 rounded-full object-cover ring-4 ring-orange-100 transition-transform duration-300 group-hover:scale-110" 
+                      />
                       <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white px-2 py-0.5 rounded border border-gray-200 text-gray-800 whitespace-nowrap">
                         {t("home.rewardLabel")} {bubbleRewards[0].category || 'Reward'}
                       </span>
@@ -291,7 +316,13 @@ export default function HomePage() {
                 <div className="absolute right-32 top-40">
                   {bubbleRewards[1] && (
                     <div className="relative group cursor-pointer">
-                      <img src={bubbleRewards[1].imageUrl || ''} alt={`${getRewardTitle(bubbleRewards[1], language)} - ${bubbleRewards[1].category} reward`} className="w-28 h-28 rounded-full object-cover ring-4 ring-orange-100 transition-transform duration-300 group-hover:scale-110" />
+                      <img 
+                        src={bubbleRewards[1].imageUrl || ''} 
+                        alt={`${getRewardTitle(bubbleRewards[1], language)} - ${bubbleRewards[1].category} reward`} 
+                        width="112" 
+                        height="112"
+                        className="w-28 h-28 rounded-full object-cover ring-4 ring-orange-100 transition-transform duration-300 group-hover:scale-110" 
+                      />
                       <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white px-2 py-0.5 rounded border border-gray-200 text-gray-800 whitespace-nowrap">
                         {t("home.rewardLabel")} {bubbleRewards[1].category || 'Reward'}
                       </span>
@@ -301,7 +332,13 @@ export default function HomePage() {
                 <div className="absolute right-0 bottom-4">
                   {bubbleRewards[2] && (
                     <div className="relative group cursor-pointer">
-                      <img src={bubbleRewards[2].imageUrl || ''} alt={`${getRewardTitle(bubbleRewards[2], language)} - ${bubbleRewards[2].category} reward`} className="w-32 h-32 rounded-full object-cover ring-4 ring-orange-100 transition-transform duration-300 group-hover:scale-110" />
+                      <img 
+                        src={bubbleRewards[2].imageUrl || ''} 
+                        alt={`${getRewardTitle(bubbleRewards[2], language)} - ${bubbleRewards[2].category} reward`} 
+                        width="128" 
+                        height="128"
+                        className="w-32 h-32 rounded-full object-cover ring-4 ring-orange-100 transition-transform duration-300 group-hover:scale-110" 
+                      />
                       <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white px-2 py-0.5 rounded border border-gray-200 text-gray-800 whitespace-nowrap">
                         {t("home.rewardLabel")} {bubbleRewards[2].category || 'Reward'}
                       </span>
@@ -420,6 +457,9 @@ export default function HomePage() {
                         <img 
                           src={getProjectImageUrl(bubbleProjects[0]) || ''} 
                           alt={bubbleProjects[0].title} 
+                          width="112" 
+                          height="112"
+                          fetchPriority="high"
                           className="w-28 h-28 rounded-full object-cover ring-2 ring-orange-100 transition-transform duration-300 group-active:scale-110" 
                         />
                         <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white text-gray-800 px-2 py-0.5 rounded border border-gray-200 max-w-[140px] whitespace-nowrap overflow-hidden text-ellipsis text-center">
@@ -434,6 +474,8 @@ export default function HomePage() {
                         <img 
                           src={getProjectImageUrl(bubbleProjects[1]) || ''} 
                           alt={bubbleProjects[1].title} 
+                          width="96" 
+                          height="96"
                           className="w-24 h-24 rounded-full object-cover ring-2 ring-orange-100 transition-transform duration-300 group-active:scale-110" 
                         />
                         <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white text-gray-800 px-2 py-0.5 rounded border border-gray-200 max-w-[140px] whitespace-nowrap overflow-hidden text-ellipsis text-center">
@@ -448,6 +490,8 @@ export default function HomePage() {
                         <img 
                           src={getProjectImageUrl(bubbleProjects[2]) || ''} 
                           alt={bubbleProjects[2].title} 
+                          width="112" 
+                          height="112"
                           className="w-28 h-28 rounded-full object-cover ring-2 ring-orange-100 transition-transform duration-300 group-active:scale-110" 
                         />
                         <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white text-gray-800 px-2 py-0.5 rounded border border-gray-200 max-w-[140px] whitespace-nowrap overflow-hidden text-ellipsis text-center">
@@ -466,6 +510,8 @@ export default function HomePage() {
                         <img 
                           src={bubbleRewards[0].imageUrl || ''} 
                           alt={getRewardTitle(bubbleRewards[0], language)} 
+                          width="112" 
+                          height="112"
                           className="w-28 h-28 rounded-full object-cover ring-2 ring-orange-100 transition-transform duration-300 group-active:scale-110" 
                         />
                         <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white px-2 py-0.5 rounded border border-gray-200 text-gray-800 max-w-[140px] whitespace-nowrap overflow-hidden text-ellipsis text-center">
@@ -480,6 +526,8 @@ export default function HomePage() {
                         <img 
                           src={bubbleRewards[1].imageUrl || ''} 
                           alt={getRewardTitle(bubbleRewards[1], language)} 
+                          width="96" 
+                          height="96"
                           className="w-24 h-24 rounded-full object-cover ring-2 ring-orange-100 transition-transform duration-300 group-active:scale-110" 
                         />
                         <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white px-2 py-0.5 rounded border border-gray-200 text-gray-800 max-w-[140px] whitespace-nowrap overflow-hidden text-ellipsis text-center">
@@ -494,6 +542,8 @@ export default function HomePage() {
                         <img 
                           src={bubbleRewards[2].imageUrl || ''} 
                           alt={getRewardTitle(bubbleRewards[2], language)} 
+                          width="112" 
+                          height="112"
                           className="w-28 h-28 rounded-full object-cover ring-2 ring-orange-100 transition-transform duration-300 group-active:scale-110" 
                         />
                         <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white px-2 py-0.5 rounded border border-gray-200 text-gray-800 max-w-[140px] whitespace-nowrap overflow-hidden text-ellipsis text-center">

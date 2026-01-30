@@ -1,30 +1,33 @@
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
-import HomePage from "@/pages/home-page";
-import ProjectsPage from "@/pages/projects-page";
-import ProjectDetailPage from "@/pages/project-detail-page";
-import ProjectDetailPageV3 from "@/pages/project-detail-page-v3";
-import DashboardPage from "@/pages/dashboard-page";
-import DashboardV2 from "@/pages/dashboard-v2";
-import ContactPage from "@/pages/contact-page";
-import AboutPage from "@/pages/about-page";
-import RewardsPage from "@/pages/rewards-page";
-import RewardsPageV2 from "@/pages/rewards-page-v2";
-import ThankYouPage from "@/pages/thank-you-page";
-import BrandsPageV2 from "@/pages/brands-page-v2";
-import SocialEnterprisesPage from "@/pages/social-enterprises-page";
-import FAQPage from "@/pages/faq-page";
-import PrivacyPolicy from "@/pages/privacy-policy";
-import CookiePolicy from "@/pages/cookie-policy";
-import TermsAndConditions from "@/pages/terms";
-import LegalNotice from "@/pages/legal-notice";
-import EligibilityGuidelines from "@/pages/eligibility-guidelines";
-import AuthCallback from "@/pages/auth-callback";
-import ResetPasswordPage from "@/pages/reset-password";
-import PerformanceTestPage from "@/pages/performance-test";
-import AnalyticsTestPage from "@/pages/analytics-test";
-import SupportPage from "@/pages/support-page";
+import { lazy, Suspense, useState, useEffect } from "react";
+
+// Lazy-loaded pages for route-based code splitting
+const HomePage = lazy(() => import("@/pages/home-page"));
+const ProjectsPage = lazy(() => import("@/pages/projects-page"));
+const ProjectDetailPage = lazy(() => import("@/pages/project-detail-page"));
+const ProjectDetailPageV3 = lazy(() => import("@/pages/project-detail-page-v3"));
+const DashboardPage = lazy(() => import("@/pages/dashboard-page"));
+const DashboardV2 = lazy(() => import("@/pages/dashboard-v2"));
+const ContactPage = lazy(() => import("@/pages/contact-page"));
+const AboutPage = lazy(() => import("@/pages/about-page"));
+const RewardsPage = lazy(() => import("@/pages/rewards-page"));
+const RewardsPageV2 = lazy(() => import("@/pages/rewards-page-v2"));
+const ThankYouPage = lazy(() => import("@/pages/thank-you-page"));
+const BrandsPageV2 = lazy(() => import("@/pages/brands-page-v2"));
+const SocialEnterprisesPage = lazy(() => import("@/pages/social-enterprises-page"));
+const FAQPage = lazy(() => import("@/pages/faq-page"));
+const PrivacyPolicy = lazy(() => import("@/pages/privacy-policy"));
+const CookiePolicy = lazy(() => import("@/pages/cookie-policy"));
+const TermsAndConditions = lazy(() => import("@/pages/terms"));
+const LegalNotice = lazy(() => import("@/pages/legal-notice"));
+const EligibilityGuidelines = lazy(() => import("@/pages/eligibility-guidelines"));
+const AuthCallback = lazy(() => import("@/pages/auth-callback"));
+const ResetPasswordPage = lazy(() => import("@/pages/reset-password"));
+const PerformanceTestPage = lazy(() => import("@/pages/performance-test"));
+const AnalyticsTestPage = lazy(() => import("@/pages/analytics-test"));
+const SupportPage = lazy(() => import("@/pages/support-page"));
 
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
@@ -32,7 +35,6 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { AuthRedirect } from "@/components/auth/auth-redirect";
 import { useScrollToTop } from "@/hooks/use-scroll-to-top";
-import { useState, useEffect } from "react";
 import { AuthModal } from "@/components/auth/auth-modal";
 import { trackPageView } from "@/lib/simple-analytics";
 import { I18nProvider } from "@/lib/i18n/i18n-context";
@@ -185,7 +187,9 @@ function App() {
                 <Navbar />
               </>
             )}
-            <Router onOpenAuthModal={openAuthModal} />
+            <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="text-gray-600">Loading...</div></div>}>
+              <Router onOpenAuthModal={openAuthModal} />
+            </Suspense>
             {!isSupportPage && <Footer />}
             <AuthModal 
               isOpen={showAuthModal} 
