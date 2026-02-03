@@ -43,3 +43,6 @@ git push origin main
 ---
 
 If `git push` asks for credentials, use your GitHub login or SSH key as you normally do. After a successful push, the latest commit and the `SEO/dopaya-astro-seo-pages` folder will appear on https://github.com/Dopaya1/dopaya-app.
+
+---
+*Last main-site deploy trigger: 2026-02-03*
