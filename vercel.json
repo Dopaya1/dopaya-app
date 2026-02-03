@@ -34,6 +34,7 @@
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/brands/:path+", "destination": "https://dopaya-astro-seo-pages.vercel.app/brands/:path*" },
     { "source": "/de/brands/:path+", "destination": "https://dopaya-astro-seo-pages.vercel.app/de/brands/:path*" },
+    { "source": "/_assets/:path*", "destination": "https://dopaya-astro-seo-pages.vercel.app/_assets/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
