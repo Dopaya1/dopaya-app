@@ -1,0 +1,81 @@
+{
+  "categories": [
+    {
+      "id": "clothing",
+      "name": "clothing",
+      "description": "Sustainable fashion and apparel with social impact",
+      "searchTerms": ["sustainable clothing", "ethical fashion", "eco apparel"],
+      "relatedBrands": ["NIKIN", "RRREVOLVE", "sustainable fashion brand", "Rania Kinge"]
+    },
+    {
+      "id": "shoes", 
+      "name": "shoes",
+      "description": "Sustainable footwear made from recycled and eco-friendly materials",
+      "searchTerms": ["sustainable shoes", "eco footwear", "ethical sneakers"],
+      "relatedBrands": ["RESLIDES", "RRREVOLVE"]
+    },
+    {
+      "id": "accessories",
+      "name": "accessories",
+      "description": "Sustainable accessories and lifestyle products",
+      "searchTerms": ["sustainable accessories", "eco bags", "ethical jewelry"],
+      "relatedBrands": ["NIKIN", "RRREVOLVE", "RESLIDES", "Rania Kinge"]
+    },
+    {
+      "id": "beauty",
+      "name": "beauty", 
+      "description": "Clean beauty products with environmental and social impact",
+      "searchTerms": ["clean beauty", "sustainable cosmetics", "ethical skincare"],
+      "relatedBrands": ["eco-beauty brand"]
+    },
+    {
+      "id": "home-goods",
+      "name": "home goods",
+      "description": "Sustainable home and lifestyle products",
+      "searchTerms": ["sustainable home", "eco home goods", "ethical lifestyle"],
+      "relatedBrands": ["Kompotoi", "ethical home goods brand", "Wuerfeli (by QE)", "Ecomade"]
+    },
+    {
+      "id": "food",
+      "name": "food",
+      "description": "Organic and sustainable food products supporting local communities",
+      "searchTerms": ["organic food", "sustainable food", "ethical eating"],
+      "relatedBrands": ["organic food brand"]
+    },
+    {
+      "id": "athletic-wear",
+      "name": "athletic wear",
+      "description": "Sustainable sportswear and performance clothing", 
+      "searchTerms": ["sustainable activewear", "eco sportswear", "ethical athletics"],
+      "relatedBrands": ["2nd Peak"]
+    },
+    {
+      "id": "handbags",
+      "name": "handbags",
+      "description": "Sustainable bags and accessories made from eco-friendly materials",
+      "searchTerms": ["sustainable bags", "eco handbags", "ethical accessories"],
+      "relatedBrands": ["RRREVOLVE"]
+    },
+    {
+      "id": "outdoor-gear", 
+      "name": "outdoor gear",
+      "description": "Sustainable outdoor equipment and adventure gear",
+      "searchTerms": ["sustainable outdoor gear", "eco camping", "ethical adventure"],
+      "relatedBrands": ["NIKIN", "2nd Peak"]
+    },
+    {
+      "id": "skincare",
+      "name": "skincare", 
+      "description": "Clean skincare products with natural and sustainable ingredients",
+      "searchTerms": ["clean skincare", "sustainable beauty", "natural skincare"],
+      "relatedBrands": ["eco-beauty brand"]
+    },
+    {
+      "id": "lifestyle-products",
+      "name": "lifestyle products",
+      "description": "Sustainable lifestyle and everyday products",
+      "searchTerms": ["sustainable living", "eco lifestyle", "conscious consumption"],
+      "relatedBrands": ["Kompotoi", "ethical home goods brand", "Wuerfeli (by QE)", "Ecomade"]
+    }
+  ]
+}

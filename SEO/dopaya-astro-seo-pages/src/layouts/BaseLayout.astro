@@ -1,0 +1,259 @@
+---
+import { t, getAlternateLocaleUrl } from '../lib/i18n.ts';
+import type { Locale } from '../lib/translations.ts';
+
+export interface Props {
+  title: string;
+  description: string;
+  keywords?: string;
+  ogImage?: string;
+  canonicalUrl: string;
+  locale?: Locale;
+}
+
+const { title, description, keywords, ogImage = '/og-image.png', canonicalUrl, locale: localeProp } = Astro.props;
+const locale: Locale = localeProp ?? 'en';
+
+// Derive current path from canonical URL for language switcher and hreflang
+const pathFromCanonical = canonicalUrl.replace(/^https?:\/\/[^/]+/, '') || '/';
+const pathWithoutLocale = pathFromCanonical.startsWith('/de') ? pathFromCanonical.slice(3) || '/' : pathFromCanonical;
+const baseUrl = 'https://dopaya.com';
+const enHreflangUrl = pathWithoutLocale === '/' ? baseUrl : `${baseUrl}${pathWithoutLocale}`;
+const deHreflangUrl = pathWithoutLocale === '/' ? `${baseUrl}/de` : `${baseUrl}/de${pathWithoutLocale}`;
+const alternateUrl = getAlternateLocaleUrl(pathFromCanonical, locale);
+
+const mainSiteBase = locale === 'de' ? 'https://dopaya.com/de' : 'https://dopaya.com';
+---
+
+<html lang={locale === 'de' ? 'de' : 'en'}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content={description} />
+    <meta name="keywords" content={keywords} />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href={canonicalUrl} />
+    <!-- hreflang for en/de -->
+    <link rel="alternate" hreflang="en" href={enHreflangUrl} />
+    <link rel="alternate" hreflang="de" href={deHreflangUrl} />
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Dopaya" />
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  </head>
+  
+  <body class="min-h-screen bg-white">
+    <!-- Navigation -->
+    <nav class="sticky top-0 z-50 bg-white shadow-sm">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+          <div class="flex items-center">
+            <a href={mainSiteBase} class="flex-shrink-0 flex items-center">
+              <img src="/dopaya-logo.png" alt="Dopaya" class="h-6 w-auto" />
+            </a>
+          </div>
+          
+          <!-- Desktop Navigation -->
+          <div class="hidden md:flex items-center justify-center flex-1">
+            <div class="flex space-x-6">
+              <a href={`${mainSiteBase}/projects`} class="px-3 py-2 text-sm font-medium text-brand-text hover:text-brand-orange">{t(locale, 'nav.socialEnterprises')}</a>
+              <a href={`${mainSiteBase}/about`} class="px-3 py-2 text-sm font-medium text-brand-text hover:text-brand-orange">{t(locale, 'nav.aboutUs')}</a>
+              <a href={`${mainSiteBase}/contact`} class="px-3 py-2 text-sm font-medium text-brand-text hover:text-brand-orange">{t(locale, 'nav.contact')}</a>
+            </div>
+          </div>
+          
+          <div class="hidden md:flex items-center space-x-3">
+            <a href={mainSiteBase} class="text-brand-text hover:text-brand-orange px-4 py-2 text-sm font-medium">
+              {t(locale, 'nav.login')}
+            </a>
+            <span class="flex items-center gap-1 text-sm">
+              {locale === 'de' ? (
+                <>DE | <a href={alternateUrl} class="text-brand-text hover:text-brand-orange font-medium">EN</a></>
+              ) : (
+                <><a href={alternateUrl} class="text-brand-text hover:text-brand-orange font-medium">DE</a> | EN</>
+              )}
+            </span>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main>
+      <slot />
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full py-20 bg-gray-50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Newsletter Section (matches main dopaya.com footer) -->
+        <div class="px-6 py-8">
+          <div class="max-w-md mx-auto text-center">
+            <h3 class="text-xl font-bold mb-2 text-brand-navy font-heading">
+              {t(locale, 'footer.stayUpdated')}
+            </h3>
+            <p class="text-sm mb-4 text-brand-text-secondary">
+              {t(locale, 'footer.newsletterDescription')}
+            </p>
+            
+            <form id="newsletter-form" class="flex gap-2">
+              <input
+                type="email"
+                name="email"
+                id="newsletter-email"
+                placeholder={t(locale, 'footer.enterEmail')}
+                required
+                class="flex-1 px-4 py-2 rounded-lg border border-brand-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-orange"
+              />
+              <button
+                type="submit"
+                class="px-6 py-2 rounded-lg text-white text-sm font-medium hover:opacity-90 transition-opacity bg-brand-orange flex items-center gap-2"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                {t(locale, 'footer.subscribe')}
+              </button>
+            </form>
+            <p id="newsletter-success" class="text-sm mt-2 text-emerald-600 hidden">
+              {t(locale, 'footer.thankYouSubscribing')}
+            </p>
+          </div>
+        </div>
+
+        <!-- Main Footer -->
+        <div class="relative rounded-3xl px-6 py-12 flex flex-col md:flex-row justify-between items-center gap-8 bg-white border border-brand-border">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-8 px-2 md:px-8 flex-1">
+            
+            <!-- Brand Section -->
+            <div class="flex flex-col items-start gap-3">
+              <a href={mainSiteBase} class="flex flex-row gap-2 items-center justify-start">
+                <img src="/dopaya-logo.png" alt="Dopaya" class="h-6 w-auto" />
+              </a>
+              <p class="font-medium text-sm leading-relaxed text-brand-text-secondary">
+                {t(locale, 'footer.tagline')}
+              </p>
+            </div>
+
+            <!-- Community Section -->
+            <div class="flex flex-col gap-4">
+              <h4 class="uppercase font-semibold text-sm text-brand-text-muted">
+                {t(locale, 'footer.community')}
+              </h4>
+              <div class="flex flex-col gap-3 text-sm">
+                <a href={`${mainSiteBase}/about`} class="font-medium hover:underline transition-all text-brand-text-secondary">
+                  {t(locale, 'footer.aboutUs')}
+                </a>
+                <a href={`${mainSiteBase}/social-enterprises`} class="font-medium hover:underline transition-all text-brand-text-secondary">
+                  {t(locale, 'footer.socialEnterprisePartners')}
+                </a>
+                <a href={`${mainSiteBase}/contact`} class="font-medium hover:underline transition-all text-brand-text-secondary">
+                  {t(locale, 'footer.contactUs')}
+                </a>
+              </div>
+            </div>
+
+            <!-- Impact Section -->
+            <div class="flex flex-col gap-4">
+              <h4 class="uppercase font-semibold text-sm text-brand-text-muted">
+                {t(locale, 'footer.createImpact')}
+              </h4>
+              <div class="flex flex-col gap-3 text-sm">
+                <a href={`${mainSiteBase}/projects`} class="font-medium hover:underline transition-all text-brand-text-secondary">
+                  {t(locale, 'footer.socialEnterprises')}
+                </a>
+                <a href={`${mainSiteBase}/brands`} class="font-medium hover:underline transition-all text-brand-text-secondary">
+                  {t(locale, 'footer.brandPartners')}
+                </a>
+              </div>
+            </div>
+
+            <!-- Legal Section -->
+            <div class="flex flex-col gap-4">
+              <h4 class="uppercase font-semibold text-sm text-brand-text-muted">
+                {t(locale, 'footer.legal')}
+              </h4>
+              <div class="flex flex-col gap-3 text-sm">
+                <a href={`${mainSiteBase}/privacy`} class="font-medium hover:underline transition-all text-brand-text-secondary">
+                  {t(locale, 'footer.privacyPolicy')}
+                </a>
+                <a href={`${mainSiteBase}/terms`} class="font-medium hover:underline transition-all text-brand-text-secondary">
+                  {t(locale, 'footer.termsAndConditions')}
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Bottom Copyright Section -->
+        <div class="mt-6 px-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-sm">
+          <div class="flex flex-col sm:flex-row gap-2 sm:gap-6 items-start sm:items-center">
+            <p class="whitespace-nowrap text-brand-text-muted">
+              ©2025 Dopaya. {t(locale, 'footer.copyright')}
+            </p>
+            <div class="flex flex-row gap-6">
+              <span class="text-brand-text-muted">
+                {t(locale, 'footer.madeWithLove')}
+              </span>
+            </div>
+          </div>
+
+          <div class="flex gap-6 items-center text-sm">
+            <span class="text-brand-text-muted">
+              {t(locale, 'footer.supportingChange')}
+            </span>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      document.getElementById('newsletter-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const emailInput = form.querySelector('#newsletter-email');
+        const successEl = document.getElementById('newsletter-success');
+        const email = emailInput?.value?.trim();
+        if (!email) return;
+        try {
+          const res = await fetch('https://dopaya.com/api/newsletter/subscribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, source: 'footer' }),
+          });
+          const data = await res.json();
+          if (res.ok || data) {
+            emailInput.value = '';
+            successEl?.classList.remove('hidden');
+            setTimeout(() => successEl?.classList.add('hidden'), 3000);
+          }
+        } catch {
+          emailInput.value = '';
+          successEl?.classList.remove('hidden');
+          setTimeout(() => successEl?.classList.add('hidden'), 3000);
+        }
+      });
+    </script>
+  </body>
+</html>

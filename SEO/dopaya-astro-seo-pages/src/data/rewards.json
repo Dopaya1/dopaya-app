@@ -1,0 +1,83 @@
+{
+  "rewardTypes": [
+    {
+      "id": "cashback",
+      "name": "cashback", 
+      "description": "Get money back on purchases while supporting social enterprises",
+      "benefits": ["Direct savings", "Impact tracking", "Verified causes"]
+    },
+    {
+      "id": "loyalty-points",
+      "name": "loyalty points",
+      "description": "Earn points redeemable for exclusive rewards and experiences",
+      "benefits": ["Exclusive access", "Premium rewards", "VIP experiences"] 
+    },
+    {
+      "id": "discount-codes",
+      "name": "discount codes",
+      "description": "Exclusive discounts for conscious consumers supporting impact",
+      "benefits": ["Special pricing", "Member-only deals", "Limited time offers"]
+    },
+    {
+      "id": "exclusive-access",
+      "name": "exclusive access", 
+      "description": "First access to new products and limited collections",
+      "benefits": ["Early releases", "Limited editions", "Insider previews"]
+    },
+    {
+      "id": "tree-planting-rewards",
+      "name": "tree-planting rewards",
+      "description": "Environmental impact rewards through verified tree planting",
+      "benefits": ["Environmental impact", "Carbon offset", "Forest restoration"]
+    },
+    {
+      "id": "impact-credits",
+      "name": "impact credits",
+      "description": "Verified credits for measurable social and environmental impact",
+      "benefits": ["Measurable impact", "Verified outcomes", "Progress tracking"]
+    },
+    {
+      "id": "gift-cards",
+      "name": "gift cards",
+      "description": "Reward cards for sustainable brands and social enterprises", 
+      "benefits": ["Flexible rewards", "Gift options", "Brand choice"]
+    },
+    {
+      "id": "early-access",
+      "name": "early access",
+      "description": "Priority access to sales, events, and new launches",
+      "benefits": ["Priority shopping", "Event invitations", "Insider access"]
+    }
+  ],
+  "rewardPhrases": [
+    {
+      "id": "donation-rewards",
+      "phrase": "donation rewards",
+      "description": "Earn rewards for supporting social enterprises through donations"
+    },
+    {
+      "id": "impact-points", 
+      "phrase": "impact points",
+      "description": "Points earned through verified social and environmental impact"
+    },
+    {
+      "id": "exclusive-supporter-perks",
+      "phrase": "exclusive supporter perks",
+      "description": "Special benefits for dedicated social enterprise supporters"
+    },
+    {
+      "id": "sustainable-shopping-rewards",
+      "phrase": "sustainable shopping rewards", 
+      "description": "Rewards for conscious consumption and sustainable purchasing"
+    }
+  ],
+  "benefitModifiers": [
+    "supporting social enterprises",
+    "with verified impact", 
+    "for conscious consumers",
+    "sustainable",
+    "ethical",
+    "transparent giving",
+    "values-aligned"
+  ]
+}

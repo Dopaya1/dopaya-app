@@ -1,0 +1,44 @@
+{
+  "sectors": [
+    {
+      "id": "clean-energy-environment",
+      "name": "Clean Energy & Environment",
+      "description": "Supporting renewable energy, climate action, and environmental protection",
+      "enterprises": ["MPower Ventures", "Mandulis Energy", "Panjurli Labs", "Dump In Bin"],
+      "impactMetrics": ["Trees planted", "CO2 reduced", "Clean energy generated", "Waste recycled"],
+      "icon": "🌱"
+    },
+    {
+      "id": "water-wash", 
+      "name": "Water & WASH",
+      "description": "Improving access to clean water, sanitation, and hygiene worldwide",
+      "enterprises": ["Openversum", "Kompotoi"],
+      "impactMetrics": ["People with clean water access", "Sanitation systems built", "Communities served"],
+      "icon": "💧"
+    },
+    {
+      "id": "education-india",
+      "name": "Education in India", 
+      "description": "Expanding educational opportunities and career development in India",
+      "enterprises": ["Ignis Careers"],
+      "impactMetrics": ["Students supported", "Skills training provided", "Career placements"],
+      "icon": "📚"
+    },
+    {
+      "id": "healthcare-vision",
+      "name": "Healthcare & Vision",
+      "description": "Improving healthcare access and vision care globally",
+      "enterprises": ["Vision Friend Sakib Gore"],
+      "impactMetrics": ["Patients treated", "Vision screenings", "Healthcare services provided"],
+      "icon": "👁️"
+    },
+    {
+      "id": "food-agriculture",
+      "name": "Food & Agriculture / Community Well-being",
+      "description": "Supporting sustainable food systems and community wellness",
+      "enterprises": ["Syangs project"],
+      "impactMetrics": ["Farmers supported", "Food security improved", "Communities empowered"],
+      "icon": "🌾"
+    }
+  ]
+}

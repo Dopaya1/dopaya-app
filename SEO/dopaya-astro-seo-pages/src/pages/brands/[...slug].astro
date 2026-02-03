@@ -1,0 +1,260 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Formula3Page from '../../components/programmatic/Formula3Page.astro';
+import BrandFormula12Content from '../../components/BrandFormula12Content.astro';
+import { getProjects, getBrands, getRewards } from '../../lib/supabase.ts';
+import { generateFormula3CombinationsAsync } from '../../lib/formula3.ts';
+import { t } from '../../lib/i18n.ts';
+
+type PageType = 'formula3' | 'formula12';
+
+interface RelatedCombo {
+  slug: string;
+  label: string;
+}
+
+export async function getStaticPaths() {
+  const [combinations, projects, brands, rewards] = await Promise.all([
+    generateFormula3CombinationsAsync(),
+    getProjects(),
+    getBrands(),
+    getRewards(),
+  ] as const);
+
+  // Formula 3 paths (no "formula3" in URL)
+  const filteredProjects = projects.filter((project: any) => {
+    const isUniversalFund = project.isUniversalFund === true || project.is_universal_fund === true;
+    return !isUniversalFund;
+  });
+  const featuredProjects = filteredProjects.filter((project: any) => project.featured);
+  const impactPool = featuredProjects.length > 0 ? featuredProjects : filteredProjects;
+  const norm = (s: string) => (s || '').toLowerCase().trim().replace(/\.(ch|com|org|net)$/i, '');
+  const formula3Slugs = new Set<string>();
+
+  const formula3Paths = combinations.map((combo) => {
+    formula3Slugs.add(combo.slug);
+    const brandFromDb = brands.find((b: any) => norm(b.name) === norm(combo.brand.name)) ?? null;
+    const impactProjects = impactPool.slice(0, 6);
+    const brandRewards = brandFromDb
+      ? rewards.filter((reward: any) => reward.brand_id === brandFromDb.id)
+      : [];
+    const relatedCombos: RelatedCombo[] = [];
+    const sameBrandDiffCategory = combinations.find(
+      (other) => other.brand.id === combo.brand.id && other.category.id !== combo.category.id && other.slug !== combo.slug
+    );
+    if (sameBrandDiffCategory) relatedCombos.push({ slug: sameBrandDiffCategory.slug, label: `${sameBrandDiffCategory.brand.name} ${sameBrandDiffCategory.category.name} ${sameBrandDiffCategory.rewardType.name}` });
+    const sameCategoryDiffBrand = combinations.find(
+      (other) => other.category.id === combo.category.id && other.brand.id !== combo.brand.id && other.slug !== combo.slug
+    );
+    if (sameCategoryDiffBrand) relatedCombos.push({ slug: sameCategoryDiffBrand.slug, label: `${sameCategoryDiffBrand.brand.name} ${sameCategoryDiffBrand.category.name} ${sameCategoryDiffBrand.rewardType.name}` });
+    const sameContextDiffReward = combinations.find(
+      (other) => other.brand.id === combo.brand.id && other.category.id === combo.category.id && other.rewardType.id !== combo.rewardType.id && other.slug !== combo.slug
+    );
+    if (sameContextDiffReward) relatedCombos.push({ slug: sameContextDiffReward.slug, label: `${sameContextDiffReward.brand.name} ${sameContextDiffReward.category.name} ${sameContextDiffReward.rewardType.name}` });
+    const sameBrandDiffBenefit = combinations.find(
+      (other) => other.brand.id === combo.brand.id && other.benefitModifier !== combo.benefitModifier && other.slug !== combo.slug && !relatedCombos.some((rc) => rc.slug === other.slug)
+    );
+    if (sameBrandDiffBenefit) relatedCombos.push({ slug: sameBrandDiffBenefit.slug, label: `${sameBrandDiffBenefit.brand.name} ${sameBrandDiffBenefit.category.name} ${sameBrandDiffBenefit.rewardType.name}` });
+
+    return {
+      params: { slug: combo.slug },
+      props: {
+        pageType: 'formula3' as PageType,
+        formula3: combo,
+        brand: brandFromDb,
+        impactProjects,
+        brandRewards,
+        relatedCombos,
+      },
+    };
+  });
+
+  // Formula 12 paths (exclude slugs that collide with formula3)
+  const projectsByCategory = projects.reduce((acc: Record<string, any[]>, project: any) => {
+    if (!acc[project.category]) acc[project.category] = [];
+    acc[project.category].push(project);
+    return acc;
+  }, {});
+
+  const formula12Paths: { params: { slug: string }; props: any }[] = [];
+  brands.forEach((brand: any) => {
+    Object.entries(projectsByCategory).forEach(([category, categoryProjects]) => {
+      const brandRewards = rewards.filter(
+        (reward: any) =>
+          reward.companyName?.toLowerCase().includes(brand.name.toLowerCase()) ||
+          reward.title?.toLowerCase().includes(brand.name.toLowerCase())
+      );
+      const rewardTypes = brandRewards.length > 0 ? brandRewards.slice(0, 3) : [
+        { title: 'Impact Points Rewards', category: 'points' },
+        { title: 'Exclusive Discounts', category: 'discounts' },
+        { title: 'Early Access', category: 'access' },
+      ];
+      rewardTypes.forEach((reward: any) => {
+        const slug = `${brand.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${category.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${(reward.title || reward).toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+        if (formula3Slugs.has(slug)) return;
+        const title = `Support ${category} Projects • Earn ${reward.title || reward} from ${brand.name}`;
+        formula12Paths.push({
+          params: { slug },
+          props: {
+            pageType: 'formula12' as PageType,
+            brand,
+            category,
+            categoryProjects: categoryProjects.slice(0, 3),
+            reward: typeof reward === 'object' ? reward : { title: reward, category: 'points' },
+            brandRewards,
+            title,
+            slug,
+          },
+        });
+      });
+    });
+  });
+
+  return [...formula3Paths, ...formula12Paths];
+}
+
+const locale = 'en' as const;
+const pageType = Astro.props.pageType as PageType;
+
+let pageTitle: string;
+let description: string;
+let keywords: string;
+let canonicalUrl: string;
+let formula3Schemas: { jsonLd: any; breadcrumbList: any; howToSchema: any; brandSchema: any; productSchema: any } | null = null;
+let webPageSchema: any = null;
+let formula12Props: any = null;
+
+if (pageType === 'formula3') {
+  const { formula3, brand, impactProjects, brandRewards, relatedCombos } = Astro.props;
+  const brandName = (brand && brand.name) || formula3.brand.name;
+  const productCategory = formula3.category.name;
+  const rewardTypeName = formula3.rewardType.name;
+  const benefitModifier = formula3.benefitModifier;
+  const brandDescription = (brand && (brand as any).description) || (formula3.brand as any).description || '';
+  pageTitle = `${brandName} ${productCategory} ${rewardTypeName} ${benefitModifier} | Dopaya`;
+  description = `Support independent social enterprises on Dopaya, earn Impact Points, and redeem ${rewardTypeName} at ${brandName} for ${productCategory} — ${benefitModifier}.`;
+  keywords = `${brandName}, ${productCategory}, ${rewardTypeName}, ${benefitModifier}, social enterprises, impact points, sustainable rewards, conscious consumers`;
+  canonicalUrl = `https://dopaya.com/brands/${formula3.slug}`;
+
+  const faqEntities = [
+    { '@type': 'Question', name: `What is ${brandName} ${productCategory} ${rewardTypeName} ${benefitModifier}?`, acceptedAnswer: { '@type': 'Answer', text: `It's a way to support independent social enterprises on Dopaya, earn Impact Points ($10 donated = 100 Impact Points), and redeem ${rewardTypeName} at ${brandName} for ${productCategory} — designed for conscious consumers ${benefitModifier}.` } },
+    { '@type': 'Question', name: `How do Impact Points turn into ${brandName} ${productCategory} ${rewardTypeName}?`, acceptedAnswer: { '@type': 'Answer', text: `When you donate to verified social enterprises on Dopaya, you earn Impact Points ($10 = 100 points). You can then redeem these points for ${rewardTypeName} at ${brandName} on ${productCategory}, connecting your giving directly to meaningful rewards.` } },
+    { '@type': 'Question', name: `Are these ${brandName} projects or independent social enterprises?`, acceptedAnswer: { '@type': 'Answer', text: `The projects shown are independent social enterprises on Dopaya. ${brandName} is a sustainable reward partner — your Impact Points from supporting these enterprises can be redeemed for ${productCategory} rewards at ${brandName}.` } },
+    { '@type': 'Question', name: `How much do I need to donate to get ${brandName} ${productCategory} rewards?`, acceptedAnswer: { '@type': 'Answer', text: `Rewards start from as low as $25 (250 Impact Points). $50 gives you 500 points, $100 gives you 1000 points, unlocking progressively better ${rewardTypeName} at ${brandName} on ${productCategory}.` } },
+    { '@type': 'Question', name: `Is ${brandName} transparent about impact tracking?`, acceptedAnswer: { '@type': 'Answer', text: `Yes. Dopaya provides full transparency: 100% of your donation goes to the social enterprise you choose, and you can track every dollar's impact on your dashboard. ${brandName} is a verified sustainable brand partner offering rewards for your impact.` } },
+    { '@type': 'Question', name: `Can I use ${brandName} ${productCategory} ${rewardTypeName} if I'm ${benefitModifier}?`, acceptedAnswer: { '@type': 'Answer', text: `Absolutely. This combination is specifically designed for people ${benefitModifier}. By supporting verified social enterprises and earning ${rewardTypeName} at ${brandName}, you align your giving with your values.` } },
+    { '@type': 'Question', name: 'How do I sign up for Dopaya?', acceptedAnswer: { '@type': 'Answer', text: `Visit dopaya.com and click Register. Create a free account, then choose a social enterprise to support. Your donations earn Impact Points instantly, which you can redeem for ${rewardTypeName} at ${brandName} and other sustainable brands.` } },
+    { '@type': 'Question', name: 'Is Dopaya free to use?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Creating an account and using Dopaya is free. You only pay when you choose to donate to a social enterprise — and 100% of that donation goes to the cause. Dopaya earns through brand partnerships, not from your giving.' } },
+  ];
+  const brandWebsite = (brand && ((brand as any).website_url ?? (brand as any).websiteUrl ?? (brand as any).website)) || formula3.brand.website || null;
+  const breadcrumbList = {
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Dopaya', item: 'https://dopaya.com' },
+      { '@type': 'ListItem', position: 2, name: 'Brands', item: 'https://dopaya.com/brands' },
+      { '@type': 'ListItem', position: 3, name: `${brandName} ${productCategory} ${rewardTypeName}`, item: canonicalUrl },
+    ],
+  };
+  const howToSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    name: `How to earn ${rewardTypeName} at ${brandName} for ${productCategory} on Dopaya`,
+    description: `Support social enterprises on Dopaya, earn Impact Points ($10 = 100 points), and redeem ${rewardTypeName} at ${brandName} for ${productCategory}.`,
+    step: [
+      { '@type': 'HowToStep', name: 'Support', text: 'Donate any amount to independent social enterprises on Dopaya.' },
+      { '@type': 'HowToStep', name: 'Earn Points', text: 'Receive 100 Impact Points for every $10 donated — credited instantly.' },
+      { '@type': 'HowToStep', name: 'Redeem', text: `Exchange your Impact Points for ${rewardTypeName} at ${brandName} for ${productCategory}.` },
+    ],
+  };
+  const brandSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Brand',
+    name: brandName,
+    description: brandDescription || formula3.brand.description,
+    url: brandWebsite || 'https://dopaya.com/brands',
+  };
+  const productSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: `${brandName} ${productCategory} ${rewardTypeName}`,
+    description: `Support social enterprises on Dopaya and redeem ${rewardTypeName} at ${brandName} for ${productCategory}.`,
+    brand: { '@type': 'Brand', name: brandName },
+    category: productCategory,
+  };
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: pageTitle,
+    description,
+    url: canonicalUrl,
+    isPartOf: { '@type': 'WebSite', '@id': 'https://dopaya.com#website', name: 'Dopaya' },
+    about: { '@type': 'Thing', name: `${brandName} ${productCategory} ${rewardTypeName} ${benefitModifier}`, description: `Support social enterprises on Dopaya, earn Impact Points, redeem ${rewardTypeName} at ${brandName} for ${productCategory}.` },
+    mainEntity: { '@type': 'FAQPage', mainEntity: faqEntities },
+    mentions: impactProjects.slice(0, 6).map((project: any) => ({ '@type': 'Organization', name: project.title, description: project.summary || project.description, url: `https://dopaya.com/project/${project.slug}` })),
+  };
+  formula3Schemas = { jsonLd, breadcrumbList, howToSchema, brandSchema, productSchema };
+} else {
+  const { brand, category, categoryProjects, reward, brandRewards, title, slug } = Astro.props;
+  formula12Props = { brand, category, categoryProjects, reward, brandRewards, title, slug };
+  pageTitle = `Support ${category} Projects • Earn ${reward.title} from ${brand.name} | Dopaya`;
+  description = `Support verified ${category} social enterprises and earn Impact Points. Redeem points for exclusive ${reward.title} from ${brand.name}. Track real impact with ${categoryProjects.length}+ verified organizations.`;
+  keywords = `${brand.name}, ${category}, ${reward.title}, social enterprises, impact points, verified projects, sustainable rewards, conscious giving`;
+  canonicalUrl = `https://dopaya.com/brands/${slug}`;
+  const totalImpact = categoryProjects.reduce(
+    (acc: any, project: any) => ({
+      people: acc.people + (project.donors || 0),
+      raised: acc.raised + (project.raised || 0),
+      projects: acc.projects + 1,
+      countries: new Set([...Array.from(acc.countries), project.country]),
+    }),
+    { people: 0, raised: 0, projects: 0, countries: new Set<string>() }
+  );
+  webPageSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: pageTitle,
+    description,
+    url: canonicalUrl,
+    isPartOf: { '@type': 'WebSite', '@id': 'https://dopaya.com#website' },
+    about: { '@type': 'Thing', name: `${category} Social Enterprises and ${brand.name} Rewards` },
+    mentions: categoryProjects.map((project: any) => ({ '@type': 'Organization', name: project.title, description: project.summary || project.description, url: `https://dopaya.com/project/${project.slug}` })),
+  };
+}
+---
+
+{pageType === 'formula3' ? (
+  <BaseLayout title={pageTitle} description={description} keywords={keywords} canonicalUrl={canonicalUrl} locale={locale}>
+    <Formula3Page
+      locale="en"
+      formula3={Astro.props.formula3}
+      brand={Astro.props.brand}
+      impactProjects={Astro.props.impactProjects}
+      brandRewards={Astro.props.brandRewards}
+      relatedCombos={Astro.props.relatedCombos}
+    />
+  </BaseLayout>
+) : formula12Props ? (
+  <BaseLayout title={pageTitle} description={description} keywords={keywords} canonicalUrl={canonicalUrl} locale={locale}>
+    <BrandFormula12Content
+      brand={formula12Props.brand}
+      category={formula12Props.category}
+      categoryProjects={formula12Props.categoryProjects}
+      reward={formula12Props.reward}
+      brandRewards={formula12Props.brandRewards}
+      locale={locale}
+    />
+  </BaseLayout>
+) : null}
+
+{pageType === 'formula3' && formula3Schemas && (
+  <>
+    <script type="application/ld+json" set:html={JSON.stringify(formula3Schemas.jsonLd)} />
+    <script type="application/ld+json" set:html={JSON.stringify({ '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: formula3Schemas.breadcrumbList.itemListElement })} />
+    <script type="application/ld+json" set:html={JSON.stringify(formula3Schemas.howToSchema)} />
+    <script type="application/ld+json" set:html={JSON.stringify(formula3Schemas.brandSchema)} />
+    <script type="application/ld+json" set:html={JSON.stringify(formula3Schemas.productSchema)} />
+  </>
+)}
+{pageType === 'formula12' && webPageSchema && (
+  <script type="application/ld+json" set:html={JSON.stringify(webPageSchema)} />
+)}

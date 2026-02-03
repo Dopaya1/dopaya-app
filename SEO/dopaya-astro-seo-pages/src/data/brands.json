@@ -1,0 +1,136 @@
+{
+  "brands": [
+    {
+      "id": "nikin",
+      "name": "NIKIN",
+      "description": "Swiss sustainable fashion brand creating environmental impact with every purchase",
+      "logo": "/logos/nikin-logo.png",
+      "website": "https://nikin.ch",
+      "country": "🇨🇭",
+      "searchVolume": 9900,
+      "categories": ["clothing", "accessories", "outdoor gear", "handbags"],
+      "sustainability": {
+        "treePlanting": true,
+        "carbonNeutral": true,
+        "fairTrade": true
+      }
+    },
+    {
+      "id": "rrrevolve",
+      "name": "RRREVOLVE",
+      "description": "Swiss circular fashion brand revolutionizing sustainable style",
+      "logo": "/logos/rrrevolve-logo.png",
+      "website": "https://rrrevolve.ch", 
+      "country": "🇨🇭",
+      "searchVolume": 9900,
+      "categories": ["clothing", "accessories", "shoes"],
+      "sustainability": {
+        "circular": true,
+        "organic": true,
+        "ethical": true
+      }
+    },
+    {
+      "id": "2nd-peak",
+      "name": "2nd Peak",
+      "description": "Swiss outdoor brand combining performance with environmental responsibility",
+      "logo": "/logos/2nd-peak-logo.png",
+      "website": "https://2ndpeak.ch",
+      "country": "🇨🇭", 
+      "searchVolume": 1300,
+      "categories": ["outdoor gear", "athletic wear", "accessories", "clothing"],
+      "sustainability": {
+        "recycled": true,
+        "durable": true,
+        "localProduction": true
+      }
+    },
+    {
+      "id": "kompotoi",
+      "name": "Kompotoi",
+      "description": "Swiss innovation in circular sanitation and waste management",
+      "logo": "/logos/kompotoi-logo.png",
+      "website": "https://kompotoi.ch",
+      "country": "🇨🇭",
+      "searchVolume": 1300,
+      "categories": ["home goods", "lifestyle products"],
+      "sustainability": {
+        "circular": true,
+        "waterSaving": true,
+        "innovation": true
+      }
+    },
+    {
+      "id": "reslides", 
+      "name": "RESLIDES",
+      "description": "Swiss sustainable footwear from recycled ocean plastic",
+      "logo": "/logos/reslides-logo.png",
+      "website": "https://reslides.ch",
+      "country": "🇨🇭",
+      "searchVolume": 140,
+      "categories": ["shoes", "accessories"],
+      "sustainability": {
+        "oceanPlastic": true,
+        "recycled": true,
+        "carbonneutral": true
+      }
+    },
+    {
+      "id": "sustainable-fashion-brand",
+      "name": "sustainable fashion brand",
+      "description": "Generic sustainable fashion brands supporting social enterprises",
+      "searchVolume": 22200,
+      "categories": ["clothing", "accessories", "shoes"]
+    },
+    {
+      "id": "eco-beauty-brand", 
+      "name": "eco-beauty brand",
+      "description": "Environmentally conscious beauty products with verified impact",
+      "searchVolume": 720,
+      "categories": ["beauty", "skincare"]
+    },
+    {
+      "id": "ethical-home-goods-brand",
+      "name": "ethical home goods brand", 
+      "description": "Fair-trade home and lifestyle products supporting social causes",
+      "searchVolume": 210,
+      "categories": ["home goods", "lifestyle products"]
+    },
+    {
+      "id": "rania-kinge",
+      "name": "Rania Kinge",
+      "description": "Handcrafted jewelry and apparel empowering women and preserving traditional crafts",
+      "website": "https://www.raniakinge.com",
+      "country": "🇨🇭",
+      "categories": ["clothing", "accessories"],
+      "sustainability": {
+        "fairTrade": true,
+        "ethical": true
+      }
+    },
+    {
+      "id": "wuerfeli",
+      "name": "Wuerfeli (by QE)",
+      "description": "Swiss-made indoor air quality device by QE for healthier living spaces",
+      "website": "https://wuerfeli.ch",
+      "country": "🇨🇭",
+      "categories": ["home goods", "lifestyle products"],
+      "sustainability": {
+        "localProduction": true,
+        "innovation": true
+      }
+    },
+    {
+      "id": "ecomade",
+      "name": "Ecomade",
+      "description": "Swiss sustainable mattresses with circular design and on-demand production",
+      "website": "https://www.ecomade.ch",
+      "country": "🇨🇭",
+      "categories": ["home goods", "lifestyle products"],
+      "sustainability": {
+        "recycled": true,
+        "localProduction": true
+      }
+    }
+  ]
+}

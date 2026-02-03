@@ -1,0 +1,14 @@
+{
+  "redirects": [
+    {
+      "source": "/brands/formula3/:path*",
+      "destination": "/brands/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/de/brands/formula3/:path*",
+      "destination": "/de/brands/:path*",
+      "permanent": true
+    }
+  ]
+}

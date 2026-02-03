@@ -32,6 +32,8 @@
     { "source": "/sitemap.xml", "destination": "/api/sitemap.xml" },
     { "source": "/api/stripe/webhook", "destination": "/api/stripe-webhook" },
     { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/brands/:path+", "destination": "https://dopaya-astro-seo-pages.vercel.app/brands/:path*" },
+    { "source": "/de/brands/:path+", "destination": "https://dopaya-astro-seo-pages.vercel.app/de/brands/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [

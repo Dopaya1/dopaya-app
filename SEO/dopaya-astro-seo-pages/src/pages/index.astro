@@ -1,0 +1,312 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import brandsJson from '../data/brands.json';
+import sectors from '../data/sectors.json';
+import { getBrands } from '../lib/supabase.ts';
+import { t } from '../lib/i18n.ts';
+
+const locale = 'en' as const;
+const title = "Brand Partners | Dopaya - Social Impact Platform";
+const description = "Discover sustainable brands partnering with Dopaya to support social enterprises. Earn rewards while creating positive impact through verified social causes.";
+const keywords = "sustainable brands, social enterprises, impact rewards, ethical shopping, conscious consumers, NIKIN, RRREVOLVE, RESLIDES";
+
+// Fetch brands from Supabase; only show active on homepage (formula3 pages need all brands for logo/description/rewards)
+const supabaseBrands = await getBrands();
+const EXCLUDE_AS_BRAND = ['kompotoi', 'eco-beauty-brand', 'sustainable-fashion-brand', 'ethical-home-goods-brand'];
+const supabaseFiltered = supabaseBrands.filter((s: any) => {
+  const name = (s.name || '').toLowerCase();
+  const status = (s.status || '').toLowerCase().trim();
+  return name !== 'kompotoi' && status === 'active';
+});
+
+const jsonBrands = brandsJson.brands.filter((b: any) => b.id && !EXCLUDE_AS_BRAND.includes(b.id));
+
+// Prefer Supabase (source of truth for logos and copy); use JSON only when Supabase is empty
+function getLogoUrl(sb: any, jsonBrand: any) {
+  const fromSupabase = sb && ((sb as any).logo_url || (sb as any).logoUrl);
+  const url = (fromSupabase && String(fromSupabase).trim()) || jsonBrand?.logo || null;
+  return url || null;
+}
+function getWebsite(sb: any, jsonBrand: any) {
+  return (sb && ((sb as any).website_url ?? (sb as any).websiteUrl ?? (sb as any).website)) || jsonBrand?.website || null;
+}
+function getDescription(sb: any, jsonBrand: any) {
+  const fromSupabase = (sb && (sb as any).description) && String((sb as any).description).trim();
+  return fromSupabase || (jsonBrand && jsonBrand.description) || '';
+}
+
+// Match Supabase brand name to JSON: exact match first, then one name contains the other (e.g. "Wuerfeli" ↔ "Wuerfeli (by QE)")
+function findJsonBrandByName(jsonBrands: any[], supabaseName: string) {
+  const n = (supabaseName || '').toLowerCase().trim();
+  return jsonBrands.find((j: any) => (j.name || '').toLowerCase().trim() === n)
+    || jsonBrands.find((j: any) => (j.name || '').toLowerCase().includes(n) || n.includes((j.name || '').toLowerCase()));
+}
+
+// Normalize brand name for deduplication: trim, lowercase, and strip domain suffixes so "Ecomade" and "Ecomade.ch" count as one
+function normName(name: string) {
+  let n = (name || '').toLowerCase().trim();
+  const suffix = n.match(/\.(ch|com|org|net)$/);
+  if (suffix) n = n.slice(0, -suffix[0].length);
+  return n;
+}
+
+// 1) Brands from Supabase – use Supabase for logo, description, website; enrich with JSON when Supabase is missing data. Deduplicate by normalized name so the same brand is not shown twice.
+const fromSupabaseRaw = supabaseFiltered.map((sb: any) => {
+  const name = (sb.name || '').trim();
+  const jsonMatch = findJsonBrandByName(jsonBrands, name);
+  return {
+    name,
+    country: (sb as any).country || (jsonMatch && jsonMatch.country) || '',
+    description: getDescription(sb, jsonMatch),
+    categories: (jsonMatch && jsonMatch.categories)?.length ? jsonMatch.categories : [],
+    logoUrl: getLogoUrl(sb, jsonMatch),
+    website: getWebsite(sb, jsonMatch),
+  };
+});
+// Deduplicate: keep first per normalized name (e.g. "Ecomade" and "Ecomade.ch" → one card, prefer name without domain suffix)
+const seenKeys = new Map<string, any>();
+for (const b of fromSupabaseRaw) {
+  const key = normName(b.name);
+  if (!seenKeys.has(key)) seenKeys.set(key, b);
+  else if (!b.name.includes('.') && seenKeys.get(key).name.includes('.')) {
+    seenKeys.set(key, b);
+  }
+}
+const fromSupabase = Array.from(seenKeys.values());
+
+// 2) Brands only in JSON (not in Supabase) – use same normalized name so we don't show e.g. Ecomade twice
+const namesFromSupabase = new Set(fromSupabase.map((b: any) => normName(b.name)));
+const jsonOnly = jsonBrands
+  .filter((j: any) => !namesFromSupabase.has(normName(j.name || '')))
+  .map((j: any) => ({
+    name: j.name,
+    country: j.country || '',
+    description: j.description || '',
+    categories: j.categories || [],
+    logoUrl: j.logo || null,
+    website: j.website || null,
+  }));
+
+const displayBrands = [...fromSupabase, ...jsonOnly];
+const mainSiteProjects = locale === 'de' ? 'https://dopaya.com/de/projects' : 'https://dopaya.com/projects';
+---
+
+<BaseLayout title={title} description={description} keywords={keywords} canonicalUrl="https://dopaya.com/" locale={locale}>
+  <!-- Hero Section -->
+  <section class="pt-14 md:pt-20 pb-16 md:pb-24 bg-brand-beige">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-4xl mx-auto">
+        <h1 class="text-3xl md:text-5xl font-bold text-brand-navy leading-normal mb-6 font-heading">
+          {t(locale, 'hero.indexTitleLine1')}<br />
+          <span class="text-brand-orange">{t(locale, 'hero.indexTitleLine2')}</span> {t(locale, 'hero.indexTitleLine2Suffix')}
+        </h1>
+        
+        <p class="text-xl text-brand-text-secondary mb-8 max-w-2xl mx-auto">
+          {t(locale, 'hero.indexSubtitle')}
+        </p>
+        
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <a href={mainSiteProjects} 
+             class="inline-flex items-center justify-center px-6 py-3 rounded-md bg-brand-orange text-white hover:opacity-90 font-medium text-sm">
+            {t(locale, 'hero.startSupporting')}
+          </a>
+          <a href={mainSiteProjects} 
+             class="inline-flex items-center justify-center px-6 py-3 rounded-md bg-white text-brand-navy hover:bg-gray-50 font-medium text-sm border border-brand-border">
+            {t(locale, 'hero.seeSocialEnterprises')}
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Featured Brands -->
+  <section class="py-16 md:py-24 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl md:text-4xl font-bold text-brand-navy mb-4 font-heading">
+          {t(locale, 'index.featuredBrands')}
+        </h2>
+        <p class="text-xl text-brand-text-secondary max-w-2xl mx-auto">
+          {t(locale, 'index.featuredBrandsSub')}
+        </p>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {displayBrands.map((brand: any) => (
+          <div class="bg-gray-50 p-8 rounded-2xl hover:shadow-lg transition-shadow">
+            <div class="flex justify-center mb-6 min-h-[4rem]" data-brand-initial={brand.name ? brand.name.charAt(0) : '?'}>
+              {brand.logoUrl ? (
+                <img
+                  src={brand.logoUrl}
+                  alt={`${brand.name} logo`}
+                  class="h-16 w-auto object-contain brand-logo-img"
+                />
+              ) : (
+                <div class="w-16 h-16 rounded-xl bg-brand-orange/10 flex items-center justify-center">
+                  <span class="text-2xl font-bold text-brand-orange">{brand.name ? brand.name.charAt(0) : '?'}</span>
+                </div>
+              )}
+            </div>
+            
+            <div class="text-center">
+              <h3 class="text-xl font-semibold text-brand-navy mb-2 font-heading">
+                {brand.name} {brand.country || ''}
+              </h3>
+              <p class="text-brand-text-secondary mb-4 text-sm leading-relaxed">
+                {brand.description}
+              </p>
+              
+              {brand.categories && brand.categories.length > 0 && (
+                <div class="mb-4">
+                  <div class="flex flex-wrap justify-center gap-1">
+                    {brand.categories.slice(0, 3).map((category: string) => (
+                      <span class="px-2 py-1 bg-brand-beige text-xs rounded text-brand-text">
+                        {category}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {(brand.website) && (
+                <a href={brand.website} target="_blank" rel="noopener noreferrer"
+                   class="inline-flex items-center text-brand-orange hover:underline text-sm font-medium">
+                  {t(locale, 'index.visitWebsite')}
+                  <svg class="ml-1 w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                  </svg>
+                </a>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Impact Sectors -->
+  <section class="py-16 md:py-24 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl md:text-4xl font-bold text-brand-navy mb-4 font-heading">
+          {t(locale, 'index.impactAreas')}
+        </h2>
+        <p class="text-xl text-brand-text-secondary max-w-2xl mx-auto">
+          {t(locale, 'index.impactAreasSub')}
+        </p>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {sectors.sectors.map(sector => (
+          <div class="bg-white p-8 rounded-2xl hover:shadow-lg transition-shadow border border-gray-200">
+            <div class="text-center">
+              <div class="text-4xl mb-4">{sector.icon}</div>
+              <h3 class="text-xl font-semibold text-brand-navy mb-3 font-heading">
+                {sector.name}
+              </h3>
+              <p class="text-brand-text-secondary mb-4 text-sm leading-relaxed">
+                {sector.description}
+              </p>
+              
+              <div class="mb-4">
+                <span class="text-xs font-medium text-brand-text-muted">{t(locale, 'index.impactMetrics')}</span>
+                <div class="flex flex-wrap justify-center gap-1 mt-1">
+                  {sector.impactMetrics.slice(0, 2).map(metric => (
+                    <span class="px-2 py-1 bg-brand-beige text-xs rounded text-brand-text">
+                      {metric}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              
+              <div>
+                <span class="text-xs font-medium text-brand-text-muted">{t(locale, 'index.enterprises')}</span>
+                <p class="text-xs text-brand-text-secondary mt-1">
+                  {sector.enterprises.slice(0, 2).join(', ')}
+                  {sector.enterprises.length > 2 && ` ${t(locale, 'index.moreCount', { count: String(sector.enterprises.length - 2) })}`}
+                </p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section class="py-16 md:py-24 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl md:text-4xl font-bold text-brand-navy mb-4 font-heading">
+          {t(locale, 'index.howItWorksTitle')}
+        </h2>
+        <p class="text-xl text-brand-text-secondary max-w-2xl mx-auto">
+          {t(locale, 'howItWorks.indexSubtitle')}
+        </p>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="text-center">
+          <div class="w-16 h-16 bg-brand-orange rounded-full flex items-center justify-center text-white font-bold text-2xl mx-auto mb-4">
+            1
+          </div>
+          <h3 class="text-lg font-semibold text-brand-navy mb-3 font-heading">{t(locale, 'index.stepSupport')}</h3>
+          <p class="text-brand-text-secondary text-sm">{t(locale, 'howItWorks.indexStep1')}</p>
+        </div>
+        
+        <div class="text-center">
+          <div class="w-16 h-16 bg-brand-orange rounded-full flex items-center justify-center text-white font-bold text-2xl mx-auto mb-4">
+            2
+          </div>
+          <h3 class="text-lg font-semibold text-brand-navy mb-3 font-heading">{t(locale, 'index.stepEarn')}</h3>
+          <p class="text-brand-text-secondary text-sm">{t(locale, 'howItWorks.indexStep2')}</p>
+        </div>
+        
+        <div class="text-center">
+          <div class="w-16 h-16 bg-brand-orange rounded-full flex items-center justify-center text-white font-bold text-2xl mx-auto mb-4">
+            3
+          </div>
+          <h3 class="text-lg font-semibold text-brand-navy mb-3 font-heading">{t(locale, 'index.stepRedeem')}</h3>
+          <p class="text-brand-text-secondary text-sm">{t(locale, 'howItWorks.indexStep3')}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Call to Action -->
+  <section class="py-16 md:py-24 bg-brand-orange text-white">
+    <div class="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+      <h2 class="text-3xl md:text-4xl font-bold mb-6 font-heading">
+        {t(locale, 'index.ctaTitle')}
+      </h2>
+      <p class="text-xl mb-8 opacity-90">
+        {t(locale, 'index.ctaSub')}
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a href={mainSiteProjects}
+           class="inline-flex items-center justify-center px-6 py-3 rounded-md bg-white text-brand-orange hover:bg-gray-50 font-medium text-sm">
+          {t(locale, 'index.startSupportingNow')}
+        </a>
+        <a href={mainSiteProjects}
+           class="inline-flex items-center justify-center px-6 py-3 rounded-md border border-white text-white hover:bg-white hover:text-brand-orange font-medium text-sm">
+          {t(locale, 'index.exploreSocialEnterprises')}
+        </a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+<script>
+  document.querySelectorAll('.brand-logo-img').forEach((img) => {
+    img.addEventListener('error', function () {
+      const parent = this.closest('[data-brand-initial]');
+      const initial = parent?.getAttribute('data-brand-initial') || '?';
+      const fallback = document.createElement('div');
+      fallback.setAttribute('style', 'width: 4rem; height: 4rem; border-radius: 0.75rem; background: rgba(240, 83, 4, 0.1); display: flex; align-items: center; justify-content: center;');
+      const span = document.createElement('span');
+      span.setAttribute('style', 'font-size: 1.5rem; font-weight: 700; color: #F05304;');
+      span.textContent = initial;
+      fallback.appendChild(span);
+      parent?.replaceChildren(fallback);
+    });
+  });
+</script>

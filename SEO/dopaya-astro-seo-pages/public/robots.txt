@@ -1,0 +1,20 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://dopaya.com/brands/sitemap-index.xml
+
+# Block admin areas
+Disallow: /admin/
+Disallow: /scripts/
+Disallow: /_assets/
+
+# Allow important brand pages
+Allow: /brands/nikin-*
+Allow: /brands/rrrevolve-*
+Allow: /brands/reslides-*
+Allow: /brands/2nd-peak-*
+Allow: /brands/sustainable-fashion-*
+
+# Crawl delay for respectful crawling
+Crawl-delay: 1

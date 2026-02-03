@@ -1,0 +1,322 @@
+{
+  "enterprises": [
+    {
+      "id": "mpower-ventures",
+      "name": "MPower Ventures",
+      "slug": "mpower-ventures",
+      "sector": "clean-energy-environment",
+      "logo": "/enterprises/mpower-ventures-logo.png",
+      "image": "/enterprises/mpower-ventures-hero.jpg",
+      "location": "Switzerland / Africa",
+      "flag": "🇨🇭🌍",
+      "founded": 2019,
+      "mission": "Democratizing clean energy access across Africa through innovative solar solutions and micro-finance programs",
+      "description": "Swiss-founded social enterprise providing affordable solar energy solutions to rural communities across Africa. Since 2019, MPower has installed over 2,500 solar systems, bringing clean electricity to more than 12,000 people in Kenya, Uganda, and Tanzania.",
+      "impact": {
+        "people_served": 12000,
+        "solar_systems": 2500,
+        "co2_saved": "450 tons annually",
+        "jobs_created": 85,
+        "countries": 3
+      },
+      "problem": "Over 600 million people in sub-Saharan Africa lack access to electricity, forcing reliance on expensive, polluting kerosene lamps and diesel generators.",
+      "solution": "MPower provides affordable, high-quality solar home systems through flexible payment plans, local training programs, and ongoing technical support.",
+      "achievements": [
+        "2,500+ solar installations completed",
+        "12,000+ people gained electricity access",
+        "450 tons CO2 emissions avoided annually", 
+        "85 local jobs created across 3 countries",
+        "98% customer satisfaction rating"
+      ],
+      "testimonial": {
+        "quote": "MPower's solar system changed our children's education. Now they can study at night and we save money on kerosene.",
+        "author": "Margaret Wanjiku",
+        "role": "Mother of 3, Kenya"
+      },
+      "donation_tiers": [
+        {
+          "amount": 25,
+          "impact": "Powers LED lights for 1 family for 3 months"
+        },
+        {
+          "amount": 50, 
+          "impact": "Covers solar installation training for 1 local technician"
+        },
+        {
+          "amount": 100,
+          "impact": "Provides complete solar lighting system for 1 household"
+        },
+        {
+          "amount": 500,
+          "impact": "Funds solar system for small business (shop/clinic)"
+        }
+      ],
+      "website": "https://mpowerventures.org"
+    },
+    {
+      "id": "mandulis-energy",
+      "name": "Mandulis Energy",
+      "slug": "mandulis-energy", 
+      "sector": "clean-energy-environment",
+      "logo": "/enterprises/mandulis-energy-logo.png",
+      "image": "/enterprises/mandulis-energy-hero.jpg",
+      "location": "Uganda",
+      "flag": "🇺🇬",
+      "founded": 2018,
+      "mission": "Converting agricultural waste into clean cooking fuel and sustainable energy for rural African communities",
+      "description": "Uganda-based social enterprise transforming agricultural waste into clean, affordable cooking solutions. Mandulis converts rice husks, coffee husks, and other farm waste into high-quality briquettes, providing clean cooking fuel while creating income for rural farmers.",
+      "impact": {
+        "people_served": 8500,
+        "tons_waste_converted": 1200,
+        "co2_saved": "320 tons annually",
+        "farmers_benefited": 150,
+        "households_clean_cooking": 2100
+      },
+      "problem": "Rural families in Uganda spend hours collecting firewood and suffer from indoor air pollution. Agricultural waste is often burned or discarded, contributing to environmental degradation.",
+      "solution": "Mandulis collects agricultural waste from farmers, converts it into clean-burning briquettes, and sells affordable cooking fuel while providing farmers additional income.",
+      "achievements": [
+        "1,200+ tons agricultural waste converted annually",
+        "2,100+ households using clean cooking fuel",
+        "150+ farmers earning additional income",
+        "320 tons CO2 emissions reduced yearly",
+        "85% reduction in cooking fuel costs for families"
+      ],
+      "testimonial": {
+        "quote": "Selling rice husks to Mandulis gives me extra income and helps my community get clean cooking fuel. It's a win-win.",
+        "author": "Joseph Kigozi",
+        "role": "Rice Farmer, Wakiso District"
+      },
+      "donation_tiers": [
+        {
+          "amount": 15,
+          "impact": "Provides clean cooking fuel for 1 family for 1 month"
+        },
+        {
+          "amount": 30,
+          "impact": "Covers waste collection from 5 farmers"
+        },
+        {
+          "amount": 75,
+          "impact": "Funds briquette production equipment maintenance"
+        },
+        {
+          "amount": 200,
+          "impact": "Establishes waste collection point in new village"
+        }
+      ],
+      "website": "https://mandulisenergy.org"
+    },
+    {
+      "id": "openversum", 
+      "name": "Openversum",
+      "slug": "openversum",
+      "sector": "water-wash",
+      "logo": "/enterprises/openversum-logo.png",
+      "image": "/enterprises/openversum-hero.jpg",
+      "location": "Switzerland / Global",
+      "flag": "🇨🇭🌍",
+      "founded": 2020,
+      "mission": "Developing open-source water technology solutions for sustainable access to clean water worldwide",
+      "description": "Swiss-based social enterprise creating innovative, open-source water purification and monitoring technologies. Openversum's solutions provide real-time water quality data and affordable purification systems for communities and organizations globally.",
+      "impact": {
+        "people_served": 15000,
+        "water_systems": 45,
+        "countries": 8,
+        "liters_clean_water": "2.5 million daily",
+        "communities_trained": 25
+      },
+      "problem": "2 billion people lack access to safely managed drinking water, and many water systems fail due to lack of monitoring and maintenance.",
+      "solution": "Openversum provides open-source water monitoring sensors, purification systems, and training programs that communities can maintain and scale independently.",
+      "achievements": [
+        "45 water systems deployed across 8 countries",
+        "15,000+ people accessing clean water daily", 
+        "2.5 million liters clean water produced daily",
+        "25 communities trained in system maintenance",
+        "Open-source technology adopted by 12 NGOs"
+      ],
+      "testimonial": {
+        "quote": "Openversum's water monitoring system helps us ensure our community always has safe drinking water. The training empowered us to maintain it ourselves.",
+        "author": "Dr. Priya Sharma",
+        "role": "Community Health Worker, India"
+      },
+      "donation_tiers": [
+        {
+          "amount": 20,
+          "impact": "Funds water quality testing for 1 community for 1 month"
+        },
+        {
+          "amount": 50,
+          "impact": "Provides water monitoring sensor replacement parts"
+        },
+        {
+          "amount": 120,
+          "impact": "Covers training workshop for 10 community members"
+        },
+        {
+          "amount": 300,
+          "impact": "Funds complete water monitoring system for new site"
+        }
+      ],
+      "website": "https://openversum.com"
+    },
+    {
+      "id": "ignis-careers",
+      "name": "Ignis Careers",
+      "slug": "ignis-careers",
+      "sector": "education-india", 
+      "logo": "/enterprises/ignis-careers-logo.png",
+      "image": "/enterprises/ignis-careers-hero.jpg",
+      "location": "India",
+      "flag": "🇮🇳",
+      "founded": 2019,
+      "mission": "Bridging the skills gap for underserved youth in India through practical career training and job placement programs",
+      "description": "India-focused social enterprise providing career-oriented training programs for youth from underserved communities. Ignis Careers offers industry-relevant skills training, mentorship, and direct job placement in sectors including technology, hospitality, and manufacturing.",
+      "impact": {
+        "students_trained": 2800,
+        "job_placements": 2100,
+        "average_salary_increase": "250%",
+        "partner_companies": 85,
+        "training_centers": 12
+      },
+      "problem": "Millions of Indian youth lack access to practical skills training, resulting in high unemployment despite growing job opportunities in various sectors.",
+      "solution": "Ignis provides 3-6 month intensive training programs combining technical skills, soft skills, and direct industry mentorship, followed by guaranteed job placement support.",
+      "achievements": [
+        "2,800+ students completed training programs",
+        "2,100+ successful job placements (75% success rate)",
+        "250% average salary increase for graduates",
+        "85+ partner companies for job placements",
+        "12 training centers across 5 Indian states"
+      ],
+      "testimonial": {
+        "quote": "Ignis Careers changed my life. I went from earning ₹8,000 to ₹25,000 per month after their IT training program. Now I can support my family.",
+        "author": "Rahul Kumar",
+        "role": "IT Support Specialist, Mumbai"
+      },
+      "donation_tiers": [
+        {
+          "amount": 30,
+          "impact": "Covers 1 week of training for 1 student"
+        },
+        {
+          "amount": 75,
+          "impact": "Provides complete skills assessment and career guidance"
+        },
+        {
+          "amount": 150,
+          "impact": "Funds 1 month training program for 1 student" 
+        },
+        {
+          "amount": 500,
+          "impact": "Sponsors complete 3-month program including job placement"
+        }
+      ],
+      "website": "https://igniscareers.org"
+    },
+    {
+      "id": "vision-friend",
+      "name": "Vision Friend Sakib Gore",
+      "slug": "vision-friend",
+      "sector": "healthcare-vision",
+      "logo": "/enterprises/vision-friend-logo.png", 
+      "image": "/enterprises/vision-friend-hero.jpg",
+      "location": "Global",
+      "flag": "🌍",
+      "founded": 2017,
+      "mission": "Providing affordable eye care and vision correction to underserved communities worldwide",
+      "description": "Global social enterprise led by Sakib Gore, focused on eliminating preventable blindness through accessible eye care services. Vision Friend operates mobile clinics and training programs, bringing professional eye care to remote and underserved areas.",
+      "impact": {
+        "people_screened": 25000,
+        "surgeries_performed": 1200,
+        "glasses_provided": 8500,
+        "eye_care_workers_trained": 150,
+        "communities_served": 85
+      },
+      "problem": "Over 2.2 billion people worldwide have vision impairment, with 1 billion cases being preventable or untreated. Rural communities often lack access to basic eye care services.",
+      "solution": "Vision Friend provides mobile eye clinics, trains local healthcare workers, and establishes sustainable eye care programs that communities can maintain long-term.",
+      "achievements": [
+        "25,000+ people received eye screenings",
+        "1,200+ sight-restoring surgeries performed",
+        "8,500+ pairs of glasses provided",
+        "150+ local eye care workers trained",
+        "85+ rural communities now have eye care access"
+      ],
+      "testimonial": {
+        "quote": "I couldn't see my granddaughter's face clearly for 3 years. After Vision Friend's free cataract surgery, I can see her smile again.",
+        "author": "Fatima Al-Rashid",
+        "role": "Patient, Rural Bangladesh"
+      },
+      "donation_tiers": [
+        {
+          "amount": 20,
+          "impact": "Funds eye screening for 10 people"
+        },
+        {
+          "amount": 50,
+          "impact": "Provides 1 pair of prescription glasses"
+        },
+        {
+          "amount": 150,
+          "impact": "Covers 1 sight-restoring cataract surgery"
+        },
+        {
+          "amount": 400,
+          "impact": "Funds mobile clinic visit to 1 remote village"
+        }
+      ],
+      "website": "https://visionfriend.org"
+    },
+    {
+      "id": "syangs",
+      "name": "Syangs",
+      "slug": "syangs",
+      "sector": "food-agriculture",
+      "logo": "/enterprises/syangs-logo.png",
+      "image": "/enterprises/syangs-hero.jpg", 
+      "location": "Darjeeling, India",
+      "flag": "🇮🇳",
+      "founded": 2020,
+      "mission": "Revitalizing traditional Himalayan agriculture and empowering indigenous farmers through sustainable farming practices",
+      "description": "Community-led social enterprise in Darjeeling, India, working with indigenous farmers to preserve traditional crops, implement sustainable farming techniques, and create fair market access for Himalayan agricultural products including traditional grains, vegetables, and medicinal plants.",
+      "impact": {
+        "farmers_supported": 180,
+        "acres_organic": 450,
+        "traditional_varieties": 25,
+        "income_increase": "40%",
+        "families_benefited": 650
+      },
+      "problem": "Climate change and market pressures force Himalayan farmers to abandon traditional crops and sustainable practices, threatening food security and cultural heritage.",
+      "solution": "Syangs helps farmers transition to organic methods, preserve indigenous seeds, and connect directly with conscious consumers who value traditional, sustainably-grown food.",
+      "achievements": [
+        "180+ farmers adopting sustainable practices",
+        "450+ acres converted to organic farming",
+        "25 traditional crop varieties preserved",
+        "40% average income increase for participating farmers",
+        "650+ families achieving food security"
+      ],
+      "testimonial": {
+        "quote": "Syangs helped me grow traditional finger millet again. My grandfather's seeds are feeding my family and earning good income through fair trade.",
+        "author": "Pemba Sherpa",
+        "role": "Organic Farmer, Darjeeling"
+      },
+      "donation_tiers": [
+        {
+          "amount": 25,
+          "impact": "Provides organic seed kit for 1 farmer"
+        },
+        {
+          "amount": 60,
+          "impact": "Funds sustainable farming training workshop"
+        },
+        {
+          "amount": 100,
+          "impact": "Supports 1 farmer's transition to organic for 1 season"
+        },
+        {
+          "amount": 250,
+          "impact": "Establishes seed bank for traditional varieties"
+        }
+      ],
+      "website": "https://syangs.org"
+    }
+  ]
+}

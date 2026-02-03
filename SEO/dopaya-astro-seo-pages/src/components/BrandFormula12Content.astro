@@ -1,0 +1,300 @@
+---
+interface Props {
+  brand: any;
+  category: string;
+  categoryProjects: any[];
+  reward: { title: string; category?: string };
+  brandRewards: any[];
+  locale: 'en' | 'de';
+}
+const { brand, category, categoryProjects, reward, brandRewards, locale } = Astro.props;
+import { t } from '../lib/i18n.ts';
+
+const totalImpact = categoryProjects.reduce(
+  (acc: any, project: any) => ({
+    people: acc.people + (project.donors || 0),
+    raised: acc.raised + (project.raised || 0),
+    projects: acc.projects + 1,
+    countries: new Set([...Array.from(acc.countries), project.country]),
+  }),
+  { people: 0, raised: 0, projects: 0, countries: new Set<string>() }
+);
+const totalSupporters = Number(totalImpact.people || 0);
+const totalRaisedChf = Number(totalImpact.raised || 0);
+const totalCountries = totalImpact.countries instanceof Set ? totalImpact.countries.size : Number(totalImpact.countries || 0);
+const brandWebsite = (brand as any).website_url ?? (brand as any).websiteUrl ?? (brand as any).website;
+---
+
+<!-- Enhanced Hero Section with Correct Flow -->
+<section class="pt-14 md:pt-20 pb-20 md:pb-28 bg-gradient-to-br from-brand-beige to-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-5xl mx-auto">
+      <div class="flex items-center justify-center mb-8">
+        <div class="flex items-center space-x-4">
+          <div class="text-center">
+            <div class="w-16 h-16 bg-brand-orange rounded-full flex items-center justify-center text-white font-bold text-2xl mb-2">1</div>
+            <div class="text-sm font-medium text-brand-navy">{t(locale, 'howItWorks.support')}<br/>{category}</div>
+          </div>
+          <div class="text-2xl text-brand-orange">→</div>
+          <div class="text-center">
+            <div class="w-16 h-16 bg-brand-orange rounded-full flex items-center justify-center text-white font-bold text-2xl mb-2">2</div>
+            <div class="text-sm font-medium text-brand-navy">{t(locale, 'howItWorks.earnPoints')}</div>
+          </div>
+          <div class="text-2xl text-brand-orange">→</div>
+          <div class="text-center">
+            <div class="w-16 h-16 bg-brand-orange rounded-full flex items-center justify-center text-white font-bold text-2xl mb-2">3</div>
+            <div class="text-sm font-medium text-brand-navy">{t(locale, 'howItWorks.redeem')}<br/>{brand.name}</div>
+          </div>
+        </div>
+      </div>
+      <div class="text-center">
+        <h1 class="text-3xl md:text-5xl font-bold text-brand-navy leading-normal mb-6 font-heading">
+          Support <span class="text-brand-orange">{category}</span> Projects<br />
+          Earn <span class="text-brand-orange">{reward.title}</span><br />
+          <span class="text-2xl md:text-3xl block mt-4">from {brand.name}</span>
+        </h1>
+        <p class="text-xl md:text-2xl text-brand-text-secondary mb-8 max-w-4xl mx-auto leading-relaxed">
+          Support verified {category} social enterprises and automatically earn Impact Points.
+          Redeem your points for exclusive {reward.title} from {brand.name}.
+          Track real impact with {totalSupporters.toLocaleString()}+ supporters across {totalCountries} countries.
+        </p>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10 max-w-4xl mx-auto">
+          <div class="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-gray-200">
+            <div class="text-2xl font-bold text-brand-orange">{totalSupporters.toLocaleString()}+</div>
+            <div class="text-sm text-brand-text-muted">Supporters</div>
+          </div>
+          <div class="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-gray-200">
+            <div class="text-2xl font-bold text-brand-orange">{totalImpact.projects}</div>
+            <div class="text-sm text-brand-text-muted">Active Projects</div>
+          </div>
+          <div class="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-gray-200">
+            <div class="text-2xl font-bold text-brand-orange">CHF {(totalRaisedChf / 1000).toFixed(0)}K+</div>
+            <div class="text-sm text-brand-text-muted">Raised</div>
+          </div>
+          <div class="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-gray-200">
+            <div class="text-2xl font-bold text-brand-orange">{totalCountries}</div>
+            <div class="text-sm text-brand-text-muted">Countries</div>
+          </div>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <a href="https://dopaya.com/projects" class="inline-flex items-center justify-center px-6 py-3 rounded-md bg-brand-orange text-white hover:opacity-90 font-medium text-sm transition-opacity">
+            Start Supporting {category} →
+          </a>
+          <a href="#featured-projects" class="inline-flex items-center justify-center px-6 py-3 rounded-md bg-white text-brand-navy hover:bg-gray-50 font-medium text-sm border border-brand-border transition-colors">
+            See {category} Projects
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="py-20 md:py-28 bg-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-16">
+      <h2 class="text-3xl md:text-4xl font-bold text-brand-navy mb-6 font-heading">How the Process Works</h2>
+      <p class="text-xl text-brand-text-secondary max-w-3xl mx-auto">
+        Support social enterprises first, earn Impact Points, then redeem rewards from sustainable brands
+      </p>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+      <div class="text-center">
+        <div class="w-20 h-20 bg-brand-orange rounded-full flex items-center justify-center text-white font-bold text-3xl mx-auto mb-6">1</div>
+        <h3 class="text-2xl font-semibold text-brand-navy mb-4 font-heading">Support {category} Projects</h3>
+        <p class="text-brand-text-secondary leading-relaxed">Choose from verified {category} social enterprises creating measurable impact worldwide. Your donations go directly to their work - 100% transparent.</p>
+      </div>
+      <div class="text-center">
+        <div class="w-20 h-20 bg-brand-orange rounded-full flex items-center justify-center text-white font-bold text-3xl mx-auto mb-6">2</div>
+        <h3 class="text-2xl font-semibold text-brand-navy mb-4 font-heading">Earn Impact Points</h3>
+        <p class="text-brand-text-secondary leading-relaxed">For every CHF 1 you donate, earn Impact Points on your Dopaya dashboard. Track your total contribution and see real-world outcomes from your support.</p>
+      </div>
+      <div class="text-center">
+        <div class="w-20 h-20 bg-brand-orange rounded-full flex items-center justify-center text-white font-bold text-3xl mx-auto mb-6">3</div>
+        <h3 class="text-2xl font-semibold text-brand-navy mb-4 font-heading">Redeem at {brand.name}</h3>
+        <p class="text-brand-text-secondary leading-relaxed">Use your earned Impact Points to unlock {reward.title} from {brand.name}. Get exclusive access, discounts, and special offers as a verified impact creator.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="featured-projects" class="py-20 md:py-28 bg-gray-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-16">
+      <h2 class="text-3xl md:text-4xl font-bold text-brand-navy mb-6 font-heading">Featured {category} Social Enterprises</h2>
+      <p class="text-xl text-brand-text-secondary max-w-3xl mx-auto">
+        Support these verified organizations creating measurable impact in {category}. 100% of your contributions go directly to their work.
+      </p>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+      {categoryProjects.map((project) => (
+        <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-200 hover:shadow-lg transition-shadow">
+          <div class="aspect-video rounded-xl overflow-hidden mb-6">
+            <img src={project.imageUrl} alt={project.title} class="w-full h-full object-cover" />
+          </div>
+          <div class="flex items-center mb-4">
+            <div>
+              <h3 class="text-xl font-semibold text-brand-navy font-heading">{project.title}</h3>
+              <p class="text-sm text-brand-text-muted">{project.country} • {project.category}</p>
+            </div>
+          </div>
+          <p class="text-brand-text-secondary mb-6 leading-relaxed">{project.summary || project.description}</p>
+          <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="text-center">
+              <div class="text-2xl font-bold text-brand-orange">{(project.donors || 0).toLocaleString()}</div>
+              <div class="text-xs text-brand-text-muted">Supporters</div>
+            </div>
+            <div class="text-center">
+              <div class="text-2xl font-bold text-brand-orange">CHF {((project.raised || 0) / 1000).toFixed(0)}K</div>
+              <div class="text-xs text-brand-text-muted">Raised</div>
+            </div>
+          </div>
+          <div class="mb-6">
+            <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
+              <div class="h-full bg-gradient-to-r from-brand-orange to-yellow-400 rounded-full" style={`width: ${Math.min(project.percentCompleted || 0, 100)}%`}></div>
+            </div>
+            <p class="text-xs text-brand-text-muted text-center">{project.percentCompleted || 0}% of goal reached</p>
+          </div>
+          <a href={`https://dopaya.com/project/${project.slug}`} class="inline-flex items-center justify-center w-full px-6 py-3 bg-brand-orange text-white rounded-md hover:opacity-90 font-medium text-sm transition-opacity">
+            Support & Earn Points
+            <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+          </a>
+        </div>
+      ))}
+    </div>
+    <div class="bg-white rounded-2xl p-8 border border-gray-200">
+      <h3 class="text-2xl font-bold text-brand-navy mb-6 font-heading text-center">Your Impact Points Potential</h3>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="text-center p-6 bg-gray-50 rounded-xl">
+          <div class="text-2xl font-bold text-brand-orange mb-2">CHF 25</div>
+          <div class="text-sm text-brand-text-secondary mb-3">→ 25 Impact Points</div>
+          <div class="text-xs text-brand-text-muted">Get started with basic {reward.title}</div>
+        </div>
+        <div class="text-center p-6 bg-gray-50 rounded-xl">
+          <div class="text-2xl font-bold text-brand-orange mb-2">CHF 50</div>
+          <div class="text-sm text-brand-text-secondary mb-3">→ 50 Impact Points</div>
+          <div class="text-xs text-brand-text-muted">Unlock {brand.name} member benefits</div>
+        </div>
+        <div class="text-center p-6 bg-gray-50 rounded-xl">
+          <div class="text-2xl font-bold text-brand-orange mb-2">CHF 100</div>
+          <div class="text-sm text-brand-text-secondary mb-3">→ 100 Impact Points</div>
+          <div class="text-xs text-brand-text-muted">Access exclusive {brand.name} products</div>
+        </div>
+        <div class="text-center p-6 bg-gray-50 rounded-xl">
+          <div class="text-2xl font-bold text-brand-orange mb-2">CHF 250</div>
+          <div class="text-sm text-brand-text-secondary mb-3">→ 250 Impact Points</div>
+          <div class="text-xs text-brand-text-muted">Premium {reward.title} and early access</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="py-20 md:py-28 bg-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+      <div>
+        <h2 class="text-3xl md:text-4xl font-bold text-brand-navy mb-8 font-heading">Redeem Points at {brand.name}</h2>
+        <div class="prose prose-lg text-brand-text-secondary">
+          <p class="mb-6 leading-relaxed">{brand.description || `${brand.name} is a verified sustainable brand partner offering exclusive rewards for Impact Points earned through social enterprise support.`}</p>
+          <div class="mb-8">
+            <h3 class="text-xl font-semibold text-brand-navy mb-4 font-heading">Available Rewards:</h3>
+            <ul class="space-y-3">
+              {brandRewards.length > 0 ? brandRewards.slice(0, 3).map((brandReward: any) => (
+                <li class="flex items-start">
+                  <svg class="w-5 h-5 text-brand-orange mr-3 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                  <span class="text-brand-text-secondary"><strong>{brandReward.title}</strong> - {brandReward.pointsCost} points - {brandReward.description}</span>
+                </li>
+              )) : (
+                <>
+                  <li class="flex items-start"><svg class="w-5 h-5 text-brand-orange mr-3 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg><span class="text-brand-text-secondary">Exclusive member discounts and early access</span></li>
+                  <li class="flex items-start"><svg class="w-5 h-5 text-brand-orange mr-3 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg><span class="text-brand-text-secondary">Special product collections for impact supporters</span></li>
+                  <li class="flex items-start"><svg class="w-5 h-5 text-brand-orange mr-3 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg><span class="text-brand-text-secondary">Priority customer service and support</span></li>
+                </>
+              )}
+            </ul>
+          </div>
+          {brandWebsite && (
+            <div>
+              <a href={brandWebsite} target="_blank" rel="noopener noreferrer" class="inline-flex items-center px-6 py-3 rounded-md bg-brand-orange text-white hover:opacity-90 font-medium text-sm transition-opacity">
+                Visit {brand.name} Store
+                <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+              </a>
+            </div>
+          )}
+        </div>
+      </div>
+      <div class="space-y-6">
+        <div class="bg-gray-50 p-8 rounded-2xl">
+          <h3 class="text-xl font-semibold text-brand-navy mb-6 font-heading">{brand.name} at a Glance</h3>
+          <div class="space-y-4">
+            {brand.category && <div class="flex justify-between"><span class="text-brand-text-muted">Category</span><span class="font-medium text-brand-navy">{brand.category}</span></div>}
+            {brand.country && <div class="flex justify-between"><span class="text-brand-text-muted">Based in</span><span class="font-medium text-brand-navy">{brand.country}</span></div>}
+            <div class="flex justify-between"><span class="text-brand-text-muted">Partnership Level</span><span class="font-medium text-brand-navy">{brand.featured ? 'Featured Partner' : 'Verified Partner'}</span></div>
+            <div class="flex justify-between"><span class="text-brand-text-muted">Rewards Available</span><span class="font-medium text-brand-navy">{brandRewards.length > 0 ? `${brandRewards.length} Active` : 'Coming Soon'}</span></div>
+          </div>
+        </div>
+        <div class="bg-brand-beige p-8 rounded-2xl">
+          <h3 class="text-xl font-semibold text-brand-navy mb-4 font-heading">Impact Connection</h3>
+          <p class="text-brand-text-secondary leading-relaxed mb-4">By supporting {category} social enterprises, you become part of a community of impact creators. {brand.name} recognizes this commitment and offers exclusive rewards to verified supporters.</p>
+          <div class="space-y-2">
+            <div class="text-sm text-brand-text-secondary flex items-center"><span class="w-1.5 h-1.5 bg-brand-orange rounded-full mr-2"></span>Verified impact tracking through Dopaya dashboard</div>
+            <div class="text-sm text-brand-text-secondary flex items-center"><span class="w-1.5 h-1.5 bg-brand-orange rounded-full mr-2"></span>Direct connection between your giving and brand rewards</div>
+            <div class="text-sm text-brand-text-secondary flex items-center"><span class="w-1.5 h-1.5 bg-brand-orange rounded-full mr-2"></span>Exclusive access based on your impact contribution level</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="py-20 md:py-28 bg-gray-50">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-16">
+      <h2 class="text-3xl md:text-4xl font-bold text-brand-navy mb-6 font-heading">Frequently Asked Questions</h2>
+      <p class="text-xl text-brand-text-secondary">Everything you need to know about earning and redeeming Impact Points</p>
+    </div>
+    <div class="space-y-6">
+      <details class="group bg-white rounded-xl border border-gray-200 p-6">
+        <summary class="cursor-pointer list-none">
+          <h3 class="text-lg font-semibold text-brand-navy group-open:text-brand-orange">How do I earn Impact Points to redeem at {brand.name}?</h3>
+        </summary>
+        <div class="mt-4 text-brand-text-secondary leading-relaxed">Support any verified social enterprise on Dopaya and earn 1 Impact Point for every CHF 1 you donate. Points accumulate in your dashboard and can be redeemed for exclusive rewards from {brand.name} and other partner brands.</div>
+      </details>
+      <details class="group bg-white rounded-xl border border-gray-200 p-6">
+        <summary class="cursor-pointer list-none">
+          <h3 class="text-lg font-semibold text-brand-navy group-open:text-brand-orange">Which {category} projects should I support?</h3>
+        </summary>
+        <div class="mt-4 text-brand-text-secondary leading-relaxed">All projects shown above are thoroughly vetted {category} social enterprises. Each provides transparent impact reporting and direct outcomes from your support.</div>
+      </details>
+      <details class="group bg-white rounded-xl border border-gray-200 p-6">
+        <summary class="cursor-pointer list-none">
+          <h3 class="text-lg font-semibold text-brand-navy group-open:text-brand-orange">How does Dopaya verify social enterprises?</h3>
+        </summary>
+        <div class="mt-4 text-brand-text-secondary leading-relaxed">Every social enterprise undergoes rigorous due diligence including financial audits, impact measurement verification, and ongoing performance monitoring.</div>
+      </details>
+      <details class="group bg-white rounded-xl border border-gray-200 p-6">
+        <summary class="cursor-pointer list-none">
+          <h3 class="text-lg font-semibold text-brand-navy group-open:text-brand-orange">Can I track my {brand.name} rewards and impact in real-time?</h3>
+        </summary>
+        <div class="mt-4 text-brand-text-secondary leading-relaxed">Yes! Your Dopaya dashboard shows Impact Points balance, available {brand.name} rewards, and detailed impact tracking from each social enterprise you support.</div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="py-20 md:py-28 bg-gradient-to-r from-brand-orange to-red-600 text-white">
+  <div class="max-w-5xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+    <h2 class="text-3xl md:text-5xl font-bold mb-8 font-heading">Ready to Create Impact & Earn Rewards?</h2>
+    <p class="text-xl md:text-2xl mb-10 opacity-95 leading-relaxed">Support verified {category} social enterprises and earn Impact Points for exclusive {reward.title} from {brand.name}. Track your real-world impact with transparent metrics and verifiable outcomes.</p>
+    <div class="flex flex-col sm:flex-row gap-6 justify-center">
+      <a href="https://dopaya.com/projects" class="inline-flex items-center justify-center px-6 py-3 rounded-md bg-white text-brand-orange hover:bg-gray-50 font-medium text-sm transition-colors">
+        Start Supporting {category}
+        <svg class="ml-2 w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
+      </a>
+      <a href="https://dopaya.com/brands" class="inline-flex items-center justify-center px-6 py-3 rounded-md border border-white text-white hover:bg-white hover:text-brand-orange font-medium text-sm transition-colors">See All Brand Partners</a>
+    </div>
+    <div class="mt-12 pt-8 border-t border-white/20">
+      <p class="text-lg opacity-90"><strong>100% Transparency:</strong> Support social enterprises first • Earn Impact Points • Redeem exclusive rewards</p>
+    </div>
+  </div>
+</section>

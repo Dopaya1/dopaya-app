@@ -1,0 +1,731 @@
+---
+import { getProjectImageUrl } from '../../lib/imageUtils.ts';
+import { t, getLocaleUrl } from '../../lib/i18n.ts';
+import type { Locale } from '../../lib/translations.ts';
+
+interface RelatedCombo {
+  slug: string;
+  label: string;
+}
+
+interface Props {
+  locale: Locale;
+  formula3: any;
+  brand: any;
+  impactProjects: any[];
+  brandRewards: any[];
+  relatedCombos: RelatedCombo[];
+}
+
+const { locale, formula3, brand, impactProjects, brandRewards, relatedCombos } = Astro.props;
+
+const brandName = (brand && brand.name) || formula3.brand.name;
+const productCategory = formula3.category.name;
+const rewardTypeName = formula3.rewardType.name;
+const benefitModifier = formula3.benefitModifier;
+
+const brandWebsite = (brand && ((brand as any).website_url ?? (brand as any).websiteUrl ?? (brand as any).website)) || formula3.brand.website || null;
+const brandLogoUrl = (brand && ((brand as any).logo_url || (brand as any).logoUrl)) || (formula3.brand as any).logo || null;
+const brandDescription = (brand && (brand as any).description) || (formula3.brand as any).description || '';
+
+const categoryLabels: Record<string, string> = {
+  clothing: 'Sustainable clothing',
+  shoes: 'Sustainable shoes',
+  accessories: 'Accessories',
+  handbags: 'Handbags',
+  'outdoor-gear': 'Outdoor gear',
+  'outdoor gear': 'Outdoor gear',
+  'athletic-wear': 'Athletic wear',
+  'athletic wear': 'Athletic wear',
+  'home-goods': 'Home goods',
+  'home goods': 'Home goods',
+  'lifestyle-products': 'Lifestyle products',
+  'lifestyle products': 'Lifestyle products',
+};
+const brandCategories = formula3.brand.categories && Array.isArray(formula3.brand.categories)
+  ? formula3.brand.categories.map((c: string) => categoryLabels[c] || c)
+  : [];
+
+const mainSiteBase = locale === 'de' ? 'https://dopaya.com/de' : 'https://dopaya.com';
+const mainSiteProjects = `${mainSiteBase}/projects`;
+const mainSiteRewards = `${mainSiteBase}/rewards`;
+const mainSiteBrands = `${mainSiteBase}/brands`;
+const mainSiteHome = mainSiteBase;
+---
+
+<!-- Hero Section -->
+<section class="pt-14 md:pt-24 pb-12 md:pb-20 bg-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      <div class="text-left">
+        <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-normal mb-6 font-heading">
+          {t(locale, 'hero.formula3TitleSupport')}<br />
+          {t(locale, 'hero.formula3TitleEarn')} <span class="text-brand-orange">{brandName} {productCategory} {rewardTypeName}</span>
+        </h1>
+        <p class="text-lg md:text-xl text-gray-600 mb-8 max-w-xl">
+          {t(locale, 'hero.formula3Subtitle', { brandName })}
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4">
+          <a href={mainSiteProjects} class="inline-flex items-center justify-center px-6 py-3 rounded-md bg-brand-orange text-white font-medium hover:opacity-90 transition-opacity text-sm">
+            {t(locale, 'hero.startSupportingArrow')}
+          </a>
+          <a href={mainSiteRewards} class="inline-flex items-center justify-center px-6 py-3 rounded-md border border-gray-300 text-gray-700 font-medium hover:border-brand-orange hover:text-brand-orange transition-colors text-sm">
+            {t(locale, 'hero.viewRewards')}
+          </a>
+        </div>
+        <p class="mt-4 text-sm text-gray-600 font-medium">
+          {t(locale, 'hero.donateDisclaimer')}
+        </p>
+      </div>
+      <div class="relative h-[400px] md:h-[500px]">
+        {brandLogoUrl && (
+          <div class="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-white rounded-2xl shadow-lg p-6 border-2 border-gray-200">
+            <img src={brandLogoUrl} alt={brandName} class="w-full h-full object-contain" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'w-full h-full flex items-center justify-center\'><span class=\'text-4xl font-bold text-brand-orange\'>' + (this.alt || '?').charAt(0) + '</span></div>';" />
+          </div>
+        )}
+        {brandRewards[0] && (brandRewards[0].imageUrl || brandRewards[0].image_url) ? (
+          <div class="absolute top-16 right-0 w-40 h-40 bg-white rounded-2xl shadow-lg p-2 border-2 border-gray-200">
+            <img src={brandRewards[0].imageUrl || brandRewards[0].image_url} alt={brandRewards[0].title} class="w-full h-full object-cover rounded-xl" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=400&h=400&fit=crop&q=80';" />
+            <span class="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white px-2 py-0.5 rounded border border-gray-200 text-gray-800 whitespace-nowrap">
+              {t(locale, 'hero.rewardFromBrand', { brandName })}
+            </span>
+          </div>
+        ) : brandLogoUrl ? (
+          <div class="absolute right-2 top-8">
+            <div class="relative group cursor-pointer">
+              <div class="w-32 h-32 rounded-full bg-white ring-4 ring-orange-100 flex items-center justify-center p-4 transition-transform duration-300 group-hover:scale-110">
+                <img src={brandLogoUrl} alt={`${brandName} logo`} class="max-w-full max-h-full object-contain" onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\'text-2xl font-bold text-brand-orange\'>' + (this.alt || '?').charAt(0) + '</span>';" />
+              </div>
+              <span class="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white px-2 py-0.5 rounded border border-gray-200 text-gray-800 whitespace-nowrap">
+                {t(locale, 'hero.rewardPartner')}
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div class="absolute right-2 top-8">
+            <div class="relative group cursor-pointer">
+              <div class="w-32 h-32 rounded-full bg-white ring-4 ring-orange-100 flex items-center justify-center p-4 transition-transform duration-300 group-hover:scale-110">
+                <span class="text-2xl font-bold text-brand-orange">{brandName.charAt(0)}</span>
+              </div>
+              <span class="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] bg-white px-2 py-0.5 rounded border border-gray-200 text-gray-800 whitespace-nowrap">{brandName}</span>
+            </div>
+          </div>
+        )}
+        {impactProjects[0] && (
+          <div class="absolute bottom-8 left-8 w-40 h-40 bg-white rounded-2xl shadow-lg p-2 border-2 border-gray-200">
+            {getProjectImageUrl(impactProjects[0]) ? (
+              <img src={getProjectImageUrl(impactProjects[0])} alt={impactProjects[0].title} class="w-full h-full object-cover rounded-xl" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1497486751825-1233686d5d80?w=400&h=400&fit=crop&q=80';" />
+            ) : (
+              <div class="w-full h-full bg-orange-100 rounded-xl flex items-center justify-center"><span class="text-3xl font-bold text-brand-orange">{impactProjects[0].title.charAt(0)}</span></div>
+            )}
+          </div>
+        )}
+        {impactProjects[1] && (
+          <div class="absolute top-1/2 right-4 w-36 h-36 bg-white rounded-2xl shadow-lg p-2 border-2 border-gray-200 -translate-y-1/2">
+            {getProjectImageUrl(impactProjects[1]) ? (
+              <img src={getProjectImageUrl(impactProjects[1])} alt={impactProjects[1].title} class="w-full h-full object-cover rounded-xl" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1497486751825-1233686d5d80?w=400&h=400&fit=crop&q=80';" />
+            ) : (
+              <div class="w-full h-full bg-orange-100 rounded-xl flex items-center justify-center"><span class="text-2xl font-bold text-brand-orange">{impactProjects[1].title.charAt(0)}</span></div>
+            )}
+          </div>
+        )}
+        {impactProjects[2] && (
+          <div class="absolute bottom-4 right-24 w-32 h-32 bg-white rounded-2xl shadow-lg p-2 border-2 border-gray-200">
+            {getProjectImageUrl(impactProjects[2]) ? (
+              <img src={getProjectImageUrl(impactProjects[2])} alt={impactProjects[2].title} class="w-full h-full object-cover rounded-xl" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1497486751825-1233686d5d80?w=400&h=400&fit=crop&q=80';" />
+            ) : (
+              <div class="w-full h-full bg-orange-100 rounded-xl flex items-center justify-center"><span class="text-2xl font-bold text-brand-orange">{impactProjects[2].title.charAt(0)}</span></div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works -->
+<section class="py-20 md:py-28 bg-gray-50">
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+    <h2 class="text-3xl md:text-4xl font-semibold text-gray-900 mb-4 font-heading text-center">
+      {t(locale, 'howItWorks.title')}
+    </h2>
+    <p class="text-lg text-gray-600 text-center max-w-2xl mx-auto mb-16">
+      {t(locale, 'howItWorks.subtitle')}
+    </p>
+    <div class="relative">
+      <div class="hidden md:block absolute top-24 left-0 right-0 h-0.5 bg-gray-200" style="z-index: 0;"></div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-6 relative" style="z-index: 1;">
+        <div class="group relative bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-md hover:border-orange-100 transition-all duration-300">
+          <div class="flex flex-col items-center text-center">
+            <div class="w-14 h-14 rounded-2xl bg-white border-2 border-brand-orange flex items-center justify-center mb-6 shadow-sm group-hover:shadow-md transition-shadow">
+              <span class="text-2xl font-bold text-brand-orange">1</span>
+            </div>
+            <h3 class="font-semibold text-xl text-gray-900 mb-3 font-heading">{t(locale, 'howItWorks.support')}</h3>
+            <p class="text-gray-600 text-sm leading-relaxed">{t(locale, 'howItWorks.step1Text')}</p>
+          </div>
+        </div>
+        <div class="group relative bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-md hover:border-orange-100 transition-all duration-300">
+          <div class="flex flex-col items-center text-center">
+            <div class="w-14 h-14 rounded-2xl bg-white border-2 border-brand-orange flex items-center justify-center mb-6 shadow-sm group-hover:shadow-md transition-shadow">
+              <span class="text-2xl font-bold text-brand-orange">2</span>
+            </div>
+            <h3 class="font-semibold text-xl text-gray-900 mb-3 font-heading">{t(locale, 'howItWorks.earnPoints')}</h3>
+            <p class="text-gray-600 text-sm leading-relaxed">{t(locale, 'howItWorks.step2Text')}</p>
+          </div>
+        </div>
+        <div class="group relative bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-md hover:border-orange-100 transition-all duration-300">
+          <div class="flex flex-col items-center text-center">
+            <div class="w-14 h-14 rounded-2xl bg-white border-2 border-brand-orange flex items-center justify-center mb-6 shadow-sm group-hover:shadow-md transition-shadow">
+              <span class="text-2xl font-bold text-brand-orange">3</span>
+            </div>
+            <h3 class="font-semibold text-xl text-gray-900 mb-3 font-heading">{t(locale, 'howItWorks.redeem')}</h3>
+            <p class="text-gray-600 text-sm leading-relaxed">
+              {t(locale, 'howItWorks.step3Text', { rewardTypeName, brandName, productCategory })}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Featured Social Enterprises -->
+<section id="featured-projects" class="py-16 md:py-20 bg-gray-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-12">
+      <h2 class="text-3xl md:text-4xl font-semibold text-gray-900 mb-4 font-heading">
+        {t(locale, 'sections.featuredProjects')}
+      </h2>
+      <p class="text-lg text-gray-600 max-w-3xl mx-auto">
+        {t(locale, 'sections.featuredProjectsSub', { brandName })}
+      </p>
+    </div>
+    {impactProjects.length > 0 && (
+      <>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-6">
+          {impactProjects.slice(0, 8).map((project) => (
+            <div class="bg-white border-2 border-gray-200 rounded-lg overflow-hidden flex flex-col h-full hover:shadow-lg transition-all duration-300">
+              <div class="w-full h-48 overflow-hidden">
+                {getProjectImageUrl(project) ? (
+                  <img src={getProjectImageUrl(project)} alt={project.title} class="w-full h-full object-cover" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1497486751825-1233686d5d80?w=400&h=192&fit=crop&q=80';" />
+                ) : (
+                  <div class="w-full h-full bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center">
+                    <span class="text-4xl font-bold text-brand-orange">{project.title.charAt(0)}</span>
+                  </div>
+                )}
+              </div>
+              <div class="p-4 flex-grow">
+                <span class="inline-block mb-2 px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-800">{project.category}</span>
+                <h3 class="text-lg font-semibold text-gray-900 font-heading mb-2">{project.title}</h3>
+                <p class="text-sm text-gray-600 mb-2 line-clamp-3 leading-relaxed">
+                  {project.missionStatement || project.mission_statement || project.summary || project.description}
+                </p>
+              </div>
+              <div class="p-4 pt-0 mt-auto">
+                <a href={`https://dopaya.com/project/${project.slug}`} class="inline-flex items-center justify-center w-full px-4 py-2 rounded-md text-sm font-medium bg-orange-100 text-gray-900 hover:bg-orange-200 transition-colors border border-orange-200">
+                  {t(locale, 'sections.viewProject')}
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div class="mt-10 text-center">
+          <a href={mainSiteProjects} class="inline-flex items-center justify-center px-6 py-3 rounded-md border border-brand-orange text-brand-orange font-medium hover:bg-brand-orange hover:text-white transition-all text-sm">
+            {t(locale, 'sections.seeAllSocialEnterprises')}
+          </a>
+        </div>
+      </>
+    )}
+  </div>
+</section>
+
+<!-- Brand Rewards Section -->
+<section class="py-16 md:py-24 bg-gray-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-12">
+      <h2 class="text-3xl md:text-4xl font-semibold text-gray-900 mb-4 font-heading">
+        {t(locale, 'sections.yourRewardsAt', { brandName })}
+      </h2>
+      <p class="text-lg text-gray-600 max-w-3xl mx-auto">
+        {t(locale, 'sections.yourRewardsAtSub', { rewardTypeName, brandName, productCategory })}
+      </p>
+    </div>
+    <div class="grid gap-6" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">
+      {brandRewards.length > 0 ? (
+        <>
+          {brandRewards.map((reward) => (
+            <div class="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-all duration-300 hover:border-orange-200">
+              {(reward.imageUrl || reward.image_url) && (
+                <div class="relative aspect-[4/3] bg-gray-50">
+                  <img src={reward.imageUrl || reward.image_url} alt={reward.title} class="w-full h-full object-cover" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=400&h=300&fit=crop&q=80';" />
+                  {brandLogoUrl && (
+                    <div class="absolute top-3 right-3 bg-white rounded-lg p-2 shadow-sm">
+                      <img src={brandLogoUrl} alt={brandName} class="h-5 w-auto object-contain" onerror="this.onerror=null; this.style.display='none';" />
+                    </div>
+                  )}
+                </div>
+              )}
+              <div class="p-5 space-y-3">
+                <div>
+                  <h3 class="font-semibold text-lg mb-1">{reward.title}</h3>
+                  <p class="text-sm text-gray-600 line-clamp-2">{reward.description}</p>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-xs text-gray-500">{t(locale, 'sections.requires')}</p>
+                    <p class="text-xl font-bold text-gray-900">
+                      {reward.pointsCost} <span class="text-sm font-normal text-gray-600">{t(locale, 'sections.points')}</span>
+                    </p>
+                  </div>
+                  {reward.retail_value && (
+                    <div class="text-right">
+                      <p class="text-xs text-gray-500">{t(locale, 'sections.value')}</p>
+                      <p class="text-base font-semibold text-green-600">{reward.retail_value}</p>
+                    </div>
+                  )}
+                </div>
+                {brand && (
+                  <p class="text-sm text-gray-500">
+                    {t(locale, 'sections.brandLabel')} <span class="font-medium text-gray-900">{brandName}</span>
+                  </p>
+                )}
+                <a href={mainSiteRewards} class="block w-full text-center px-4 py-2 rounded-md text-sm font-medium bg-orange-100 text-gray-900 hover:bg-orange-200 transition-colors border border-orange-200">
+                  {t(locale, 'sections.unlockReward')}
+                </a>
+              </div>
+            </div>
+          ))}
+          <div class="bg-white rounded-2xl p-6 border border-gray-200 flex flex-col justify-center min-h-[200px]">
+            <div class="text-center">
+              <div class="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <svg class="w-7 h-7 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"></path></svg>
+              </div>
+              <h3 class="text-lg font-semibold text-gray-900 mb-2">{t(locale, 'sections.exploreAllRewards')}</h3>
+              <p class="text-sm text-gray-600 mb-4">{t(locale, 'sections.exploreAllRewardsSub', { brandName })}</p>
+              <a href={mainSiteRewards} class="inline-block px-4 py-2 rounded-md text-sm font-medium bg-orange-100 text-gray-900 hover:bg-orange-200 transition-colors border border-orange-200">
+                {t(locale, 'sections.seeAllRewards')}
+              </a>
+            </div>
+          </div>
+        </>
+      ) : (
+        <div class="text-center bg-white rounded-2xl p-10 border border-gray-200 col-span-full">
+          <p class="text-base text-gray-700 mb-5">
+            {t(locale, 'sections.rewardsComingSoon', { brandName })}
+          </p>
+          <a href={mainSiteRewards} class="inline-block px-4 py-2 rounded-md text-sm font-medium bg-orange-100 text-gray-900 hover:bg-orange-200 transition-colors border border-orange-200">
+            {t(locale, 'sections.seeAllRewards')}
+          </a>
+        </div>
+      )}
+    </div>
+
+    <!-- Brand Info Section -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16">
+      <div class="bg-white rounded-3xl p-8 md:p-12 border border-gray-200 shadow-sm">
+        <div class="flex items-start gap-6 mb-6">
+          {brandLogoUrl ? (
+            <div class="flex-shrink-0">
+              <img src={brandLogoUrl} alt={brandName} class="h-20 w-auto object-contain bg-white p-3 rounded-xl border border-gray-200" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'h-20 w-20 bg-white rounded-xl border border-gray-200 flex items-center justify-center\'><span class=\'text-3xl font-bold text-brand-orange\'>' + (brandName || '?').charAt(0) + '</span></div>';" />
+            </div>
+          ) : (
+            <div class="flex-shrink-0 h-20 w-20 bg-white rounded-xl border border-gray-200 flex items-center justify-center">
+              <span class="text-3xl font-bold text-brand-orange">{brandName.charAt(0)}</span>
+            </div>
+          )}
+          <div class="flex-1">
+            <h3 class="text-3xl font-semibold text-gray-900 mb-2">{brandName}</h3>
+            {brand && (brand.category || brand.country) && (
+              <p class="text-base text-gray-600 mb-3">{brand.category || 'Sustainable Brand'} • {brand.country || '🌍 Global'}</p>
+            )}
+            <div class="flex flex-wrap gap-2">
+              {formula3.brand.sustainability && Object.entries(formula3.brand.sustainability).map(([key, value]) =>
+                value && (
+                  <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+                    {key === 'treePlanting' && '🌳 Tree Planting'}
+                    {key === 'carbonNeutral' && '♻️ Carbon Neutral'}
+                    {key === 'fairTrade' && '🤝 Fair Trade'}
+                    {key === 'circular' && '🔄 Circular Economy'}
+                    {key === 'organic' && '🌿 Organic Materials'}
+                    {key === 'ethical' && '✨ Ethical Production'}
+                    {key === 'recycled' && '♻️ Recycled Materials'}
+                    {key === 'durable' && '💪 Durable Design'}
+                    {key === 'localProduction' && '🏔️ Local Production'}
+                    {key === 'waterSaving' && '💧 Water Saving'}
+                    {key === 'innovation' && '💡 Innovation'}
+                    {key === 'oceanPlastic' && '🌊 Ocean Plastic'}
+                  </span>
+                )
+              )}
+            </div>
+          </div>
+        </div>
+        <div class="space-y-6">
+          <div>
+            <h4 class="text-xl font-semibold text-gray-900 mb-3">{t(locale, 'sections.aboutBrand', { brandName })}</h4>
+            <p class="text-base text-gray-700 leading-relaxed mb-4">{brandDescription || formula3.brand.description}</p>
+            <div class="grid md:grid-cols-2 gap-6 mt-6">
+              <div class="bg-white rounded-xl p-6 border border-gray-200">
+                <h5 class="font-semibold text-gray-900 mb-3 flex items-center">
+                  <svg class="w-5 h-5 mr-2 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  {t(locale, 'sections.whyBrand', { brandName })}
+                </h5>
+                <p class="text-sm text-gray-600 leading-relaxed">
+                  {t(locale, 'sections.whyBrandText', { brandName, productCategory })}
+                </p>
+              </div>
+              <div class="bg-white rounded-xl p-6 border border-gray-200">
+                <h5 class="font-semibold text-gray-900 mb-3 flex items-center">
+                  <svg class="w-5 h-5 mr-2 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                  {t(locale, 'sections.impactPartnership')}
+                </h5>
+                <p class="text-sm text-gray-600 leading-relaxed">
+                  {t(locale, 'sections.impactPartnershipText', { brandName })}
+                </p>
+              </div>
+              {brandRewards.length > 0 && (
+                <div class="bg-white rounded-xl p-6 border border-gray-200">
+                  <h5 class="font-semibold text-gray-900 mb-3 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    {t(locale, 'sections.availableRewards')}
+                  </h5>
+                  <p class="text-sm text-gray-600 leading-relaxed">
+                    {t(locale, 'sections.availableRewardsText', { count: String(brandRewards.length), rewardTypeName, productCategory, brandName })}
+                  </p>
+                </div>
+              )}
+              <div class="bg-white rounded-xl p-6 border border-gray-200">
+                <h5 class="font-semibold text-gray-900 mb-3 flex items-center">
+                  <svg class="w-5 h-5 mr-2 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+                  {t(locale, 'sections.learnMore')}
+                </h5>
+                <div class="space-y-2">
+                  {brandWebsite && (
+                    <a href={brandWebsite} target="_blank" rel="noopener noreferrer" class="text-sm text-brand-orange hover:underline font-medium flex items-center">
+                      {t(locale, 'sections.visitBrandWebsite', { brandName })}
+                      <svg class="ml-1 w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Why Brand + Dopaya? -->
+<section class="py-16 md:py-20 bg-white">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <h2 class="text-2xl md:text-3xl font-semibold text-gray-900 mb-6 font-heading">
+      {t(locale, 'sections.whyBrandDopaya', { brandName })}
+    </h2>
+    <div class="prose prose-lg text-gray-700 leading-relaxed space-y-4">
+      <p>
+        {brandName} and Dopaya share a commitment to sustainable impact. When you support independent social enterprises on Dopaya, you earn Impact Points — and those points unlock {rewardTypeName} at {brandName} for {productCategory}. Unlike traditional cashback or loyalty programs, every reward you redeem is tied to real, measurable impact.
+      </p>
+      <p>
+        Dopaya connects conscious consumers with both impact and rewards. You choose which social enterprises to support, see exactly where your money goes, and earn rewards from sustainable brands like {brandName} in return.
+      </p>
+      <p>
+        {brandName} partners with Dopaya because we share the same values: transparency, ethical production, and positive environmental and social impact.
+      </p>
+    </div>
+    <div class="mt-8 p-6 bg-gray-50 rounded-2xl border border-gray-200">
+      <h3 class="font-semibold text-gray-900 mb-2">{t(locale, 'sections.whoIsThisFor')}</h3>
+      <p class="text-gray-700 text-sm leading-relaxed">
+        {t(locale, 'sections.whoIsThisForText', { benefitModifier, rewardTypeName, brandName, productCategory })}
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- Why Dopaya? How we're different -->
+<section class="py-16 md:py-20 bg-gray-50">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <h2 class="text-2xl md:text-3xl font-semibold text-gray-900 mb-6 font-heading">
+      {t(locale, 'sections.whyDopayaDifferent')}
+    </h2>
+    <div class="grid md:grid-cols-2 gap-6">
+      <div class="bg-white rounded-xl p-6 border border-gray-200">
+        <h3 class="font-semibold text-gray-900 mb-3 flex items-center">
+          <span class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center mr-3 text-emerald-600 text-sm font-bold">1</span>
+          {t(locale, 'sections.toTheCause')}
+        </h3>
+        <p class="text-sm text-gray-600 leading-relaxed">{t(locale, 'sections.toTheCauseText')}</p>
+      </div>
+      <div class="bg-white rounded-xl p-6 border border-gray-200">
+        <h3 class="font-semibold text-gray-900 mb-3 flex items-center">
+          <span class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center mr-3 text-emerald-600 text-sm font-bold">2</span>
+          {t(locale, 'sections.youChoose')}
+        </h3>
+        <p class="text-sm text-gray-600 leading-relaxed">{t(locale, 'sections.youChooseText')}</p>
+      </div>
+      <div class="bg-white rounded-xl p-6 border border-gray-200">
+        <h3 class="font-semibold text-gray-900 mb-3 flex items-center">
+          <span class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center mr-3 text-emerald-600 text-sm font-bold">3</span>
+          {t(locale, 'sections.rewardsFromBrands')}
+        </h3>
+        <p class="text-sm text-gray-600 leading-relaxed">
+          {t(locale, 'sections.rewardsFromBrandsText', { rewardTypeName, brandName })}
+        </p>
+      </div>
+      <div class="bg-white rounded-xl p-6 border border-gray-200">
+        <h3 class="font-semibold text-gray-900 mb-3 flex items-center">
+          <span class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center mr-3 text-emerald-600 text-sm font-bold">4</span>
+          {t(locale, 'sections.verifiedEnterprises')}
+        </h3>
+        <p class="text-sm text-gray-600 leading-relaxed">{t(locale, 'sections.verifiedEnterprisesText')}</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Impact Points Journey -->
+<section class="py-16 md:py-24 bg-white">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="bg-gray-50 rounded-3xl p-10 border border-gray-200">
+      <h3 class="text-2xl md:text-3xl font-semibold text-gray-900 mb-4 font-heading text-center">
+        {t(locale, 'impactJourney.title', { brandName })}
+      </h3>
+      <p class="text-center text-base text-gray-600 mb-2 max-w-2xl mx-auto">
+        {t(locale, 'impactJourney.subtext', { brandName, productCategory })}
+      </p>
+      <p class="text-center text-sm text-gray-500 mb-8 max-w-2xl mx-auto">
+        100% of your donation goes to the cause you choose. Track every dollar on your <a href={mainSiteHome} class="text-brand-orange hover:underline font-medium">{t(locale, 'impactJourney.dashboardLink')}</a>.
+      </p>
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="text-center p-6 bg-white rounded-2xl shadow-sm border border-gray-200">
+          <div class="text-2xl font-bold text-gray-900 mb-2">$25</div>
+          <div class="text-base text-gray-700 mb-3 font-medium">→ 250 {t(locale, 'sections.points')}</div>
+          <div class="text-sm text-gray-600">
+            {t(locale, 'impactJourney.pointsToward', { points: '250', rewardTypeName, brandName })}
+          </div>
+        </div>
+        <div class="text-center p-6 bg-white rounded-2xl shadow-sm border border-gray-200">
+          <div class="text-2xl font-bold text-gray-900 mb-2">$50</div>
+          <div class="text-base text-gray-700 mb-3 font-medium">→ 500 {t(locale, 'sections.points')}</div>
+          <div class="text-sm text-gray-600">
+            {t(locale, 'impactJourney.pointsToward', { points: '500', rewardTypeName, brandName })}
+          </div>
+        </div>
+        <div class="text-center p-6 bg-white rounded-2xl shadow-sm border border-gray-200">
+          <div class="text-2xl font-bold text-gray-900 mb-2">$100</div>
+          <div class="text-base text-gray-700 mb-3 font-medium">→ 1000 {t(locale, 'sections.points')}</div>
+          <div class="text-sm text-gray-600">
+            {t(locale, 'impactJourney.pointsTowardCategory', { points: '1000', productCategory, brandName })}
+          </div>
+        </div>
+        <div class="text-center p-6 bg-emerald-50 rounded-2xl shadow-sm border-2 border-emerald-200">
+          <div class="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-3">
+            <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          </div>
+          <h4 class="font-bold text-gray-900 mb-2 text-sm uppercase tracking-wide">{t(locale, 'impactJourney.everyReward')}</h4>
+          <p class="text-sm text-gray-700 leading-snug mb-3">
+            {t(locale, 'impactJourney.everyRewardText', { rewardTypeName })}
+          </p>
+          <a href={mainSiteProjects} class="inline-block text-xs font-medium text-emerald-700 hover:text-emerald-800 hover:underline">
+            {t(locale, 'impactJourney.startJourney')}
+          </a>
+        </div>
+      </div>
+      <div class="mt-8 text-center">
+        <a href={mainSiteProjects} class="inline-flex items-center justify-center px-6 py-3 rounded-md bg-brand-orange text-white font-medium hover:opacity-90 text-sm transition-opacity">
+          {t(locale, 'impactJourney.cta')}
+        </a>
+      </div>
+      {brandCategories.length > 0 && (
+        <div class="mt-10 pt-8 border-t border-gray-200">
+          <h4 class="text-lg font-semibold text-gray-900 mb-3 font-heading text-center">
+            {t(locale, 'sections.categoryAndMore', { productCategory, brandName })}
+          </h4>
+          <p class="text-center text-sm text-gray-600 max-w-2xl mx-auto mb-4">
+            {t(locale, 'sections.categoryAndMoreSub', { brandName, productCategory, rewardTypeName })}
+          </p>
+          <div class="flex flex-wrap justify-center gap-2">
+            {brandCategories.map((label) => (
+              <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-white border border-gray-200 text-gray-700">{label}</span>
+            ))}
+          </div>
+          <p class="text-center text-sm text-gray-500 mt-4">
+            <a href={mainSiteRewards} class="text-brand-orange hover:underline font-medium">{t(locale, 'sections.browseAllRewards', { brandName })}</a>
+          </p>
+        </div>
+      )}
+    </div>
+  </div>
+</section>
+
+<!-- FAQ Section -->
+<section class="py-16 md:py-24 bg-gray-50">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-12">
+      <h2 class="text-3xl md:text-4xl font-semibold text-gray-900 mb-4 font-heading">
+        {t(locale, 'sections.questionsAndAnswers')}
+      </h2>
+      <p class="text-lg text-gray-600">
+        {t(locale, 'sections.questionsAndAnswersSub', { brandName, productCategory })}
+      </p>
+    </div>
+    <div class="space-y-6">
+      <details class="group bg-white rounded-xl border border-gray-200 p-6 hover:border-orange-200 transition-colors">
+        <summary class="cursor-pointer list-none">
+          <h3 class="text-lg font-semibold text-gray-900 group-open:text-brand-orange">
+            What is {brandName} {productCategory} {rewardTypeName} {benefitModifier}?
+          </h3>
+        </summary>
+        <div class="mt-4 text-base text-gray-700 leading-relaxed">
+          It's a way to support independent social enterprises on Dopaya, earn Impact Points ($10 donated = 100 Impact Points), and redeem {rewardTypeName} at {brandName} for {productCategory} — designed for conscious consumers {benefitModifier}.
+        </div>
+      </details>
+      <details class="group bg-white rounded-xl border border-gray-200 p-6 hover:border-orange-200 transition-colors">
+        <summary class="cursor-pointer list-none">
+          <h3 class="text-lg font-semibold text-gray-900 group-open:text-brand-orange">
+            How do Impact Points turn into {brandName} {productCategory} {rewardTypeName}?
+          </h3>
+        </summary>
+        <div class="mt-4 text-base text-gray-700 leading-relaxed">
+          When you donate to verified social enterprises on Dopaya, you earn Impact Points ($10 = 100 points). You can then redeem these points for {rewardTypeName} at {brandName} on {productCategory}.
+        </div>
+      </details>
+      <details class="group bg-white rounded-xl border border-gray-200 p-6 hover:border-orange-200 transition-colors">
+        <summary class="cursor-pointer list-none">
+          <h3 class="text-lg font-semibold text-gray-900 group-open:text-brand-orange">
+            Are these {brandName} projects or independent social enterprises?
+          </h3>
+        </summary>
+        <div class="mt-4 text-base text-gray-700 leading-relaxed">
+          The projects shown are independent social enterprises on Dopaya. {brandName} is a sustainable reward partner — your Impact Points from supporting these enterprises can be redeemed for {productCategory} rewards at {brandName}.
+        </div>
+      </details>
+      <details class="group bg-white rounded-xl border border-gray-200 p-6 hover:border-orange-200 transition-colors">
+        <summary class="cursor-pointer list-none">
+          <h3 class="text-lg font-semibold text-gray-900 group-open:text-brand-orange">
+            How much do I need to donate to get {brandName} {productCategory} rewards?
+          </h3>
+        </summary>
+        <div class="mt-4 text-base text-gray-700 leading-relaxed">
+          Rewards start from as low as $25 (250 Impact Points). $50 gives you 500 points, $100 gives you 1000 points, unlocking progressively better {rewardTypeName} at {brandName} on {productCategory}.
+        </div>
+      </details>
+      <details class="group bg-white rounded-xl border border-gray-200 p-6 hover:border-orange-200 transition-colors">
+        <summary class="cursor-pointer list-none">
+          <h3 class="text-lg font-semibold text-gray-900 group-open:text-brand-orange">
+            Is Dopaya transparent about where my money goes?
+          </h3>
+        </summary>
+        <div class="mt-4 text-base text-gray-700 leading-relaxed">
+          Yes. Dopaya provides full transparency: 100% of your donation goes to the social enterprise you choose, and you can track every dollar's impact on your dashboard. {brandName} is a verified sustainable brand partner offering rewards for your impact.
+        </div>
+      </details>
+      <details class="group bg-white rounded-xl border border-gray-200 p-6 hover:border-orange-200 transition-colors">
+        <summary class="cursor-pointer list-none">
+          <h3 class="text-lg font-semibold text-gray-900 group-open:text-brand-orange">
+            Can I use {brandName} {productCategory} {rewardTypeName} if I'm {benefitModifier}?
+          </h3>
+        </summary>
+        <div class="mt-4 text-base text-gray-700 leading-relaxed">
+          Absolutely. This combination is specifically designed for people {benefitModifier}. By supporting verified social enterprises and earning {rewardTypeName} at {brandName}, you align your giving with your values.
+        </div>
+      </details>
+      <details class="group bg-white rounded-xl border border-gray-200 p-6 hover:border-orange-200 transition-colors">
+        <summary class="cursor-pointer list-none">
+          <h3 class="text-lg font-semibold text-gray-900 group-open:text-brand-orange">
+            How do I sign up for Dopaya?
+          </h3>
+        </summary>
+        <div class="mt-4 text-base text-gray-700 leading-relaxed">
+          Visit dopaya.com and click Register. Create a free account, then choose a social enterprise to support. Your donations earn Impact Points instantly, which you can redeem for {rewardTypeName} at {brandName} and other sustainable brands.
+        </div>
+      </details>
+      <details class="group bg-white rounded-xl border border-gray-200 p-6 hover:border-orange-200 transition-colors">
+        <summary class="cursor-pointer list-none">
+          <h3 class="text-lg font-semibold text-gray-900 group-open:text-brand-orange">
+            Is Dopaya free to use?
+          </h3>
+        </summary>
+        <div class="mt-4 text-base text-gray-700 leading-relaxed">
+          Yes. Creating an account and using Dopaya is free. You only pay when you choose to donate to a social enterprise — and 100% of that donation goes to the cause. Dopaya earns through brand partnerships, not from your giving.
+        </div>
+      </details>
+    </div>
+    <div class="mt-12 text-center">
+      <p class="text-lg text-gray-700 mb-6">
+        {t(locale, 'cta.readyToSupport', { rewardTypeName, brandName })}
+      </p>
+      <a href={mainSiteHome} class="inline-flex items-center justify-center px-6 py-3 rounded-md bg-brand-orange text-white font-medium hover:opacity-90 transition-opacity text-sm">
+        {t(locale, 'cta.joinDopaya')}
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Related Combinations -->
+<section class="py-16 md:py-20 bg-white">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+      <div class="bg-orange-50 rounded-2xl p-8 border border-orange-100">
+        <h3 class="text-2xl font-semibold text-gray-900 mb-4 font-heading">
+          {t(locale, 'sections.exploreMorePaths')}
+        </h3>
+        <p class="text-base text-gray-600 mb-6">
+          {t(locale, 'sections.exploreMorePathsSub')}
+        </p>
+        <div class="flex flex-col gap-3">
+          <a href={mainSiteBrands} class="inline-flex items-center justify-center px-6 py-3 rounded-md border border-brand-orange text-brand-orange font-medium hover:bg-brand-orange hover:text-white transition-all text-sm">
+            {t(locale, 'sections.allBrandPartners')}
+          </a>
+          <a href={mainSiteProjects} class="inline-flex items-center justify-center px-6 py-3 rounded-md border border-brand-orange text-brand-orange font-medium hover:bg-brand-orange hover:text-white transition-all text-sm">
+            {t(locale, 'sections.allSocialEnterprises')}
+          </a>
+        </div>
+      </div>
+      {relatedCombos.length > 0 && (
+        <div class="bg-white rounded-2xl p-8 border border-gray-200">
+          <h3 class="text-2xl font-semibold text-gray-900 mb-4 font-heading">
+            {t(locale, 'sections.relatedCombos')}
+          </h3>
+          <ul class="space-y-3">
+            {relatedCombos.map((combo) => (
+              <li>
+                <a href={getLocaleUrl(`/brands/${combo.slug}`, locale)} class="text-base text-brand-orange hover:text-orange-600 font-medium transition-colors flex items-center group">
+                  <svg class="w-4 h-4 mr-2 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                  {combo.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  </div>
+</section>
+
+<!-- Final CTA -->
+<section class="py-20 md:py-24 relative overflow-hidden" style="background: linear-gradient(135deg, #F05304 0%, #ff7b3d 100%);">
+  <div class="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8 relative z-10">
+    <h2 class="text-3xl md:text-4xl font-semibold mb-6 font-heading text-white leading-tight">
+      {t(locale, 'cta.startYourJourney')}
+    </h2>
+    <p class="text-xl md:text-2xl mb-10 text-white/95 leading-relaxed">
+      {t(locale, 'cta.supportEarnRedeem', { rewardTypeName, brandName })}
+    </p>
+    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+      <a href={mainSiteProjects} class="inline-flex items-center justify-center px-6 py-3 rounded-md bg-white text-brand-orange hover:shadow-lg font-medium transition-all text-sm">
+        {t(locale, 'cta.supportNow')}
+        <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
+      </a>
+    </div>
+    <div class="mt-10 pt-8 border-t border-white/30">
+      <p class="text-base text-white/90">
+        <strong class="font-semibold">100% Transparent:</strong> {t(locale, 'cta.transparentNote', { brandName })}
+      </p>
+    </div>
+  </div>
+  <div class="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+    <div class="absolute top-10 left-10 w-32 h-32 bg-white rounded-full blur-3xl"></div>
+    <div class="absolute bottom-10 right-10 w-40 h-40 bg-white rounded-full blur-3xl"></div>
+  </div>
+</section>
