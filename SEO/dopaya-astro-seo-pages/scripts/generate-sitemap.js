@@ -1,7 +1,7 @@
 /**
- * Post-build script: generate sitemap-index.xml and sitemap-*.xml from built output.
- * Run after `astro build` so programmatic and all other pages are included for Google.
- * Max 50,000 URLs per sitemap file (sitemap spec).
+ * Post-build script: generate sitemap-seo.xml with all SEO (programmatic) pages.
+ * Run after `astro build`. Single file for easy submission in Google Search Console.
+ * Max 50,000 URLs per sitemap (we have ~1.4k, so one file is fine).
  */
 
 import fs from 'fs';
@@ -11,7 +11,6 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.join(__dirname, '..', 'dist');
 const SITE = 'https://dopaya.com';
-const MAX_URLS_PER_SITEMAP = 50000;
 
 function collectUrls(dir, basePath = '') {
   const urls = [];
@@ -45,7 +44,16 @@ function escapeXml(unsafe) {
     .replace(/'/g, '&apos;');
 }
 
-function writeUrlsetXml(urls, outPath) {
+function main() {
+  const rootIndex = path.join(distDir, 'index.html');
+  let urls = [];
+  if (fs.existsSync(rootIndex)) {
+    urls.push('/');
+  }
+  urls = [...new Set([...urls, ...collectUrls(distDir)])]
+    .filter((u) => !u.startsWith('/_assets') && !u.startsWith('/logos'))
+    .sort();
+
   const lastmod = new Date().toISOString().slice(0, 10);
   const urlEntries = urls
     .map(
@@ -61,45 +69,10 @@ function writeUrlsetXml(urls, outPath) {
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urlEntries}
 </urlset>`;
+
+  const outPath = path.join(distDir, 'sitemap-seo.xml');
   fs.writeFileSync(outPath, xml, 'utf8');
-}
-
-function writeSitemapIndexXml(chunkNames, outPath) {
-  const urlEntries = chunkNames
-    .map(
-      (name) => `  <sitemap>
-    <loc>${escapeXml(SITE + '/' + name)}</loc>
-    <lastmod>${new Date().toISOString().slice(0, 10)}</lastmod>
-  </sitemap>`
-    )
-    .join('\n');
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urlEntries}
-</sitemapindex>`;
-  fs.writeFileSync(outPath, xml, 'utf8');
-}
-
-function main() {
-  const rootIndex = path.join(distDir, 'index.html');
-  let urls = [];
-  if (fs.existsSync(rootIndex)) {
-    urls.push('/');
-  }
-  urls = [...new Set([...urls, ...collectUrls(distDir)])]
-    .filter((u) => !u.startsWith('/_assets'))
-    .sort();
-
-  const chunks = [];
-  for (let i = 0; i < urls.length; i += MAX_URLS_PER_SITEMAP) {
-    const chunk = urls.slice(i, i + MAX_URLS_PER_SITEMAP);
-    const chunkName = `sitemap-${chunks.length}.xml`;
-    writeUrlsetXml(chunk, path.join(distDir, chunkName));
-    chunks.push(chunkName);
-  }
-
-  writeSitemapIndexXml(chunks, path.join(distDir, 'sitemap-index.xml'));
-  console.log(`[sitemap] Generated sitemap-index.xml with ${chunks.length} chunk(s), ${urls.length} URLs total.`);
+  console.log(`[sitemap] Generated sitemap-seo.xml with ${urls.length} SEO pages.`);
 }
 
 main();

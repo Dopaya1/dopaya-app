@@ -340,6 +340,35 @@ This document outlines the implementation roadmap for Dopaya's programmatic SEO 
 
 ---
 
+## Implementation Status & Technical Notes (Completed)
+
+The following fixes and features have been implemented for programmatic SEO pages on dopaya.com.
+
+### 1. CSS / Assets on Production
+- **Issue:** Programmatic pages (e.g. `/brands/nikin-clothing-cashback-supporting-social-enterprises`) were served as HTML-only; CSS did not load because asset URLs (`/_assets/*`) were not proxied from the Astro deployment.
+- **Fix:** In the main site’s `vercel.json` (dopaya/Tech), a rewrite was added so `/_assets/:path*` is proxied to the Astro deployment (`dopaya-astro-seo-pages.vercel.app`). Reversal instructions are in `ROLLBACK_SEO_ASSETS.md` in the main repo.
+
+### 2. Missing Programmatic Pages on Localhost
+- **Issue:** Some programmatic URLs (e.g. `nikin-clothing-impact-points-for-conscious-consumers`) did not resolve locally.
+- **Fix:** In `dopaya-astro-seo-pages`, `src/data/rewards.json` was updated: an entry for **impact-points** was added to the `rewardTypes` array so Formula 3 slug generation includes impact-points pages.
+
+### 3. Sitemap for Indexing
+- **Issue:** Programmatic pages were not listed in any sitemap, limiting discoverability by Google.
+- **Fix:**
+  - In the Astro project, `scripts/generate-sitemap.js` was added/updated to produce a single **sitemap-seo.xml** with all programmatic (and other Astro-generated) page URLs from `dist/`. This script runs as a **post-build** step.
+  - In the main site’s `vercel.json`, a rewrite was added so **`/sitemap-seo.xml`** is proxied from the Astro deployment.
+
+### Verification After Deployment
+- Confirm programmatic pages on dopaya.com load with CSS (e.g. `/brands/nikin-clothing-cashback-supporting-social-enterprises`).
+- Confirm **https://dopaya.com/sitemap-seo.xml** is live and returns valid XML with all programmatic URLs (~1,418+).
+
+### Google Search Console
+Once `sitemap-seo.xml` is live:
+1. In GSC → **Sitemaps**, add a new sitemap: **sitemap-seo.xml**.
+2. Submit it. Monitor indexing status in GSC.
+
+---
+
 ## Next Steps
 
 1. **Template Design**: Create 3-4 page templates for Phase 1 formulas
@@ -347,3 +376,4 @@ This document outlines the implementation roadmap for Dopaya's programmatic SEO 
 3. **Technical Setup**: Configure programmatic page generation system
 4. **Pilot Launch**: Test with 10-20 pages, measure performance, iterate
 5. **Scale**: Roll out remaining pages based on pilot learnings
+6. **Post-deploy**: Trigger Vercel deploys for both Astro and main site; run verification above; submit `sitemap-seo.xml` in GSC
