@@ -37,6 +37,12 @@
       "benefits": ["Measurable impact", "Verified outcomes", "Progress tracking"]
     },
     {
+      "id": "impact-points",
+      "name": "impact points",
+      "description": "Points earned through verified social and environmental impact when you support causes",
+      "benefits": ["Instant points", "Redeem at brands", "Track impact"]
+    },
+    {
       "id": "gift-cards",
       "name": "gift cards",
       "description": "Reward cards for sustainable brands and social enterprises", 
