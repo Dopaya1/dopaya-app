@@ -23,6 +23,9 @@ const deHreflangUrl = pathWithoutLocale === '/' ? `${baseUrl}/de` : `${baseUrl}/
 const alternateUrl = getAlternateLocaleUrl(pathFromCanonical, locale);
 
 const mainSiteBase = locale === 'de' ? 'https://dopaya.com/de' : 'https://dopaya.com';
+// When pages are served on dopaya.com via rewrite, relative /dopaya-logo.png hits the main site (404). Use Astro origin in production so the logo loads.
+const logoBase = typeof import.meta.env.DEV !== 'undefined' && import.meta.env.DEV ? '' : 'https://dopaya-astro-seo-pages.vercel.app';
+const logoUrl = `${logoBase}/dopaya-logo.png`;
 ---
 
 <html lang={locale === 'de' ? 'de' : 'en'}>
@@ -70,7 +73,7 @@ const mainSiteBase = locale === 'de' ? 'https://dopaya.com/de' : 'https://dopaya
         <div class="flex justify-between h-16">
           <div class="flex items-center">
             <a href={mainSiteBase} class="flex-shrink-0 flex items-center">
-              <img src="/dopaya-logo.png" alt="Dopaya" class="h-6 w-auto" />
+              <img src={logoUrl} alt="Dopaya" class="h-6 w-auto" />
             </a>
           </div>
           
@@ -149,7 +152,7 @@ const mainSiteBase = locale === 'de' ? 'https://dopaya.com/de' : 'https://dopaya
             <!-- Brand Section -->
             <div class="flex flex-col items-start gap-3">
               <a href={mainSiteBase} class="flex flex-row gap-2 items-center justify-start">
-                <img src="/dopaya-logo.png" alt="Dopaya" class="h-6 w-auto" />
+                <img src={logoUrl} alt="Dopaya" class="h-6 w-auto" />
               </a>
               <p class="font-medium text-sm leading-relaxed text-brand-text-secondary">
                 {t(locale, 'footer.tagline')}
