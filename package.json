@@ -97,7 +97,6 @@
     "zod-validation-error": "^3.4.0"
   },
   "devDependencies": {
-    "@vercel/node": "^3.0.33",
     "@replit/vite-plugin-cartographer": "^0.2.8",
     "@replit/vite-plugin-runtime-error-modal": "^0.0.3",
     "@tailwindcss/typography": "^0.5.15",
@@ -110,6 +109,8 @@
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.1",
     "@types/ws": "^8.5.13",
+    "@vercel/functions": "^3.4.2",
+    "@vercel/node": "^3.0.33",
     "@vitejs/plugin-react": "^4.3.2",
     "autoprefixer": "^10.4.20",
     "drizzle-kit": "^0.30.4",
