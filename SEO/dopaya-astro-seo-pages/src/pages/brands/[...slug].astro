@@ -5,6 +5,7 @@ import BrandFormula12Content from '../../components/BrandFormula12Content.astro'
 import { getProjects, getBrands, getRewards } from '../../lib/supabase.ts';
 import { generateFormula3CombinationsAsync } from '../../lib/formula3.ts';
 import { t } from '../../lib/i18n.ts';
+import brandsData from '../../data/brands.json';
 
 type PageType = 'formula3' | 'formula12';
 
@@ -14,6 +15,37 @@ interface RelatedCombo {
 }
 
 export async function getStaticPaths() {
+  // ============================================================================
+  // FEATURE FLAG: Brand Filtering (2026-02-18)
+  // ============================================================================
+  // Set to false to revert to including all brands (rollback option)
+  const ENABLE_BRAND_FILTERING = true;
+  const APPROVED_BRAND_IDS = ["nikin", "rrrevolve", "reslides", "2nd-peak", "wuerfeli", "ecomade"];
+
+  // Helper function to normalize brand names (matches formula3.ts logic)
+  function normalizeToSlug(value: string): string {
+    return value
+      .toLowerCase()
+      .trim()
+      .replace(/\.(ch|com|org|net)$/i, "")
+      .replace(/&/g, "and")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  }
+
+  function findJsonBrandByName(supabaseName: string): any | null {
+    const n = (supabaseName || "").toLowerCase().trim().replace(/\.(ch|com|org|net)$/i, "");
+    const exact = brandsData.brands.find(
+      (j: any) => (j.name || "").toLowerCase().trim().replace(/\.(ch|com|org|net)$/i, "") === n,
+    );
+    if (exact) return exact;
+    return brandsData.brands.find(
+      (j: any) =>
+        (j.name || "").toLowerCase().includes(n) ||
+        n.includes((j.name || "").toLowerCase()),
+    ) ?? null;
+  }
+
   const [combinations, projects, brands, rewards] = await Promise.all([
     generateFormula3CombinationsAsync(),
     getProjects(),
@@ -77,7 +109,24 @@ export async function getStaticPaths() {
   }, {});
 
   const formula12Paths: { params: { slug: string }; props: any }[] = [];
-  brands.forEach((brand: any) => {
+  
+  // CHANGED: Filter brands to only approved ones when ENABLE_BRAND_FILTERING is true
+  // To rollback: Set ENABLE_BRAND_FILTERING = false at the top of this file
+  const brandsToUse = ENABLE_BRAND_FILTERING
+    ? brands.filter((brand: any) => {
+        // First try to find matching brand in JSON
+        const jsonMatch = findJsonBrandByName(brand.name);
+        if (jsonMatch) {
+          // If found in JSON, check if ID is approved
+          return APPROVED_BRAND_IDS.includes(jsonMatch.id);
+        }
+        // If not in JSON, normalize the brand name and check against approved IDs
+        const normalizedId = normalizeToSlug(brand.name);
+        return APPROVED_BRAND_IDS.includes(normalizedId);
+      })
+    : brands;
+  
+  brandsToUse.forEach((brand: any) => {
     Object.entries(projectsByCategory).forEach(([category, categoryProjects]) => {
       const brandRewards = rewards.filter(
         (reward: any) =>

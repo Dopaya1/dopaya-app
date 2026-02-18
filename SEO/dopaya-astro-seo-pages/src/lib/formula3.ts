@@ -16,18 +16,38 @@ export interface Formula3Combination {
   slug: string;
 }
 
-// Fallback list: brands from JSON that should always get programmatic pages (e.g. generic "sustainable fashion brand" not in Supabase)
-const PRIORITY_BRAND_IDS = [
+// ============================================================================
+// FEATURE FLAG: Brand Filtering (2026-02-18)
+// ============================================================================
+// Set to false to revert to including all brands (rollback option)
+const ENABLE_BRAND_FILTERING = true;
+
+// Approved brands only: NIKIN, RRREVOLVE, RESLIDES, 2nd Peak, Würfeli, Ecomade
+// To rollback: Set ENABLE_BRAND_FILTERING = false above
+const APPROVED_BRAND_IDS = [
   "nikin",
   "rrrevolve",
-  "2nd-peak",
   "reslides",
-  "sustainable-fashion-brand",
-  "ethical-home-goods-brand",
-  "rania-kinge",
+  "2nd-peak",
   "wuerfeli",
   "ecomade",
 ];
+
+// Fallback list: brands from JSON that should always get programmatic pages
+// CHANGED: Now only includes approved brands when ENABLE_BRAND_FILTERING is true
+const PRIORITY_BRAND_IDS = ENABLE_BRAND_FILTERING
+  ? APPROVED_BRAND_IDS
+  : [
+      "nikin",
+      "rrrevolve",
+      "2nd-peak",
+      "reslides",
+      "sustainable-fashion-brand",
+      "ethical-home-goods-brand",
+      "rania-kinge",
+      "wuerfeli",
+      "ecomade",
+    ];
 
 const PRIORITY_REWARD_TYPE_IDS = [
   "cashback",
@@ -97,8 +117,23 @@ export async function generateFormula3CombinationsAsync(): Promise<Formula3Combi
   );
 
   const supabaseBrands = await getBrands();
+  // CHANGED: Filter Supabase brands to only approved ones when ENABLE_BRAND_FILTERING is true
   const activeFromSupabase = supabaseBrands.filter(
-    (b: any) => (b.status || "").toLowerCase().trim() === "active",
+    (b: any) => {
+      const status = (b.status || "").toLowerCase().trim() === "active";
+      if (!status) return false;
+      
+      // If brand filtering is enabled, only include approved brands
+      if (ENABLE_BRAND_FILTERING) {
+        const name = (b.name || "").trim();
+        const jsonMatch = findJsonBrandByName(name);
+        const id = jsonMatch ? jsonMatch.id : normalizeToSlug(name);
+        return APPROVED_BRAND_IDS.includes(id);
+      }
+      
+      // Original behavior: include all active brands
+      return true;
+    }
   );
 
   const brandMap = new Map<string, BrandJson>();
