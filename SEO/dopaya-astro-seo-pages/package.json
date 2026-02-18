@@ -6,6 +6,7 @@
     "dev": "astro dev",
     "start": "astro dev",
     "build": "astro build && node scripts/generate-sitemap.js",
+    "validate": "node scripts/validate-sitemap.js",
     "preview": "astro preview",
     "astro": "astro"
   },
