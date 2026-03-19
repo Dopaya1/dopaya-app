@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { getAllBlogPostMeta } from './blog-data';
 
 export interface SitemapUrl {
   url: string;
@@ -7,7 +8,7 @@ export interface SitemapUrl {
   priority: string;
 }
 
-export async function generateSitemap(): Promise<{ staticPages: SitemapUrl[], projectPages: SitemapUrl[] }> {
+export async function generateSitemap(): Promise<{ staticPages: SitemapUrl[], projectPages: SitemapUrl[], blogPages: SitemapUrl[] }> {
   const baseUrl = 'https://dopaya.com';
   
   // Static pages with their priorities and change frequencies
@@ -119,11 +120,28 @@ export async function generateSitemap(): Promise<{ staticPages: SitemapUrl[], pr
     console.error('Error generating project pages for sitemap:', error);
   }
 
-  return { staticPages, projectPages };
+  // Blog post pages (file-based, no database query needed)
+  const blogPosts = getAllBlogPostMeta();
+  const blogPages: SitemapUrl[] = blogPosts.flatMap(post => [
+    {
+      url: `${baseUrl}/blog/${post.slug}`,
+      priority: '0.7',
+      changefreq: 'monthly' as const,
+      lastmod: new Date().toISOString().split('T')[0],
+    },
+    {
+      url: `${baseUrl}/de/blog/${post.slug}`,
+      priority: '0.7',
+      changefreq: 'monthly' as const,
+      lastmod: new Date().toISOString().split('T')[0],
+    },
+  ]);
+
+  return { staticPages, projectPages, blogPages };
 }
 
-export function generateSitemapXML(staticPages: SitemapUrl[], projectPages: SitemapUrl[]): string {
-  const allPages = [...staticPages, ...projectPages];
+export function generateSitemapXML(staticPages: SitemapUrl[], projectPages: SitemapUrl[], blogPages: SitemapUrl[] = []): string {
+  const allPages = [...staticPages, ...projectPages, ...blogPages];
   
   const xmlHeader = '<?xml version="1.0" encoding="UTF-8"?>';
   const urlsetOpen = '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">';
@@ -155,12 +173,12 @@ ${urlsetClose}`;
 
 export async function getSitemapXML(): Promise<string> {
   try {
-    const { staticPages, projectPages } = await generateSitemap();
-    return generateSitemapXML(staticPages, projectPages);
+    const { staticPages, projectPages, blogPages } = await generateSitemap();
+    return generateSitemapXML(staticPages, projectPages, blogPages);
   } catch (error) {
     console.error('Error generating sitemap XML:', error);
     // Return a basic sitemap with just static pages if there's an error
-    const { staticPages } = await generateSitemap();
-    return generateSitemapXML(staticPages, []);
+    const { staticPages, blogPages } = await generateSitemap();
+    return generateSitemapXML(staticPages, [], blogPages);
   }
 }

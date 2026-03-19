@@ -28,6 +28,8 @@ const ResetPasswordPage = lazy(() => import("@/pages/reset-password"));
 const PerformanceTestPage = lazy(() => import("@/pages/performance-test"));
 const AnalyticsTestPage = lazy(() => import("@/pages/analytics-test"));
 const SupportPage = lazy(() => import("@/pages/support-page"));
+const BlogPage = lazy(() => import("@/pages/blog-page"));
+const BlogDetailPage = lazy(() => import("@/pages/blog-detail-page"));
 
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
@@ -119,7 +121,9 @@ function Router({ onOpenAuthModal }: { onOpenAuthModal: (tab: "login" | "registe
       <Route path="/performance-test" component={PerformanceTestPage} />
       <Route path="/analytics-test" component={AnalyticsTestPage} />
       <Route path="/support/:slug" component={SupportPage} />
-      
+      <Route path="/blog" component={BlogPage} />
+      <Route path="/blog/:slug" component={BlogDetailPage} />
+
       {/* Routes with German language prefix */}
       <Route path="/de" component={HomePage} />
       <Route path="/de/projects" component={ProjectsPage} />
@@ -142,7 +146,9 @@ function Router({ onOpenAuthModal }: { onOpenAuthModal: (tab: "login" | "registe
       <Route path="/de/legal" component={LegalNotice} />
       <Route path="/de/eligibility" component={EligibilityGuidelines} />
       <Route path="/de/support/:slug" component={SupportPage} />
-      
+      <Route path="/de/blog" component={BlogPage} />
+      <Route path="/de/blog/:slug" component={BlogDetailPage} />
+
       <Route component={() => <div className="min-h-screen flex items-center justify-center"><h1 className="text-2xl">Page not found</h1></div>} />
     </Switch>
   );
