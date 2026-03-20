@@ -4,9 +4,9 @@ const post: BlogPost = {
   slug: "education-crisis-364000-students-reached-for-10-a-year",
   title: "Education Crisis: 364,000 Students Reached for $10 a Year",
   titleDe: "Bildungskrise: 364'000 Schülerinnen und Schüler erreicht – für 10 Dollar pro Jahr",
-  metaDescription: "Rennis Joseph from Ignis Careers on education crisis — Impact Bites Episode 2",
-  metaDescriptionDe: "Rennis Joseph von Ignis Careers über die Bildungskrise — Impact Bites Episode 2",
-  excerpt: "The global education crisis is producing a generation of young people who have certificates but no skills — 400 million of them worldwide. Rennis Joseph explains how flipping the classroom for $10 per child can change everything.",
+  metaDescription: "Rennis Joseph from Ignis Careers on education crisis - Impact Bites Episode 2",
+  metaDescriptionDe: "Rennis Joseph von Ignis Careers über die Bildungskrise - Impact Bites Episode 2",
+  excerpt: "The global education crisis is producing a generation of young people who have certificates but no skills - 400 million of them worldwide. Rennis Joseph explains how flipping the classroom for $10 per child can change everything.",
   excerptDe: "Die globale Bildungskrise bringt eine Generation junger Menschen hervor, die Zertifikate besitzen, aber keine Kompetenzen. Rennis Joseph erklärt, wie ein umgedrehtes Klassenzimmer für 10 Dollar pro Kind alles verändern kann.",
   youtubeUrl: "https://www.youtube.com/watch?v=9TvOK7ZSyQw",
   author: "Dopaya",
@@ -21,7 +21,7 @@ const post: BlogPost = {
 
 ---
 
-The global education crisis is producing a generation of young people who have certificates but no skills — 400 million of them worldwide, with 290 million in India alone. Rennis Joseph, CEO of Ignis Careers, has spent nearly two decades building a program that flips the classroom on its head, giving students the English fluency and life skills they need to escape poverty — for just $10 per child per year.
+The global education crisis is producing a generation of young people who have certificates but no skills - 400 million of them worldwide, with 290 million in India alone. Rennis Joseph, CEO of Ignis Careers, has spent nearly two decades building a program that flips the classroom on its head, giving students the English fluency and life skills they need to escape poverty - for just $10 per child per year.
 
 [Watch the full episode on YouTube](https://www.youtube.com/watch?v=9TvOK7ZSyQw)
 
@@ -29,20 +29,20 @@ The global education crisis is producing a generation of young people who have c
 
 ## Key Takeaways
 
-- The education crisis is not about access to classrooms — it is about what happens inside them. When teachers talk 80% of the time and students silently take notes, learning does not happen.
-- Connecting lessons to a student's own life — their food, family, surroundings, and ambitions — is not a nice-to-have. It is the difference between education that transforms and education that is forgotten.
+- The education crisis is not about access to classrooms - it is about what happens inside them. When teachers talk 80% of the time and students silently take notes, learning does not happen.
+- Connecting lessons to a student's own life - their food, family, surroundings, and ambitions - is not a nice-to-have. It is the difference between education that transforms and education that is forgotten.
 - Eight years of work in one village produced a 90% higher education enrollment rate, against a national average of around 30–34%. Depth of impact, not breadth, is what drives lasting change.
-- Rote learning and obedience culture do not just produce poor exam results — they actively strip young people of agency, critical thinking, and the ability to negotiate their own futures.
+- Rote learning and obedience culture do not just produce poor exam results - they actively strip young people of agency, critical thinking, and the ability to negotiate their own futures.
 - At $10 per child per year, transformative education is not a resource problem. It is a priority and awareness problem.
-- Social enterprises can be more accountable to their beneficiaries than traditional nonprofits — but systemic barriers in corporate funding continue to exclude them from the resources they deserve.
+- Social enterprises can be more accountable to their beneficiaries than traditional nonprofits - but systemic barriers in corporate funding continue to exclude them from the resources they deserve.
 
 ---
 
 ## About Rennis
 
-[Rennis Joseph](https://linkedin.com/in/rennis-joseph) is the CEO and co-founder of [Ignis Careers](https://igniscareers.com), a social enterprise headquartered in Hyderabad, India, dedicated to bringing English language and life skills education to underserved communities. Originally from Kerala, Rennis studied at Jawaharlal Nehru University, one of India's most prestigious institutions, where he first began supporting low-income students who were being held back not by intelligence, but by the English language barrier. A pivotal three-month project with UNHCR in Delhi — working with Afghan and Burmese refugees — showed him that a well-designed, agency-centered program could move people from poverty into employment, and permanently redirected his path away from academia.
+[Rennis Joseph](https://linkedin.com/in/rennis-joseph) is the CEO and co-founder of [Ignis Careers](https://igniscareers.com), a social enterprise headquartered in Hyderabad, India, dedicated to bringing English language and life skills education to underserved communities. Originally from Kerala, Rennis studied at Jawaharlal Nehru University, one of India's most prestigious institutions, where he first began supporting low-income students who were being held back not by intelligence, but by the English language barrier. A pivotal three-month project with UNHCR in Delhi - working with Afghan and Burmese refugees - showed him that a well-designed, agency-centered program could move people from poverty into employment, and permanently redirected his path away from academia.
 
-Rennis co-founded Ignis Careers in 2009 alongside his wife and academic director, Imma Mary, after years of teaching in colleges and traveling across India's rural tier-two and tier-three cities, where the depth of the education crisis far exceeded what he had imagined. Together, they built a curriculum grounded in joyful, participatory learning — rejecting rote memorization and grammar-first teaching in favor of student-led activities rooted in each learner's own life and context. Their most cited proof point is an eight-year intervention in the village of Banapuram, Telangana, where 90% of students went on to higher education and child marriage rates dropped dramatically.
+Rennis co-founded Ignis Careers in 2009 alongside his wife and academic director, Imma Mary, after years of teaching in colleges and traveling across India's rural tier-two and tier-three cities, where the depth of the education crisis far exceeded what he had imagined. Together, they built a curriculum grounded in joyful, participatory learning - rejecting rote memorization and grammar-first teaching in favor of student-led activities rooted in each learner's own life and context. Their most cited proof point is an eight-year intervention in the village of Banapuram, Telangana, where 90% of students went on to higher education and child marriage rates dropped dramatically.
 
 Over more than two decades of individual work and 17 years building Ignis Careers, Rennis has helped reach over 364,000 students across more than 1,500 schools in Andhra Pradesh, Telangana, Karnataka, Odisha, Mumbai, and Delhi. The organization has been backed by Acumen, Gray Matters Capital, and Yunus Social Business, and recognized by the World Economic Forum as one of 100 corporate-ready social enterprises. He remains driven by a single conviction: that English and life skills are not luxuries, but the foundational gateway to employment, mobility, and human dignity for millions of young people born into poverty.
 
@@ -50,31 +50,31 @@ Over more than two decades of individual work and 17 years building Ignis Career
 
 ## The Education Crisis Leaving 400 Million Students Without Skills
 
-The scale of the education crisis is staggering. Globally, 400 million students leave school each year holding certificates but lacking the practical skills to access employment or build independent lives. In India alone, 290 million children are enrolled in school — and 80 to 90% of them are caught inside a system defined by rote learning, exam-obsessed culture, and teacher-dominated classrooms that offer students almost no agency. The result is not simply poor academic outcomes. It is a generation of young people who have spent years in school but cannot hold a job interview, articulate an opinion, or negotiate the world beyond their village. When you understand the numbers, the education crisis stops looking like a funding problem and starts looking like a systemic failure of design.
+The scale of the education crisis is staggering. Globally, 400 million students leave school each year holding certificates but lacking the practical skills to access employment or build independent lives. In India alone, 290 million children are enrolled in school - and 80 to 90% of them are caught inside a system defined by rote learning, exam-obsessed culture, and teacher-dominated classrooms that offer students almost no agency. The result is not simply poor academic outcomes. It is a generation of young people who have spent years in school but cannot hold a job interview, articulate an opinion, or negotiate the world beyond their village. When you understand the numbers, the education crisis stops looking like a funding problem and starts looking like a systemic failure of design.
 
 ## From a Delhi Refugee Camp to a Life's Mission
 
-Rennis's path to founding Ignis Careers was shaped by two formative experiences that arrived in quick succession. While studying at JNU, he began working with low-income students who were intellectually capable but blocked from opportunities by poor English skills — a barrier that had nothing to do with their potential and everything to do with what their schooling had failed to give them. Then came a three-month UNHCR project in Delhi, working with Afghan and Burmese refugees. Watching a short, well-designed program give displaced people genuine agency — and move them toward employment — was the moment Rennis's ambition shifted. He walked away from a future in academia and toward a life dedicated to this work. In 2009, he and his wife Imma Mary co-founded Ignis Careers, driven by a simple but radical idea: that the way education is delivered is just as important as whether children attend school at all.
+Rennis's path to founding Ignis Careers was shaped by two formative experiences that arrived in quick succession. While studying at JNU, he began working with low-income students who were intellectually capable but blocked from opportunities by poor English skills - a barrier that had nothing to do with their potential and everything to do with what their schooling had failed to give them. Then came a three-month UNHCR project in Delhi, working with Afghan and Burmese refugees. Watching a short, well-designed program give displaced people genuine agency - and move them toward employment - was the moment Rennis's ambition shifted. He walked away from a future in academia and toward a life dedicated to this work. In 2009, he and his wife Imma Mary co-founded Ignis Careers, driven by a simple but radical idea: that the way education is delivered is just as important as whether children attend school at all.
 
 ## What Most Education Programs Get Dangerously Wrong
 
-The conventional wisdom in education holds that teaching grammar is the path to language proficiency, and that a well-managed classroom is one where the teacher leads and students follow. Rennis argues that this is not just ineffective — it is the core of the education crisis itself. "If learning is not joyful, it's not learning at all," he says. The problem is not simply pedagogical. In many communities, children are already silenced at home — treated as though their opinions do not count. When school reinforces that same dynamic, it compounds the damage. The students who sit quietly, memorize without understanding, and recite answers they cannot connect to their own lives are not learning. They are being trained for passivity. Real change requires breaking that culture entirely.
+The conventional wisdom in education holds that teaching grammar is the path to language proficiency, and that a well-managed classroom is one where the teacher leads and students follow. Rennis argues that this is not just ineffective - it is the core of the education crisis itself. "If learning is not joyful, it's not learning at all," he says. The problem is not simply pedagogical. In many communities, children are already silenced at home - treated as though their opinions do not count. When school reinforces that same dynamic, it compounds the damage. The students who sit quietly, memorize without understanding, and recite answers they cannot connect to their own lives are not learning. They are being trained for passivity. Real change requires breaking that culture entirely.
 
-## How Ignis Careers Works — and Why It's Different
+## How Ignis Careers Works - and Why It's Different
 
-Ignis Careers delivers interactive English and life skills programs to students in affordable private and government schools, built around a simple but powerful inversion: students should be talking 80% of the time. Activities are designed to connect directly to each student's own life — their home, their food, their surroundings, their aspirations — making the learning feel personal rather than abstract. As Rennis describes it, "our activities are like a dress stitched for the specific student." Teacher training is included, ensuring that the methodology takes root in the classroom even after the program moves on. The full program runs to approximately 100 hours per child per year. And it costs $10.
+Ignis Careers delivers interactive English and life skills programs to students in affordable private and government schools, built around a simple but powerful inversion: students should be talking 80% of the time. Activities are designed to connect directly to each student's own life - their home, their food, their surroundings, their aspirations - making the learning feel personal rather than abstract. As Rennis describes it, "our activities are like a dress stitched for the specific student." Teacher training is included, ensuring that the methodology takes root in the classroom even after the program moves on. The full program runs to approximately 100 hours per child per year. And it costs $10.
 
 ## The $10 Question
 
-> "If you gave $10 to Ignis Careers, it would cover one child's full year of education — approximately 100 hours of a life skills and English learning program, plus teacher training — at an affordable private school serving a low-income community earning less than $5 a day."
+> "If you gave $10 to Ignis Careers, it would cover one child's full year of education - approximately 100 hours of a life skills and English learning program, plus teacher training - at an affordable private school serving a low-income community earning less than $5 a day."
 
-Ten dollars is the price of a paperback book or a takeaway coffee. At Ignis Careers, it is the price of giving a child the skills to hold a job interview, form an opinion, and imagine a future beyond the village they were born in. The education crisis is not a resource problem. It is a question of where resources are directed — and what we decide a child's future is worth.
+Ten dollars is the price of a paperback book or a takeaway coffee. At Ignis Careers, it is the price of giving a child the skills to hold a job interview, form an opinion, and imagine a future beyond the village they were born in. The education crisis is not a resource problem. It is a question of where resources are directed - and what we decide a child's future is worth.
 
 ## Rennis's Message to the World
 
-> "Being a social enterprise is not a crime — we are far more accountable to our beneficiaries than a typical nonprofit. Please invest in educating students and imparting skills, because a life skills program goes 10 to 15 times further than giving a desk and bench to a classroom. And the culture of learning by rote — learning by heart without understanding — has to change. Unless that changes, nothing changes."
+> "Being a social enterprise is not a crime - we are far more accountable to our beneficiaries than a typical nonprofit. Please invest in educating students and imparting skills, because a life skills program goes 10 to 15 times further than giving a desk and bench to a classroom. And the culture of learning by rote - learning by heart without understanding - has to change. Unless that changes, nothing changes."
 
-Rennis offers this not as a fundraising pitch but as a challenge to anyone who cares about the education crisis: look at where the money goes, ask what it actually produces, and demand more from the systems designed to help. The proof is already there — in Banapuram, in 364,000 students, in a young man from a village where girls were married at 14 who walked into Rennis's home and held a passionate debate about politics and economics. That is what is possible when a child is given agency, language, and the belief that their voice matters.
+Rennis offers this not as a fundraising pitch but as a challenge to anyone who cares about the education crisis: look at where the money goes, ask what it actually produces, and demand more from the systems designed to help. The proof is already there - in Banapuram, in 364,000 students, in a young man from a village where girls were married at 14 who walked into Rennis's home and held a passionate debate about politics and economics. That is what is possible when a child is given agency, language, and the belief that their voice matters.
 
 ---
 
@@ -94,7 +94,7 @@ Rennis offers this not as a fundraising pitch but as a challenge to anyone who c
 
 ## About Impact Bites
 
-Impact Bites is a short-form interview series featuring social entrepreneurs who solve real problems. Each episode covers: what they do, their origin story, what most people get wrong (myth-busting), one human impact story, and the $10 Question — what does a small donation actually do? Sustainable impact, explained simply.
+Impact Bites is a short-form interview series featuring social entrepreneurs who solve real problems. Each episode covers: what they do, their origin story, what most people get wrong (myth-busting), one human impact story, and the $10 Question - what does a small donation actually do? Sustainable impact, explained simply.
 
 [Explore more social enterprises on Dopaya](https://dopaya.com)`,
 

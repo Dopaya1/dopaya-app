@@ -12,6 +12,12 @@ interface BlogMeta {
 
 const blogPostMeta: BlogMeta[] = [
   {
+    slug: "the-impact-giving-report-2026",
+    title: "The Impact Giving Report 2026",
+    description: "Global philanthropic giving reached $770B — yet 80% of donors never give again. Dopaya's 2026 report on donor retention, the SE funding gap, and the case for rewards-based giving.",
+    image: "/impact-giving-report-2026-thumb.png",
+  },
+  {
     slug: "clean-water-for-all-how-openversum-is-solving-the-crisis",
     title: "Clean Water for All: How Openversum Is Solving the Crisis",
     description: "Olivier Groninger from Openversum on clean water — Impact Bites Episode 1",

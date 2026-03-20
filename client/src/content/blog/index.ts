@@ -1,9 +1,11 @@
 import type { BlogPost } from "./types";
 import ep1Openversum from "./ep1-openversum";
 import ep2IgnisCareers from "./ep2-ignis-careers";
+import theImpactGivingReport2026 from "./the-impact-giving-report-2026";
 
 // All blog posts — add new episodes here
 const allPosts: BlogPost[] = [
+  theImpactGivingReport2026,
   ep1Openversum,
   ep2IgnisCareers,
 ];
